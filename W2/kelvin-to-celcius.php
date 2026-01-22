@@ -15,9 +15,18 @@
     </form>
 </body>
 <?php
+$calculate = null;
 if($_SERVER['REQUEST_METHOD'] == "POST") {
     $kelvin = $_POST['kelvinVal'];
     $calculate = $kelvin - 273.15;
+
+    if($calculate > 30) {
+        echo "cold";
+    } elseif($calculate<50) 
+    echo "mild";
+    else{
+        echo "hot";
+    }
 }
 ?>
 <?php

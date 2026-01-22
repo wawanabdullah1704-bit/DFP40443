@@ -19,6 +19,7 @@
     </form>
 </body>
 <?php
+$bmi = null;
 if($_SERVER['REQUEST_METHOD'] == "POST") {
     $height = $_POST['heightVal'];
     $weight = $_POST['weightVal'];
