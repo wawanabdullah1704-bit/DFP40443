@@ -5,9 +5,9 @@ if($_SERVER["REQUEST_METHOD"]=="POST"){
     $namapengguna = $_POST['user'];
     $katalaluan = $_POST['pass'];
 
-    if($namapengguna == "admin" && $katalaluan == "root"){
+    if($namapengguna == "wawan" && $katalaluan == "root"){
         $_SESSION['username'] = $namapengguna;
-        $_SESSION['loggedin'] = true
+        $_SESSION['loggedin'] = true;
         header("Location:dashboard.php");
         exit();
     } else {

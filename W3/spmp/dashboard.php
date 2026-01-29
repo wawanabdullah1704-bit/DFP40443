@@ -1,7 +1,7 @@
 <?php
 session_start();
 
-if(!isset($_SESSION['loggedin']!==true)){
+if(!isset($_SESSION['loggedin'])){
     header("Location:login.php");
     exit();
 }
@@ -14,6 +14,9 @@ if(!isset($_SESSION['loggedin']!==true)){
     <title>Document</title>
 </head>
 <body>
-    <h3>This is a dashboard <?php echo $_SESSION['username'] ?></h3>
+    <h2>This is a dashboard <?php echo $_SESSION['username']; ?></h2>
+    <a href="about.php">About me</a>
+    <a href="index.php">Index</a>
+    <a href="logout.php">log out</a>
 </body>
 </html>
