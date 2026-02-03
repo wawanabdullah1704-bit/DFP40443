@@ -1,9 +1,9 @@
 <?php
 
 $pages = [
-    'home' => 'index.php',
+    'Home' => 'index.php',
     'Directory' => 'directory,php',
-    'giving' => 'donations,php',
+    'Giving' => 'donations,php',
     'Events' => 'events.php'
 ];
 
