@@ -20,7 +20,7 @@ if (isset($_POST['restart'])) {
     <h4>Review Incorrect Answers:</h4>
     <table class="table table-bordered">
         <thead class="table-light">
-            <tr><th>Question</th><th>Your Answer</th><th>Correct Answer</th></tr>
+            <tr><th>Question</th><th>Your Answers</th><th>Correct Answer</th></tr>
         </thead>
         <tbody>
             <?php foreach ($_SESSION['mistakes'] as $m): ?>
