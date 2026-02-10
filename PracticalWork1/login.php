@@ -1,21 +1,39 @@
 <?php
-$config = include('config/app_config.php')
+// login.php - Entry point for the quiz system
+require_once 'config/app_config.php';
+$error='';
+if($_SERVER['REQUEST_METHOD'] ==='POST'){
+    $username = htmlspecialchars($_POST['username']);
+    $password = htmlspecialchars($_POST['password']);
+
+    if(isset($users[$username]) && $users[$username] === $password){
+        //sekiranya benar
+        $_SESSION['username'] = $username;
+        $_SESSION['score'] = 0;
+        $_SESSION['soalanSemasa'] = 0;
+        
+        header('Location: quiz.php');
+    } else {
+        //sekiranay tidak benar
+        $error="Invalid Username or Password";
+    }
+}
+
+
+$pageTitle = 'Login';
+require_once 'include/header.php';
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-sRIl4kxILFvY47J16cr9ZwB07vP4J8+LH7qKQnuqkuIAvNWLzeN8tE5YBujZqJLB" crossorigin="anonymous">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js" integrity="sha384-FKyoEForCGlyvwx9Hj09JcYn3nv7wiPVlz7YYwJrWVcXK/BmnVDxM+D2scQbITxI" crossorigin="anonymous"></script>
-    <title><?php echo $config['site_name'] ?></title>
-</head>
-<body>
-    <h2>PHP Knowledge Questions</h2>
-    <p>Answer All questions.</p>
-    <form action="index.php" method="POST">
-        User Name: <input name="username" type="text">
-        <input value="Start Quiz" type="submit">
-    </form>
-</body>
-</html>
+
+    <h1>Welcome to the Quiz</h1>
+    <p>Enter your name to begin</p>
+        <?php if ($error): ?>
+            <?php echo $error ?>
+         <?php endif; ?>
+    <form method="POST" action="login.php">
+        Your Name:
+
+         <input type="text"  name="username" required>   
+          <input type="password"  name="password" required>       
+         <input type="submit" value="login">     
+        </form> </div>  
+<?php require_once 'include/footer.php'; ?>      
