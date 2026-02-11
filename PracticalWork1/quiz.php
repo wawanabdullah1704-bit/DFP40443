@@ -4,8 +4,8 @@ require_once 'include/header.php';
 
 $questions=[
     ['question' => 'What does PHP stands for', 'answer'=> 'Hypertext Preprocessor'],
-    ['question' => 'What does HTML stands for', 'answer'=> 'Hypertext'],
-    ['question' => 'What does CSS stands for', 'answer'=> 'CSS']
+    ['question' => 'What does HTML stands for', 'answer'=> 'Hypertext Markup Language'],
+    ['question' => 'What does CSS stands for', 'answer'=> 'Cascading Style Sheets']
 ];
 
 
@@ -38,17 +38,19 @@ if($_SERVER['REQUEST_METHOD'] === 'POST'){
 $currentIndex = $_SESSION['soalanSemasa'];
 
 $currentQuestion = $questions[$currentIndex];
-
 ?>
-User:<?php echo htmlspecialchars($_SESSION['username']); ?><br>
-Score:<?php echo $_SESSION['score'];?>
-<br><br>
-<?php echo $currentQuestion['question'] ?>
-<form action="quiz.php" method="POST">
-Your answer
-<input type="text" name="answer">
-<input type="submit" value="submit">
-</form>
+<div class="m-3">
+    User:<?php echo htmlspecialchars($_SESSION['username']); ?><br>
+    Score:<?php echo $_SESSION['score'];?>
+    <br><br>
+    <?php echo $currentQuestion['question'] ?>
+    <form action="quiz.php" method="POST">
+    Your answer
+    <input type="text" name="answer">
+    <input type="submit" value="submit" class="btn btn-primary">
+    </form>
+</div>
+
 
 <?php
 require_once 'include/footer.php';

@@ -24,16 +24,15 @@ $pageTitle = 'Login';
 require_once 'include/header.php';
 ?>
 
-    <h1>Welcome to the Quiz</h1>
-    <p>Enter your name to begin</p>
+    <h1 class="mt-3">Welcome to the Quiz</h1>
+    <p class="m-3">Enter your name to begin</p>
         <?php if ($error): ?>
             <?php echo $error ?>
          <?php endif; ?>
-    <form method="POST" action="login.php">
+    <form method="POST" action="login.php" class="mb-5">
         Your Name:
-
-         <input type="text"  name="username" required>   
-          <input type="password"  name="password" required>       
-         <input type="submit" value="login">     
-        </form> </div>  
+        <input type="text"  name="username" required>   
+        <input type="password"  name="password" required>       
+        <input type="submit" value="login">     
+    </form> 
 <?php require_once 'include/footer.php'; ?>      
