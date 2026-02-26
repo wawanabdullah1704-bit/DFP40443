@@ -1,5 +1,6 @@
 <?php
-$config = include('config/app_config.php')
+$config = include('config/app_config.php');
+require_once 'includes/header.php';
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -9,10 +10,15 @@ $config = include('config/app_config.php')
     <title><?php echo $config['site_name'] ?></title>
 </head>
 <body>
-    <form action="process_login.php" method="POST">
-        User <input name="username" type="text">
-        Password <input name="password" type="password">
-        <input type="submit" value="Login">
-    </form>
+    <div class="m-5">
+        <form action="process_login.php" method="POST">
+            User <input name="username" type="text">
+            Password <input name="password" type="password">
+            <input type="submit" value="Login">
+        </form>
+    </div>
 </body>
 </html>
+<?php
+require_once 'includes/footer.php';
+?>
