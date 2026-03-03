@@ -14,7 +14,7 @@ $maklumat = mysqli_query($conn,"SELECT users.id, username as pengguna, email, pa
 <body>
     <div class="container-fluid text-center">
         <h2 class="mb-3 mt-5">Delete User</h2>
-        <table class="table table-dark table-striped">
+        <table class="table table-dark table-striped table-bordered">
             <tr>
                 <th>Id</th>
                 <th>Nama Pengguna</th>
@@ -26,7 +26,7 @@ $maklumat = mysqli_query($conn,"SELECT users.id, username as pengguna, email, pa
                 <td><?php echo $pengguna['id'] ?></td>
                 <td><?php echo $pengguna['pengguna'] ?></td>
                 <td><?php echo $pengguna['peranan'] ?></td>
-                <td><button class="btn btn-outline-primary" type="submit">Padam</button></td>
+                <td><input type="submit" value="Padam" class="btn btn-outline-primary"></td>
             </tr>
         <?php endwhile; ?>
         </table>
