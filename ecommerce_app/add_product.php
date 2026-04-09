@@ -4,12 +4,20 @@ include 'db.php';
 $msg = "";
 
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
-    $name = htmlspeciualchars(trim($_POST[product_name]));
+    $name = htmlspecialchars(trim($_POST["product_name"]));
     $price = trim($_POST["price"]);
 
-    if (empty($name) || empty($price) || is_numeric($price) || $price <= 0) {
+    if (empty($name) || empty($price) || !is_numeric($price) || $price <= 0) {
+        $msg = "<div class='alert alert-danger'>Please fill in all fields correctly.</div>";
+    } else{
+        $stmt = mysqli_prepare($conn, "INSERT INTO products (product_name, price) VALUES (?, ?)");
+        mysqli_stmt_bind_param($stmt, "sds", $name, $price);
+        mysqli_stmt_execute($stmt);
 
+        $msg = "<div class='alert alert-success'>Product added successfully!</div>";
     }
+
+    
 }
 ?>
 
@@ -35,7 +43,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
             <?= $msg ?>
 
-            <form method="POST">
+            <form method="POST" enctype="multipart/form-data">
                 <div class="mb-3">
                     <label class="form-label">Product Name</label>
                     <input type="text" name="product_name" class="form-control" required>
@@ -43,10 +51,6 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
                 <div class="mb-3">
                     <label class="form-label">Price (RM)</label>
                     <input type="number" name="price" class="form-control" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label">Product Image</label>
-                    <input type="file" name="image" class="form-control" required>
                 </div>
                 <button type="submit" class="btn btn-warning" w-100>Add Product</button>
             </form>
