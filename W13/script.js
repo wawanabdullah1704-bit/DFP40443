@@ -1,0 +1,51 @@
+const showBtn = document.getElementById("loadMessage");
+const sysBtn = document.getElementById("loadSystem");
+const SQLBtn = document.getElementById("checkDB")
+const rolesBtn = document.getElementById("checkRoles")
+const listBtn = document.getElementById("listUsers")
+
+if (showBtn) {
+  showBtn.addEventListener("click", function () {
+    fetch("message.php")
+      .then((res) => res.text())
+      .then((data) => {
+        document.getElementById("result").innerHTML = "<P style='color:red'>" + data + "</p>";
+      });
+  });
+}
+if (sysBtn) {
+  sysBtn.addEventListener("click", function () {
+    fetch("message.php")
+      .then((res) => res.text())
+      .then((data) => {
+        document.getElementById("result").innerHTML = "<P>" + data + "</p>";
+      });
+  });
+}
+if (SQLBtn) {
+  SQLBtn.addEventListener("click", function () {
+    fetch("count.php")
+      .then((res) => res.text())
+      .then((data) => {
+        document.getElementById("result").innerHTML = "<P style='color:red'>" + data + "</p>";
+      });
+  });
+}
+if (rolesBtn) {
+  rolesBtn.addEventListener("click", function () {
+    fetch("count_roles.php")
+      .then((res) => res.text())
+      .then((data) => {
+        document.getElementById("result").innerHTML = "<P style='color:red'>" + data + "</p>";
+      });
+  });
+}
+if (listBtn) {
+  listBtn.addEventListener("click", function () {
+    fetch("users_list.php")
+      .then((res) => res.text())
+      .then((data) => {
+        document.getElementById("result").innerHTML = data;
+      });
+  });
+}
