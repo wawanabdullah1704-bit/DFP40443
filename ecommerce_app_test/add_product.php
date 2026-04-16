@@ -1,76 +1,37 @@
 <?php
 require 'db.php';
 
-// Initialize sticky variables and error messages
 $product_name = $price = "";
-$name_err = $price_err = $image_err = $success_msg = "";
+$name_err = $price_err = $success_msg = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // 1. Sanitize text inputs
     $product_name = htmlspecialchars(stripslashes(trim($_POST["product_name"])));
     $price = trim($_POST["price"]);
 
-    // 2. Validate Name
     if (empty($product_name)) {
         $name_err = "Please enter a product name.";
     }
 
-    // 3. Validate Price (Strict numeric check)
     if (empty($price)) {
         $price_err = "Please enter a price.";
     } elseif (!is_numeric($price) || $price < 0) {
         $price_err = "Please enter a valid positive number.";
     }
 
-    // 4. Validate and Handle Image Upload
-    if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
-        $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
-        $file_name = $_FILES['image']['name'];
-        $file_size = $_FILES['image']['size'];
-        $file_tmp = $_FILES['image']['tmp_name'];
+    if (empty($name_err) && empty($price_err)) {
+        $sql = "INSERT INTO products (product_name, price) VALUES (?, ?)";
 
-        $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
+        if ($stmt = mysqli_prepare($conn, $sql)) {
+            // "sd" means string, double (decimal)
+            mysqli_stmt_bind_param($stmt, "sd", $product_name, $price);
 
-        // Check size (2MB limit)
-        if ($file_size > 2097152) {
-            $image_err = "File size must not exceed 2MB.";
-        }
-        // Check extension
-        elseif (!in_array($file_ext, $allowed_ext)) {
-            $image_err = "Only JPG, JPEG, PNG, and GIF files are allowed.";
-        } else {
-            // Rename file to prevent overwriting
-            $new_file_name = uniqid() . '.' . $file_ext;
-            $upload_path = 'product_images/' . $new_file_name;
-        }
-    } else {
-        $image_err = "Please select an image to upload.";
-    }
-
-    // 5. Insert into Database using Prepared Statements (If no errors)
-    if (empty($name_err) && empty($price_err) && empty($image_err)) {
-
-        if (!is_dir('product_images/')) {
-            mkdir('product_images/', 0777, true);
-        }
-
-        if (move_uploaded_file($file_tmp, $upload_path)) {
-            $sql = "INSERT INTO products (product_name, price, image_path) VALUES (?, ?, ?)";
-
-            if ($stmt = mysqli_prepare($conn, $sql)) {
-                mysqli_stmt_bind_param($stmt, "sds", $product_name, $price, $upload_path);
-
-                if (mysqli_stmt_execute($stmt)) {
-                    $success_msg = "Product added successfully!";
-                    // Clear form after success
-                    $product_name = $price = "";
-                } else {
-                    $image_err = "Something went wrong. Please try again later.";
-                }
-                mysqli_stmt_close($stmt);
+            if (mysqli_stmt_execute($stmt)) {
+                $success_msg = "Product added successfully!";
+                $product_name = $price = "";
+            } else {
+                echo "Something went wrong. Please try again later.";
             }
-        } else {
-            $image_err = "Failed to move uploaded file.";
+            mysqli_stmt_close($stmt);
         }
     }
 }
@@ -99,7 +60,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                             <div class="alert alert-success"><?php echo $success_msg; ?></div>
                         <?php endif; ?>
 
-                        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
+                        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" onsubmit="return validateForm()">
 
                             <div class="mb-3">
                                 <label class="form-label">Product Name</label>
@@ -111,12 +72,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <label class="form-label">Price (RM)</label>
                                 <input type="text" name="price" id="price" class="form-control <?php echo (!empty($price_err)) ? 'is-invalid' : ''; ?>" value="<?php echo $price; ?>">
                                 <span class="invalid-feedback"><?php echo $price_err; ?></span>
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label">Product Image</label>
-                                <input type="file" name="image" id="image" class="form-control <?php echo (!empty($image_err)) ? 'is-invalid' : ''; ?>">
-                                <span class="invalid-feedback"><?php echo $image_err; ?></span>
                             </div>
 
                             <button type="submit" class="btn btn-primary w-100">Add Product</button>
@@ -132,7 +87,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         function validateForm() {
             let name = document.getElementById("product_name").value;
             let price = document.getElementById("price").value;
-            let image = document.getElementById("image").value;
 
             if (name.trim() == "") {
                 alert("Product name must be filled out");
@@ -140,10 +94,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             }
             if (price.trim() == "" || isNaN(price) || price < 0) {
                 alert("Please enter a valid positive price");
-                return false;
-            }
-            if (image == "") {
-                alert("Please select an image");
                 return false;
             }
             return true;
