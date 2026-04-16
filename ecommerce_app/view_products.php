@@ -13,11 +13,11 @@ require 'db.php';
 <body class="bg-light">
     <div class="container mt-5">
         <div class="card shadow">
-            <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center">
-                <h4 class="mb-0">Product Catalog Dashboard</h4>
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0 py-2">Product Catalog Dashboard</h4>
                 <a href="add_product.php" class="btn btn-success btn-sm">Add New Product</a>
             </div>
-            <div class="card-body">
+            <div class="card-body rounded-bottom-3 bg-dark">
                 
                 <?php
                 // Display success message from delete operation if it exists
@@ -27,8 +27,8 @@ require 'db.php';
                 ?>
 
                 <div class="table-responsive">
-                    <table class="table table-bordered table-striped table-hover align-middle">
-                        <thead class="table-secondary">
+                    <table class="table table-dark table-bordered table-striped table-hover align-middle">
+                        <thead class="table-dark">
                             <tr>
                                 <th>ID</th>
                                 <th>Image</th>

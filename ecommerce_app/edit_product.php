@@ -117,9 +117,9 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
             <div class="col-md-6">
                 <div class="card shadow">
                     <div class="card-header bg-warning text-dark">
-                        <h4 class="mb-0">Edit Product</h4>
+                        <h4 class="mb-0 py-2">Edit Product</h4>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body rounded-bottom-3 bg-dark text-white">
                         
                         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
                             
@@ -150,7 +150,7 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                             </div>
 
                             <button type="submit" class="btn btn-warning w-100">Update Product</button>
-                            <a href="view_products.php" class="btn btn-secondary w-100 mt-2">Cancel</a>
+                            <a href="view_products.php" class="btn btn-danger w-100 mt-2">Cancel</a>
                         </form>
                     </div>
                 </div>

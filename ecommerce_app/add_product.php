@@ -91,10 +91,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="row justify-content-center">
             <div class="col-md-6">
                 <div class="card shadow">
-                    <div class="card-header bg-primary text-white">
-                        <h4 class="mb-0">Add New Product</h4>
+                    <div class="card-header bg-success text-white">
+                        <h4 class="mb-0 py-2">Add New Product</h4>
                     </div>
-                    <div class="card-body">
+                    <div class="card-body rounded-bottom-3 bg-dark text-white">
                         <?php if (!empty($success_msg)): ?>
                             <div class="alert alert-success"><?php echo $success_msg; ?></div>
                         <?php endif; ?>
@@ -119,8 +119,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <span class="invalid-feedback"><?php echo $image_err; ?></span>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100">Add Product</button>
-                            <a href="view_products.php" class="btn btn-secondary w-100 mt-2">View Catalog</a>
+                            <button type="submit" class="btn btn-success w-100">Add Product</button>
+                            <a href="view_products.php" class="btn btn-primary w-100 mt-2">View Catalog</a>
                         </form>
                     </div>
                 </div>
