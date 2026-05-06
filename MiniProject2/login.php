@@ -30,23 +30,38 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hub Login</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-dark text-light">
-<div class="container mt-5" style="max-width: 500px;">
-    <h2>Tournament Hub Login</h2>
-    <?php echo $error; ?>
-    <form method="POST" action="">
-        <div class="mb-3">
-            <input type="text" name="username" class="form-control" placeholder="Username" required>
+<body class="bg-dark text-light d-flex align-items-center min-vh-100">
+    
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-5">
+                
+                <div class="p-4 rounded shadow-sm bg-secondary bg-opacity-10">
+                    <h2 class="text-center mb-4">Tournament Hub Login</h2>
+                    
+                    <?php echo $error; ?>
+                    
+                    <form method="POST" action="">
+                        <div class="mb-3">
+                            <input type="text" name="username" class="form-control form-control-lg" placeholder="Username" required>
+                        </div>
+                        <div class="mb-3">
+                            <input type="password" name="password" class="form-control form-control-lg" placeholder="Password" required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-lg w-100">Login</button>
+                    </form>
+                    
+                    <p class="mt-4 text-center mb-0">Need an account? <a href="register.php" class="text-info text-decoration-none">Register</a></p>
+                </div>
+
+            </div>
         </div>
-        <div class="mb-3">
-            <input type="password" name="password" class="form-control" placeholder="Password" required>
-        </div>
-        <button type="submit" class="btn btn-success w-100">Login</button>
-    </form>
-    <p class="mt-3 text-center">Need an account? <a href="register.php">Register</a></p>
-</div>
+    </div>
+
 </body>
 </html>

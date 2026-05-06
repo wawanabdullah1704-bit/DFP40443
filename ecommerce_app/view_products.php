@@ -4,12 +4,14 @@ require 'db.php';
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>E-Commerce Dashboard</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
     <div class="container mt-5">
         <div class="card shadow">
@@ -18,10 +20,9 @@ require 'db.php';
                 <a href="add_product.php" class="btn btn-success btn-sm">Add New Product</a>
             </div>
             <div class="card-body rounded-bottom-3 bg-dark">
-                
+
                 <?php
-                // Display success message from delete operation if it exists
-                if(isset($_GET['msg']) && $_GET['msg'] == 'deleted') {
+                if (isset($_GET['msg']) && $_GET['msg'] == 'deleted') {
                     echo "<div class='alert alert-success'>Product successfully deleted.</div>";
                 }
                 ?>
@@ -39,7 +40,6 @@ require 'db.php';
                         </thead>
                         <tbody>
                             <?php
-                            // 1. Execute a SELECT * query to retrieve all items
                             $sql = "SELECT * FROM products";
                             $result = mysqli_query($conn, $sql);
 
@@ -47,18 +47,15 @@ require 'db.php';
                                 while ($row = mysqli_fetch_assoc($result)) {
                                     echo "<tr>";
                                     echo "<td>" . $row['id'] . "</td>";
-                                    
-                                    // 2. Display the uploaded image using the saved database path
+
                                     echo "<td><img src='" . htmlspecialchars($row['image_path']) . "' alt='Product Image' style='width: 80px; height: auto; border-radius: 5px;'></td>";
-                                    
+
                                     echo "<td>" . htmlspecialchars($row['product_name']) . "</td>";
                                     echo "<td>" . number_format($row['price'], 2) . "</td>";
-                                    
+
                                     echo "<td>";
-                                    // 3. Edit button passing ID in query string
                                     echo "<a href='edit_product.php?id=" . $row['id'] . "' class='btn btn-warning btn-sm me-2'>Edit</a>";
-                                    
-                                    // 4. Delete button with JS Confirmation Prompt
+
                                     echo "<a href='delete_product.php?id=" . $row['id'] . "' class='btn btn-danger btn-sm' onclick=\"return confirm('Are you sure you want to permanently delete this product?');\">Delete</a>";
                                     echo "</td>";
                                     echo "</tr>";
@@ -74,4 +71,5 @@ require 'db.php';
         </div>
     </div>
 </body>
+
 </html>

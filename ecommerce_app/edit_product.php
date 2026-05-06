@@ -4,10 +4,9 @@ require 'db.php';
 $product_name = $price = $current_image = "";
 $name_err = $price_err = $image_err = "";
 
-// 1. Fetch existing data when page loads via GET request
 if (isset($_GET['id']) && is_numeric($_GET['id'])) {
     $id = trim($_GET['id']);
-    
+
     $sql = "SELECT product_name, price, image_path FROM products WHERE id = ?";
     if ($stmt = mysqli_prepare($conn, $sql)) {
         mysqli_stmt_bind_param($stmt, "i", $id);
@@ -20,19 +19,15 @@ if (isset($_GET['id']) && is_numeric($_GET['id'])) {
         }
         mysqli_stmt_close($stmt);
     }
-} 
-// 2. Process the form submission via POST request
-elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $id = $_POST['id']; // Retrieved from hidden input
-    $current_image = $_POST['current_image']; // Retrieved from hidden input
-    
-    // Sanitize and Validate Name
+} elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $id = $_POST['id'];
+    $current_image = $_POST['current_image'];
+
     $product_name = htmlspecialchars(stripslashes(trim($_POST["product_name"])));
     if (empty($product_name)) {
         $name_err = "Please enter a product name.";
     }
 
-    // Sanitize and Validate Price
     $price = trim($_POST["price"]);
     if (empty($price)) {
         $price_err = "Please enter a price.";
@@ -40,7 +35,6 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
         $price_err = "Please enter a valid positive number.";
     }
 
-    // Handle Image Update Logic
     $new_image_uploaded = false;
     if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
         $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
@@ -60,15 +54,12 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
         }
     }
 
-    // Execute UPDATE if there are no errors
     if (empty($name_err) && empty($price_err) && empty($image_err)) {
-        
+
         if ($new_image_uploaded) {
-            // SCENARIO A: User uploaded a new image
             if (move_uploaded_file($file_tmp, $upload_path)) {
-                // Delete the old physical image using unlink()
                 if (!empty($current_image) && file_exists($current_image)) {
-                    unlink($current_image); 
+                    unlink($current_image);
                 }
 
                 $sql = "UPDATE products SET product_name = ?, price = ?, image_path = ? WHERE id = ?";
@@ -81,7 +72,6 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $image_err = "Failed to upload new image.";
             }
         } else {
-            // SCENARIO B: User only updated text fields (Name/Price)
             $sql = "UPDATE products SET product_name = ?, price = ? WHERE id = ?";
             if ($stmt = mysqli_prepare($conn, $sql)) {
                 mysqli_stmt_bind_param($stmt, "sdi", $product_name, $price, $id);
@@ -89,15 +79,13 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                 mysqli_stmt_close($stmt);
             }
         }
-        
-        // Redirect back to dashboard if no errors occurred
-        if(empty($image_err)) {
+
+        if (empty($image_err)) {
             header("Location: view_products.php");
             exit();
         }
     }
 } else {
-    // Redirect if accessed directly without ID or POST
     header("Location: view_products.php");
     exit();
 }
@@ -105,12 +93,14 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
 
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Product</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
+
 <body class="bg-light">
     <div class="container mt-5">
         <div class="row justify-content-center">
@@ -120,9 +110,9 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <h4 class="mb-0 py-2">Edit Product</h4>
                     </div>
                     <div class="card-body rounded-bottom-3 bg-dark text-white">
-                        
+
                         <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST" enctype="multipart/form-data" onsubmit="return validateForm()">
-                            
+
                             <input type="hidden" name="id" value="<?php echo $id; ?>">
                             <input type="hidden" name="current_image" value="<?php echo htmlspecialchars($current_image); ?>">
 
@@ -171,9 +161,9 @@ elseif ($_SERVER["REQUEST_METHOD"] == "POST") {
                 alert("Please enter a valid positive price");
                 return false;
             }
-            // We don't validate image here because leaving it empty is allowed during an update!
             return true;
         }
     </script>
 </body>
+
 </html>

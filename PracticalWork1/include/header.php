@@ -9,7 +9,7 @@ $loggedIn= isset($_SESSION['username']);
 </head>
 <body>
     <header>
-        <nav class="navbar navbar-expand-lg bg-dark">
+        <nav class="navbar navbar-expand-lg bg-warning">
             <a class="link-light p-3" href='index.php'>Home</a>
             <?php if($loggedIn): ?>
             <a class="link-light p-3" href='quiz.php'>Quiz</a>

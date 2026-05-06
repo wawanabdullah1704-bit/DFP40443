@@ -58,41 +58,60 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Edit Team</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
-<body class="bg-dark text-light">
-<div class="container mt-5" style="max-width: 600px;">
-    <h2>Edit Team Profile</h2>
-    <?php echo $message; ?>
-    <form method="POST" action="" enctype="multipart/form-data" class="bg-secondary p-4 rounded mt-3">
-        <div class="mb-3">
-            <label class="form-label">Team Name</label>
-            <input type="text" name="team_name" class="form-control" value="<?php echo htmlspecialchars($team['team_name']); ?>" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Captain (IGN)</label>
-            <input type="text" name="captain_name" class="form-control" value="<?php echo htmlspecialchars($team['captain_name']); ?>" required>
-        </div>
-        <div class="mb-3">
-            <label class="form-label">Rank Tier</label>
-            <select name="rank_tier" class="form-select" required>
-                <option value="Epic" <?php if($team['rank_tier']=='Epic') echo 'selected'; ?>>Epic</option>
-                <option value="Legend" <?php if($team['rank_tier']=='Legend') echo 'selected'; ?>>Legend</option>
-                <option value="Mythic" <?php if($team['rank_tier']=='Mythic') echo 'selected'; ?>>Mythic</option>
-                <option value="Mythical Glory" <?php if($team['rank_tier']=='Mythical Glory') echo 'selected'; ?>>Mythical Glory</option>
-            </select>
-        </div>
-        <div class="mb-4 d-flex align-items-center">
-            <img src="<?php echo htmlspecialchars($team['logo_path']); ?>" width="60" class="rounded me-3 border border-dark">
-            <div class="flex-grow-1">
-                <label class="form-label">Replace Logo (Leave blank to keep)</label>
-                <input type="file" name="team_logo" class="form-control" accept="image/*">
+<body class="bg-dark text-light d-flex align-items-center py-4 min-vh-100">
+    
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-12 col-sm-10 col-md-8 col-lg-6">
+                
+                <h2 class="text-center mb-4">Edit Team Profile</h2>
+                
+                <?php echo $message; ?>
+                
+                <form method="POST" action="" enctype="multipart/form-data" class="bg-secondary p-4 rounded shadow-sm">
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Team Name</label>
+                        <input type="text" name="team_name" class="form-control form-control-lg" value="<?php echo htmlspecialchars($team['team_name']); ?>" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Captain (IGN)</label>
+                        <input type="text" name="captain_name" class="form-control form-control-lg" value="<?php echo htmlspecialchars($team['captain_name']); ?>" required>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label class="form-label">Rank Tier</label>
+                        <select name="rank_tier" class="form-select form-select-lg" required>
+                            <option value="Epic" <?php if($team['rank_tier']=='Epic') echo 'selected'; ?>>Epic</option>
+                            <option value="Legend" <?php if($team['rank_tier']=='Legend') echo 'selected'; ?>>Legend</option>
+                            <option value="Mythic" <?php if($team['rank_tier']=='Mythic') echo 'selected'; ?>>Mythic</option>
+                            <option value="Mythical Glory" <?php if($team['rank_tier']=='Mythical Glory') echo 'selected'; ?>>Mythical Glory</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4 d-flex flex-column flex-sm-row align-items-sm-center">
+                        <img src="<?php echo htmlspecialchars($team['logo_path']); ?>" width="60" class="rounded mb-3 mb-sm-0 me-sm-3 border border-dark align-self-start align-self-sm-center">
+                        <div class="flex-grow-1 w-100">
+                            <label class="form-label">Replace Logo (Leave blank to keep)</label>
+                            <input type="file" name="team_logo" class="form-control form-control-lg" accept="image/*">
+                        </div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-sm-block mt-4">
+                        <button type="submit" class="btn btn-warning btn-lg">Update Team</button>
+                        <a href="dashboard.php" class="btn btn-outline-light btn-lg">Cancel</a>
+                    </div>
+                    
+                </form>
             </div>
         </div>
-        <button type="submit" class="btn btn-warning">Update Team</button>
-        <a href="dashboard.php" class="btn btn-outline-light ms-2">Cancel</a>
-    </form>
-</div>
+    </div>
+
 </body>
 </html>

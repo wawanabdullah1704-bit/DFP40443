@@ -8,4 +8,4 @@ $users = [
     'guest' => 'visitor'
 ];
 
-?>  
+?> 

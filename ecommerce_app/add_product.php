@@ -1,28 +1,24 @@
 <?php
 require 'db.php';
 
-// Initialize sticky variables and error messages
 $product_name = $price = "";
 $name_err = $price_err = $image_err = $success_msg = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // 1. Sanitize text inputs
+
     $product_name = htmlspecialchars(stripslashes(trim($_POST["product_name"])));
     $price = trim($_POST["price"]);
 
-    // 2. Validate Name
     if (empty($product_name)) {
         $name_err = "Please enter a product name.";
     }
 
-    // 3. Validate Price (Strict numeric check)
     if (empty($price)) {
         $price_err = "Please enter a price.";
     } elseif (!is_numeric($price) || $price < 0) {
         $price_err = "Please enter a valid positive number.";
     }
 
-    // 4. Validate and Handle Image Upload
     if (isset($_FILES['image']) && $_FILES['image']['error'] == 0) {
         $allowed_ext = ['jpg', 'jpeg', 'png', 'gif'];
         $file_name = $_FILES['image']['name'];
@@ -31,15 +27,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
         $file_ext = strtolower(pathinfo($file_name, PATHINFO_EXTENSION));
 
-        // Check size (2MB limit)
         if ($file_size > 2097152) {
             $image_err = "File size must not exceed 2MB.";
-        }
-        // Check extension
-        elseif (!in_array($file_ext, $allowed_ext)) {
+        } elseif (!in_array($file_ext, $allowed_ext)) {
             $image_err = "Only JPG, JPEG, PNG, and GIF files are allowed.";
         } else {
-            // Rename file to prevent overwriting
             $new_file_name = uniqid() . '.' . $file_ext;
             $upload_path = 'product_images/' . $new_file_name;
         }
@@ -47,7 +39,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $image_err = "Please select an image to upload.";
     }
 
-    // 5. Insert into Database using Prepared Statements (If no errors)
     if (empty($name_err) && empty($price_err) && empty($image_err)) {
 
         if (!is_dir('product_images/')) {
@@ -62,7 +53,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 if (mysqli_stmt_execute($stmt)) {
                     $success_msg = "Product added successfully!";
-                    // Clear form after success
                     $product_name = $price = "";
                 } else {
                     $image_err = "Something went wrong. Please try again later.";
