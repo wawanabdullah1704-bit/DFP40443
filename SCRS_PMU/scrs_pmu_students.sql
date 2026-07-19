@@ -24,7 +24,9 @@ DROP TABLE IF EXISTS `students`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `students` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `full_name` varchar(100) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `email` varchar(100) NOT NULL,
+  `full_name` varchar(150) NOT NULL,
   `phone_no` varchar(20) NOT NULL,
   `no_ic` varchar(15) NOT NULL,
   `no_pendaftaran` varchar(20) NOT NULL,
@@ -33,7 +35,7 @@ CREATE TABLE `students` (
   `driving_license_file` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -42,7 +44,7 @@ CREATE TABLE `students` (
 
 LOCK TABLES `students` WRITE;
 /*!40000 ALTER TABLE `students` DISABLE KEYS */;
-INSERT INTO `students` VALUES (1,'test123','0123456789','0123456-78-1234','20dit24f1008','$2y$10$2NaljTw1FTnwwwBTUKLfa.f.NMQxK29O4DlUvOaig61UtfkQystwG','uploads/20dit24f1008_ID_1784297952_1.png','uploads/20dit24f1008_License_1784297952_1.png','2026-07-17 14:19:12'),(2,'admin2','123456','123456','13242434','$2y$10$Ht.sN886WsblUz96APCSc.7XBahIajs0ZDZR3OcdjrdQ44KAvBfRO','uploads/13242434_ID_1784298223_5.png','uploads/13242434_License_1784298223_4.png','2026-07-17 14:23:43'),(3,'admin2','123456','123456','13242434','$2y$10$DPKFexdxINld3viPJA4sqeqiKNlowGaSKVSxnTY6jES/HwpF8qJ7m','uploads/13242434_ID_1784298364_5.png','uploads/13242434_License_1784298364_4.png','2026-07-17 14:26:04'),(4,'Wan Syah','0123456789','0123456-78-1234','20dit24f1008','$2y$10$dSEIjiMoDx5Zd19S25Mtp.ITiqNMBPoctBXc71tVcDHztNcFoejGO','uploads/20dit24f1008_ID_1784298410_1.png','uploads/20dit24f1008_License_1784298410_4.png','2026-07-17 14:26:50'),(5,'Wan Syah','0123456789','0123456-78-1234','20dit24f1008','$2y$10$jnoXsttJT6CpPtus2pSF2eK1Rj6elOXyeO02yvxITzpMFXWmZ3tsq','uploads/20dit24f1008_ID_1784298622_1.png','uploads/20dit24f1008_License_1784298622_4.png','2026-07-17 14:30:22');
+INSERT INTO `students` VALUES (1,'FeeqGanteng67','contoh@gmail.com','Ali bin Abu','1234567890','0123456-78-1234','20dit24f1008','$2y$10$rdcTZX6R601HEPTLRH2/Eu5HXhn8lpGPyNmpnD7w6UU.Wk8Uk4XZS','uploads/20dit24f1008_ID_1784473043_1.png','uploads/20dit24f1008_License_1784473043_2.png','2026-07-19 14:57:23'),(2,'FeeqGanteng67','contoh@gmail.com','Ali bin Abu','1234567890','0123456-78-1234','20dit24f1008','$2y$10$qkvmj1OJuqsPNA4X7Cdt/O19njMYUf7n0.qhCUoB7PgzEzifUZrUa','uploads/20dit24f1008_ID_1784473447_1.png','uploads/20dit24f1008_License_1784473447_2.png','2026-07-19 15:04:07'),(3,'admin1','admin1@gmail.com','Admin1','1234567890','0123456-78-1234','20dit24f1008','$2y$10$.6X0rjWS55LzNsBSjT.g1.19gKs9wtFNwYr./nG8ygQOdxB7m2832','uploads/20dit24f1008_ID_1784473557_1.png','uploads/20dit24f1008_License_1784473557_2.png','2026-07-19 15:05:57'),(4,'test','contoh@gmail.com','test','0123456789','0123456-78-1234','20dit24f1008','$2y$10$mHGt252rX.8xxste11f8CedOQ5wY0/SiS99rcSA160D6ZyGYwTaH2','uploads/20dit24f1008_ID_1784473699_5.png','uploads/20dit24f1008_License_1784473699_3.png','2026-07-19 15:08:19');
 /*!40000 ALTER TABLE `students` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -55,4 +57,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-07-17 23:07:17
+-- Dump completed on 2026-07-19 23:31:55
