@@ -35,7 +35,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             // Bawa pengguna ke laman utama (contoh: home.php atau index.php)
             // Anda boleh tukar 'home.php' ini ke fail yang sepatutnya
-            header("Location: home.php");
+            header("Location: dashboard.php");
             exit();
             
         } else {
@@ -112,18 +112,18 @@ $conn->close();
                             
                             <div class="mb-3">
                                 <label class="form-label fw-bold" for="username">Username</label>
-                                <input class="form-control" type="text" name="username" id="username" placeholder="Masukkan username" required>
+                                <input class="form-control" type="text" name="username" id="username" placeholder="Enter username" required>
                             </div>
                             
                             <div class="mb-4">
                                 <label class="form-label fw-bold" for="password">Password</label>
                                 <!-- Tambah name="password" di sini -->
-                                <input class="form-control" type="password" name="password" id="password" placeholder="Masukkan kata laluan" required>
+                                <input class="form-control" type="password" name="password" id="password" placeholder="Enter password" required>
                             </div>
                             
                             <input type="submit" value="Sign In" name="sign_in" id="sign_in" class="btn btn-primary form-control mb-3">
                             
-                            <p class="text-center">Don't have an account? <a href="register.php" class="text-primary text-decoration-none fw-bold">Sign Up here!</a></p>
+                            <p class="text-center">Don't have an account? <a href="choose_role.php" class="text-primary text-decoration-none fw-bold">Sign Up here!</a></p>
                         </form>
                     </div>
                 </div>

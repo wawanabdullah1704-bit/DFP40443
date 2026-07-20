@@ -57,7 +57,7 @@
                 
                 <a href="register_provider.php" class="btn btn-primary w-100 mb-4 py-3 rounded-4 shadow-sm d-flex flex-column align-items-center">
                     <span class="fs-6">Sign up as</span>
-                    <span class="fs-5 fw-bold">car provider</span>
+                    <span class="fs-5 fw-bold">Car Provider</span>
                 </a>
 
                 <p class="mt-4">Already have an account? <a href="login.php" class="text-primary text-decoration-none fw-bold">Sign In here</a></p>
