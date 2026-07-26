@@ -1,5 +1,5 @@
 <?php
-// 1. Mulakan sesi (session) untuk menyimpan maklumat log masuk
+// 1. Mulakan sesi (session)
 session_start();
 
 // 2. Panggil sambungan pangkalan data
@@ -10,42 +10,113 @@ $error_message = "";
 // 3. Semak jika butang Sign In ditekan
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // Ambil data dari borang
     $username = htmlspecialchars($_POST['username']);
     $password = $_POST['password'];
+    $user_found = false; // Penanda jika username dijumpai
 
-    // 4. Cari pengguna dalam database berdasarkan username
-    $sql = "SELECT id, username, password, full_name FROM students WHERE username = ?";
-    $stmt = $conn->prepare($sql);
+    // --- SEMAKAN 1: JADUAL ADMINS (JHEPP) ---
+    $sql_admin = "SELECT id, username, password, full_name FROM admins WHERE username = ?";
+    $stmt = $conn->prepare($sql_admin);
     $stmt->bind_param("s", $username);
     $stmt->execute();
-    $result = $stmt->get_result();
+    $res_admin = $stmt->get_result();
 
-    // Jika username wujud
-    if ($result->num_rows > 0) {
-        $row = $result->fetch_assoc();
+    if ($res_admin->num_rows > 0) {
+        $user_found = true;
+        $row = $res_admin->fetch_assoc();
         
-        // 5. Sahkan kata laluan (bandingkan password yang ditaip dengan hash di database)
         if (password_verify($password, $row['password'])) {
-            
-            // Log masuk berjaya! Simpan maklumat pelajar ke dalam session
-            $_SESSION['student_id'] = $row['id'];
+            $_SESSION['admin_id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
-            $_SESSION['full_name'] = $row['full_name'];
+            $_SESSION['role'] = 'admin';
             
-            // Bawa pengguna ke laman utama (contoh: home.php atau index.php)
-            // Anda boleh tukar 'home.php' ini ke fail yang sepatutnya
-            header("Location: dashboard.php");
+            header("Location: verify_account.php"); 
             exit();
-            
         } else {
             $error_message = '<div class="alert alert-danger">Ralat: Kata laluan salah!</div>';
         }
-    } else {
+    }
+    $stmt->close();
+
+    // --- SEMAKAN 2: JADUAL STUDENTS ---
+    if (!$user_found) {
+        $sql_student = "SELECT id, username, password, full_name, status FROM students WHERE username = ?";
+        $stmt = $conn->prepare($sql_student);
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $res_student = $stmt->get_result();
+
+        if ($res_student->num_rows > 0) {
+            $user_found = true;
+            $row = $res_student->fetch_assoc();
+            
+            if (password_verify($password, $row['password'])) {
+                
+                // --- PENAMBAHBAIKAN SEKATAN LOGIN PELAJAR ---
+                if ($row['status'] === 'pending') {
+                    // Bawa ke muka surat pending (tanpa log masuk)
+                    header("Location: pending.php");
+                    exit();
+                } else if ($row['status'] === 'rejected') {
+                    // Papar mesej ditolak (tanpa log masuk)
+                    $error_message = '<div class="alert alert-danger">Maaf, pendaftaran akaun anda telah ditolak oleh JHEPP.</div>';
+                } else if ($row['status'] === 'approved') {
+                    // Hanya akaun approved sahaja yang boleh cipta session (log masuk berjaya)
+                    $_SESSION['student_id'] = $row['id'];
+                    $_SESSION['username'] = $row['username'];
+                    $_SESSION['role'] = 'student';
+                    
+                    header("Location: dashboard.php");
+                    exit();
+                }
+                
+            } else {
+                $error_message = '<div class="alert alert-danger">Ralat: Kata laluan salah!</div>';
+            }
+        }
+        $stmt->close();
+    }
+
+    // --- SEMAKAN 3: JADUAL PROVIDERS ---
+    if (!$user_found) {
+        $sql_provider = "SELECT id, username, password, full_name, status FROM providers WHERE username = ?";
+        $stmt = $conn->prepare($sql_provider);
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $res_provider = $stmt->get_result();
+
+        if ($res_provider->num_rows > 0) {
+            $user_found = true;
+            $row = $res_provider->fetch_assoc();
+            
+            if (password_verify($password, $row['password'])) {
+                
+                // --- PENAMBAHBAIKAN SEKATAN LOGIN PROVIDER ---
+                if ($row['status'] === 'pending') {
+                    header("Location: pending.php");
+                    exit();
+                } else if ($row['status'] === 'rejected') {
+                    $error_message = '<div class="alert alert-danger">Maaf, pendaftaran akaun Provider anda telah ditolak.</div>';
+                } else if ($row['status'] === 'approved') {
+                    $_SESSION['provider_id'] = $row['id'];
+                    $_SESSION['username'] = $row['username'];
+                    $_SESSION['role'] = 'provider';
+                    
+                    header("Location: provider_dashboard.php");
+                    exit();
+                }
+
+            } else {
+                $error_message = '<div class="alert alert-danger">Ralat: Kata laluan salah!</div>';
+            }
+        }
+        $stmt->close();
+    }
+
+    // --- KESIMPULAN JIKA USERNAME TIADA DALAM KETIGA-TIGA JADUAL ---
+    if (!$user_found) {
         $error_message = '<div class="alert alert-danger">Ralat: Username tidak wujud!</div>';
     }
-    
-    $stmt->close();
 }
 $conn->close();
 ?>
@@ -88,7 +159,7 @@ $conn->close();
                     </a>
                 </li>
                 <li class="nav-item mb-2">
-                    <a class="nav-link text-dark fs-5 d-flex align-items-center" href="#">
+                    <a class="nav-link text-dark fs-5 d-flex align-items-center" href="index.php">
                         <i class="bi bi-house-door text-secondary me-3 fs-4"></i> Laman Utama
                     </a>
                 </li>
@@ -96,20 +167,16 @@ $conn->close();
         </div>
     </div>
 
-
     <div class="container mt-5">
         <div class="row justify-content-center">
-            <div class="col-md-5"> <!-- Mengecilkan saiz kotak login supaya lebih kemas -->
+            <div class="col-md-5">
                 <div class="card shadow-sm border-0 p-3">
                     <div class="container mt-3">
                         <h2 class="text-center mb-4 text-primary fw-bold">Sign In</h2>
                         
-                        <!-- Paparkan mesej ralat di sini jika ada -->
                         <?php echo $error_message; ?>
 
-                        <!-- Tambah method="POST" supaya data boleh ditangkap oleh PHP -->
                         <form class="mb-3" action="" method="POST">
-                            
                             <div class="mb-3">
                                 <label class="form-label fw-bold" for="username">Username</label>
                                 <input class="form-control" type="text" name="username" id="username" placeholder="Enter username" required>
@@ -117,7 +184,6 @@ $conn->close();
                             
                             <div class="mb-4">
                                 <label class="form-label fw-bold" for="password">Password</label>
-                                <!-- Tambah name="password" di sini -->
                                 <input class="form-control" type="password" name="password" id="password" placeholder="Enter password" required>
                             </div>
                             
@@ -131,7 +197,6 @@ $conn->close();
         </div>
     </div>
     
-    <!-- Script Bootstrap diperlukan untuk membolehkan Offcanvas berfungsi -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

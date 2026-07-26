@@ -71,8 +71,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             // Jalankan arahan SQL
             if ($stmt->execute()) {
-                // Jika berjaya, papar mesej ini
-                $message = '<div class="alert alert-success">Berjaya: Akaun pelajar untuk <strong>' . $fullName . '</strong> telah didaftarkan!</div>';
+                // UPDATE: Jika berjaya, bawa pengguna ke muka surat pending.php
+                header("Location: pending.php");
+                exit(); // Pastikan kod berhenti di sini selepas redirect
             } else {
                 // Jika gagal simpan ke database, papar ralat
                 $message = '<div class="alert alert-danger">Ralat Database: ' . $stmt->error . '</div>';
