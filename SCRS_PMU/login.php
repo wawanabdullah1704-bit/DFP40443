@@ -1,21 +1,21 @@
 <?php
-// 1. Mulakan sesi (session)
+// 1. Start Session (session)
 session_start();
 
-// 2. Panggil sambungan pangkalan data
+// 2. Call the database connection
 require 'db.php';
 
 $error_message = "";
 
-// 3. Semak jika butang Sign In ditekan
+// 3. Check if the Sign In button has been pressed.
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
     $username = htmlspecialchars($_POST['username']);
     $password = $_POST['password'];
-    $user_found = false; // Penanda jika username dijumpai
+    $user_found = false; // Flag if username found
 
-    // --- SEMAKAN 1: JADUAL ADMINS (JHEPP) ---
-    $sql_admin = "SELECT id, username, password, full_name FROM admins WHERE username = ?";
+    // --- REVIEW 1: ADMINS SCHEDULE (JHEPP) ---
+    $sql_admin = "SELECT id, username, password, full_name FROM jhepp_staff WHERE username = ?";
     $stmt = $conn->prepare($sql_admin);
     $stmt->bind_param("s", $username);
     $stmt->execute();
@@ -33,12 +33,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             header("Location: verify_account.php"); 
             exit();
         } else {
-            $error_message = '<div class="alert alert-danger">Ralat: Kata laluan salah!</div>';
+            $error_message = '<div class="alert alert-danger">Error: Wrong password!</div>';
         }
     }
     $stmt->close();
 
-    // --- SEMAKAN 2: JADUAL STUDENTS ---
+    // --- REVIEW 2: STUDENT SCHEDULE ---
     if (!$user_found) {
         $sql_student = "SELECT id, username, password, full_name, status FROM students WHERE username = ?";
         $stmt = $conn->prepare($sql_student);
@@ -52,16 +52,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if (password_verify($password, $row['password'])) {
                 
-                // --- PENAMBAHBAIKAN SEKATAN LOGIN PELAJAR ---
+                // --- Enhancements to Student Login Restrictions ---
                 if ($row['status'] === 'pending') {
-                    // Bawa ke muka surat pending (tanpa log masuk)
+                    // Go to the pending page (without logging in)
                     header("Location: pending.php");
                     exit();
                 } else if ($row['status'] === 'rejected') {
-                    // Papar mesej ditolak (tanpa log masuk)
-                    $error_message = '<div class="alert alert-danger">Maaf, pendaftaran akaun anda telah ditolak oleh JHEPP.</div>';
+                    // Show rejected message (without logging in)
+                    $error_message = '<div class="alert alert-danger">Sorry, your account registration is rejected by JHEPP.</div>';
                 } else if ($row['status'] === 'approved') {
-                    // Hanya akaun approved sahaja yang boleh cipta session (log masuk berjaya)
+                    // Only approved accounts can create a session (successful login).
                     $_SESSION['student_id'] = $row['id'];
                     $_SESSION['username'] = $row['username'];
                     $_SESSION['role'] = 'student';
@@ -71,13 +71,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
                 
             } else {
-                $error_message = '<div class="alert alert-danger">Ralat: Kata laluan salah!</div>';
+                $error_message = '<div class="alert alert-danger">Error: Wrong password!</div>';
             }
         }
         $stmt->close();
     }
 
-    // --- SEMAKAN 3: JADUAL PROVIDERS ---
+    // --- REVIEW 3: PROVIDER SCHEDULE ---
     if (!$user_found) {
         $sql_provider = "SELECT id, username, password, full_name, status FROM providers WHERE username = ?";
         $stmt = $conn->prepare($sql_provider);
@@ -91,12 +91,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if (password_verify($password, $row['password'])) {
                 
-                // --- PENAMBAHBAIKAN SEKATAN LOGIN PROVIDER ---
+                // --- IMPROVEMENTS TO PROVIDER LOGIN RESTRICTIONS ---
                 if ($row['status'] === 'pending') {
                     header("Location: pending.php");
                     exit();
                 } else if ($row['status'] === 'rejected') {
-                    $error_message = '<div class="alert alert-danger">Maaf, pendaftaran akaun Provider anda telah ditolak.</div>';
+                    $error_message = '<div class="alert alert-danger">Sorry, your registration as Provider is rejected.</div>';
                 } else if ($row['status'] === 'approved') {
                     $_SESSION['provider_id'] = $row['id'];
                     $_SESSION['username'] = $row['username'];
@@ -107,15 +107,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 }
 
             } else {
-                $error_message = '<div class="alert alert-danger">Ralat: Kata laluan salah!</div>';
+                $error_message = '<div class="alert alert-danger">Error: Wrong password!</div>';
             }
         }
         $stmt->close();
     }
 
-    // --- KESIMPULAN JIKA USERNAME TIADA DALAM KETIGA-TIGA JADUAL ---
+    // --- Conclusion if the username is not found in any of the three tables. ---
     if (!$user_found) {
-        $error_message = '<div class="alert alert-danger">Ralat: Username tidak wujud!</div>';
+        $error_message = '<div class="alert alert-danger">Error: Username does not exist!</div>';
     }
 }
 $conn->close();
@@ -128,7 +128,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Login SCRS PMU</title>
     <style>
-        /* Tetapkan body sebagai flex supaya footer boleh diletakkan di bawah */
+        /* Set the body to flex so that the footer can be placed at the bottom. */
         body { 
             background-color: #f8f9fa; 
             min-height: 100vh;
@@ -138,7 +138,7 @@ $conn->close();
         .navbar-brand { font-weight: bold; color: #0d6efd !important; }
         .car-card img { height: 180px; object-fit: cover; }
         
-        /* Jadikan ruang tengah fleksibel supaya footer kekal di bawah */
+        /* Make the central area flexible so that the footer stays at the bottom. */
         .main-content {
             flex-grow: 1;
         }
@@ -178,7 +178,7 @@ $conn->close();
         </div>
     </div>
 
-    <!-- Gunakan div wrapper ini supaya halaman mengembang dengan betul -->
+    <!-- Use this div wrapper so that the page expands correctly. -->
     <div class="main-content">
         <div class="container mt-5">
             <div class="row justify-content-center">
@@ -213,7 +213,7 @@ $conn->close();
     
     <!-- COPYRIGHT FOOTER/WATERMARK -->
     <footer class="text-center py-3 mt-auto text-secondary">
-        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. Hak Cipta Terpelihara.</small>
+        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. All Rights Reserved.</small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

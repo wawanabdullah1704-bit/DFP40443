@@ -1,11 +1,11 @@
 <?php
-// Panggil fail sambungan pangkalan data
+// Call the database connection file
 require 'db.php';
 
 $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Ambil data dari borang
+    // Retrieve data from the form
     $username = htmlspecialchars($_POST['username']);
     $email = htmlspecialchars($_POST['email']);
     $fullName = htmlspecialchars($_POST['fullName']);
@@ -14,42 +14,42 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userPassword = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
-    // Semakan kata laluan
+    // Password check
     if ($userPassword !== $confirmPassword) {
-        $message = '<div class="alert alert-danger">Error: Password not match!</div>';
+        $message = '<div class="alert alert-danger">Error: Password do not match!</div>';
     } else {
         $hashedPassword = password_hash($userPassword, PASSWORD_DEFAULT);
 
-        // Pastikan folder uploads wujud
+        // Ensure the uploads folder exists.
         $targetDir = "uploads/";
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
 
-        // Ambil nama asal kesemua 5 fail
+        // Get the original names of all 5 files.
         $icName = basename($_FILES["ic_file"]["name"]);
         $licenceName = basename($_FILES["licence_file"]["name"]);
         $insuranceName = basename($_FILES["insurance_file"]["name"]);
         $greencardName = basename($_FILES["greencard_file"]["name"]);
         $roadtaxName = basename($_FILES["roadtax_file"]["name"]);
 
-        $time = time(); // Gunakan masa yang sama untuk semua fail
+        $time = time(); // Use the same time for all files
 
-        // Nama fail unik untuk mengelakkan tertindih
+        // Unique file name to prevent overwriting
         $newIc = $noIC . "_IC_" . $time . "_" . $icName;
         $newLicence = $noIC . "_Licence_" . $time . "_" . $licenceName;
         $newInsurance = $noIC . "_Ins_" . $time . "_" . $insuranceName;
         $newGreencard = $noIC . "_GC_" . $time . "_" . $greencardName;
         $newRoadtax = $noIC . "_RT_" . $time . "_" . $roadtaxName;
 
-        // Laluan penuh fail
+        // Full file path
         $targetIc = $targetDir . $newIc;
         $targetLicence = $targetDir . $newLicence;
         $targetInsurance = $targetDir . $newInsurance;
         $targetGreencard = $targetDir . $newGreencard;
         $targetRoadtax = $targetDir . $newRoadtax;
 
-        // Proses muat naik kelima-lima fail serentak
+        // The process of uploading all five files simultaneously.
         if (
             move_uploaded_file($_FILES["ic_file"]["tmp_name"], $targetIc) &&
             move_uploaded_file($_FILES["licence_file"]["tmp_name"], $targetLicence) &&
@@ -57,7 +57,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             move_uploaded_file($_FILES["greencard_file"]["tmp_name"], $targetGreencard) &&
             move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $targetRoadtax)
         ) {
-            // Masukkan data ke dalam table providers
+            // Enter the data into the providers table
             $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, insurance_file, greencard_file, roadtax_file) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
@@ -66,7 +66,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $stmt->bind_param("sssssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $targetInsurance, $targetGreencard, $targetRoadtax);
 
             if ($stmt->execute()) {
-                // UPDATE: Bawa pengguna ke muka surat pending selepas berjaya daftar
+                // UPDATE: Direct the user to the pending page after successful registration.
                 header("Location: pending.php");
                 exit();
             } else {
@@ -89,7 +89,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - Car Provider</title>
     <style>
-        /* Tetapkan body sebagai flex supaya footer boleh diletakkan di bawah */
+        /* Set the body to flex so that the footer can be placed at the bottom. */
         body { 
             background-color: #f8f9fa; 
             min-height: 100vh;
@@ -98,7 +98,7 @@ $conn->close();
         }
         .navbar-brand { font-weight: bold; color: #0d6efd !important; }
         
-        /* Jadikan ruang tengah fleksibel supaya footer kekal di bawah */
+        /* Make the central area flexible so that the footer stays at the bottom. */
         .main-content {
             flex-grow: 1;
         }
@@ -140,7 +140,7 @@ $conn->close();
         </div>
     </div>
 
-    <!-- Gunakan div wrapper ini supaya halaman mengembang dengan betul -->
+    <!--Use this div wrapper so that the page expands correctly. -->
     <div class="main-content">
         <div class="container">
             <div class="row justify-content-center">
@@ -195,12 +195,12 @@ $conn->close();
 
                         <!-- 5 File Uploads -->
                         <div class="mb-3">
-                            <label for="ic_file" class="form-label fw-bold">IDENTITY CARD (IC)</label>
+                            <label for="ic_file" class="form-label fw-bold">IDENTITY CARD</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="ic_file" name="ic_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="licence_file" class="form-label fw-bold">DRIVING LICENCE</label>
+                            <label for="licence_file" class="form-label fw-bold">DRIVING LICENSE</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="licence_file" name="licence_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
@@ -210,12 +210,12 @@ $conn->close();
                         </div>
 
                         <div class="mb-3">
-                            <label for="greencard_file" class="form-label fw-bold">VEHICLE GREEN CARD (GERAN KERETA)</label>
+                            <label for="greencard_file" class="form-label fw-bold">VEHICLE GREEN CARD</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="greencard_file" name="greencard_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="mb-4">
-                            <label for="roadtax_file" class="form-label fw-bold">ROADTAX COPY</label>
+                            <label for="roadtax_file" class="form-label fw-bold">ROADTAX</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="roadtax_file" name="roadtax_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
@@ -239,7 +239,7 @@ $conn->close();
 
     <!-- COPYRIGHT FOOTER/WATERMARK -->
     <footer class="text-center py-3 mt-auto text-secondary">
-        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. Hak Cipta Terpelihara.</small>
+        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. All Rights Reserved.</small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

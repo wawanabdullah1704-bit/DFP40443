@@ -1,15 +1,15 @@
 <?php
-// Memanggil fail db.php untuk menyambungkan sistem ke pangkalan data
+// Calling the db.php file to connect the system to the database.
 require 'db.php';
 
-// Menyediakan pembolehubah kosong untuk menyimpan mesej berjaya/ralat
+// Prepare an empty variable to store success/error messages.
 $message = "";
 
-// Semak sama ada borang telah dihantar (butang Submit ditekan)
+// Check whether the form has been submitted (the Submit button pressed).
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     
-    // 1. MENGAMBIL DAN MEMBERSIHKAN DATA
-    // htmlspecialchars() digunakan untuk menapis kod bahaya (elak serangan XSS)
+    // 1. RECEIVING AND CLEANING DATA
+    // htmlspecialchars() used to filter out malicious code (to prevent XSS attacks)
     $username = htmlspecialchars($_POST['username']);
     $email = htmlspecialchars($_POST['email']);
     $fullName = htmlspecialchars($_POST['fullName']);
@@ -19,75 +19,75 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userPassword = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
-    // 2. SEMAKAN KATA LALUAN
-    // Pastikan kata laluan yang diisi dan disahkan adalah sama
+    // 2. Password Check
+    // Ensure the entered and confirmed passwords are the same.
     if ($userPassword !== $confirmPassword) {
-        $message = '<div class="alert alert-danger">Ralat: Kata laluan tidak sepadan!</div>';
+        $message = '<div class="alert alert-danger">Error: Passwords do not match!</div>';
     } else {
         
-        // 3. KESELAMATAN KATA LALUAN
-        // Tukar kata laluan kepada teks rawak (hash) supaya tidak boleh dibaca di database
+        // 3. PASSWORD SECURITY
+        // Convert the password into random text (hash) so that it cannot be read in the database.
         $hashedPassword = password_hash($userPassword, PASSWORD_DEFAULT);
 
-        // 4. PENGURUSAN FOLDER MUAT NAIK
+        // 4. Upload Folder Management
         $targetDir = "uploads/";
 
-        // Jika folder 'uploads' belum wujud, sistem akan ciptakan satu folder baharu
+        // If the 'uploads' folder does not yet exist, the system will create a new folder.
         if (!is_dir($targetDir)) {
             mkdir($targetDir, 0777, true);
         }
 
-        // 5. MENDAPATKAN NAMA FAIL
+        // 5. GETTING THE FILE NAME
         $studentIdName = basename($_FILES["studentId"]["name"]);
         $drivingLicenseName = basename($_FILES["drivingLicense"]["name"]);
 
-        // Menambah No Pendaftaran dan masa (time) pada nama fail
-        // Tujuan: Supaya nama fail jadi unik dan tak tertindih jika ada orang upload fail nama sama
+        // Adding the registration number and time to the file name
+        // Purpose: To ensure the file name is unique and not overwritten if someone uploads a file with the same name.
         $newStudentIdName = $noPendaftaran . "_ID_" . time() . "_" . $studentIdName;
         $newLicenseName = $noPendaftaran . "_License_" . time() . "_" . $drivingLicenseName;
 
-        // Laluan penuh fail akan disimpan (contoh: uploads/20DIT_ID_169000_gambar.jpg)
+        // The full file path will be saved. (E.g.: uploads/20DIT_ID_169000.jpg)
         $targetStudentId = $targetDir . $newStudentIdName;
         $targetLicense = $targetDir . $newLicenseName;
 
-        // 6. PROSES MEMINDAHKAN FAIL
-        // move_uploaded_file() akan memindahkan fail dari komputer ke folder 'uploads'
+        // 6. File Transfer Process
+        // move_uploaded_file() will move the file from the computer to the 'uploads' folder
         if (
             move_uploaded_file($_FILES["studentId"]["tmp_name"], $targetStudentId) &&
             move_uploaded_file($_FILES["drivingLicense"]["tmp_name"], $targetLicense)
         ) {
             
-            // 7. SIMPAN DATA KE DALAM PANGKALAN DATA (DATABASE)
-            // Menggunakan tanda soal (?) sebagai langkah keselamatan (Prepared Statement) untuk elak SQL Injection
+            // 7. SAVE DATA INTO DATABASE (DATABASE)
+            //Using a question mark (?) as a security measure (Prepared Statement) to prevent SQL injection.
             $sql = "INSERT INTO students (username, email, full_name, phone_no, no_ic, no_pendaftaran, password, student_id_file, driving_license_file) 
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-            // Bersedia untuk memasukkan data
+            // Ready to enter data
             $stmt = $conn->prepare($sql);
             
-            // Mengikat (bind) data dari borang ke dalam tanda soal (?) di atas
-            // "sssssssss" bermaksud ada 9 data berbentuk String
+            //Binding data from the form to the question marks (?) above.
+            // "sssssssss" means there are 9 String data
             $stmt->bind_param("sssssssss", $username, $email, $fullName, $phoneNo, $noIC, $noPendaftaran, $hashedPassword, $targetStudentId, $targetLicense);
 
-            // Jalankan arahan SQL
+            // Execute SQL commands
             if ($stmt->execute()) {
-                // UPDATE: Jika berjaya, bawa pengguna ke muka surat pending.php
+                // UPDATE: If successful, redirect the user to the pending.php page.
                 header("Location: pending.php");
-                exit(); // Pastikan kod berhenti di sini selepas redirect
+                exit(); // Ensure the code stops here after the redirect.
             } else {
-                // Jika gagal simpan ke database, papar ralat
-                $message = '<div class="alert alert-danger">Ralat Database: ' . $stmt->error . '</div>';
+                // If it fails to save to the database, display an error
+                $message = '<div class="alert alert-danger">Database Error: ' . $stmt->error . '</div>';
             }
-            // Tutup statement
+            // Close statement
             $stmt->close();
             
         } else {
             // Jika sistem gagal pindahkan fail ke folder uploads
-            $message = '<div class="alert alert-danger">Ralat: Gagal memuat naik dokumen.</div>';
+            $message = '<div class="alert alert-danger">Error: Failed to upload documents</div>';
         }
     }
 }
-// Tutup sambungan pangkalan data selepas selesai semua tugas
+// Close the database connection after all tasks are completed.
 $conn->close();
 ?>
 
@@ -99,7 +99,7 @@ $conn->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Create Account - Student</title>
     <style>
-        /* Tetapkan body sebagai flex supaya footer boleh diletakkan di bawah */
+        /* Set the body to flex so that the footer can be placed at the bottom. */
         body { 
             background-color: #f8f9fa; 
             min-height: 100vh;
@@ -109,7 +109,7 @@ $conn->close();
         .navbar-brand { font-weight: bold; color: #0d6efd !important; }
         .car-card img { height: 180px; object-fit: cover; }
         
-        /* Jadikan ruang tengah fleksibel supaya footer kekal di bawah */
+        /* Make the central area flexible so that the footer stays at the bottom.*/
         .main-content {
             flex-grow: 1;
         }
@@ -151,7 +151,7 @@ $conn->close();
         </div>
     </div>
 
-    <!-- Gunakan div wrapper ini supaya halaman mengembang dengan betul -->
+    <!-- Use this div wrapper so that the page expands correctly. -->
     <div class="main-content">
         <div class="container">
             <div class="row justify-content-center">
@@ -242,7 +242,7 @@ $conn->close();
 
     <!-- COPYRIGHT FOOTER/WATERMARK -->
     <footer class="text-center py-3 mt-auto text-secondary">
-        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. Hak Cipta Terpelihara.</small>
+        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. All Rights Reserved.</small>
     </footer>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

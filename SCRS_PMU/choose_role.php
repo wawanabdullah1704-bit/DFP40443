@@ -24,7 +24,7 @@
 
     <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
         <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title text-primary fw-bold" id="sidebarMenuLabel">Menu Utama</h5>
+            <h5 class="offcanvas-title text-primary fw-bold" id="sidebarMenuLabel">SCRS PMU</h5>
             <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
         </div>
         <div class="offcanvas-body">
@@ -36,7 +36,7 @@
                 </li>
                 <li class="nav-item mb-2">
                     <a class="nav-link text-dark fs-5 d-flex align-items-center" href="index.php">
-                        <i class="bi bi-house-door text-secondary me-3 fs-4"></i> Laman Utama
+                        <i class="bi bi-house-door text-secondary me-3 fs-4"></i> Main Page
                     </a>
                 </li>
             </ul>
@@ -65,6 +65,11 @@
             </div>
         </div>
     </div>
+
+    <!-- COPYRIGHT FOOTER/WATERMARK -->
+    <footer class="text-center py-3 mt-auto text-secondary">
+        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. All Rights Reserved.</small>
+    </footer>
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>

@@ -2,6 +2,14 @@
 session_start();
 require 'db.php';
 
+// 1. PANGGIL FAIL PHPMAILER
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'PHPMailer/Exception.php';
+require 'PHPMailer/PHPMailer.php';
+require 'PHPMailer/SMTP.php';
+
 $message = "";
 
 // PROSES BUTANG APPROVE ATAU REJECT
@@ -28,9 +36,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $message = "<div class='alert {$alert_type} mb-3'>Berjaya: Akaun {$user_label} telah {$alert_text}!</div>";
 
         // ==========================================
-        // FUNGSI HANTAR E-MEL NOTIFIKASI
+        // FUNGSI HANTAR E-MEL MENGGUNAKAN PHPMAILER
         // ==========================================
-        // Dapatkan nama dan e-mel pengguna dari database
         $sql_email = "SELECT full_name, email FROM $table WHERE id = ?";
         $stmt_email = $conn->prepare($sql_email);
         $stmt_email->bind_param("i", $user_id);
@@ -42,27 +49,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $to_email = $user_data['email'];
             $user_name = $user_data['full_name'];
 
-            // Tajuk E-mel
-            $subject = ($action === 'approve') ? "SCRS PMU - Akaun Diluluskan!" : "SCRS PMU - Akaun Ditolak";
+            $mail = new PHPMailer(true);
 
-            // Kandungan E-mel
-            if ($action === 'approve') {
-                $body = "Salam $user_name,\n\nTahniah! Pendaftaran akaun anda di SCRS PMU telah DILULUSKAN oleh pihak JHEPP.\n\nAnda kini boleh log masuk ke dalam sistem.\n\nTerima kasih,\nAdmin SCRS PMU";
-            } else {
-                $body = "Salam $user_name,\n\nDukacita dimaklumkan bahawa pendaftaran akaun anda di SCRS PMU telah DITOLAK oleh pihak JHEPP. Sila rujuk pihak pengurusan untuk maklumat lanjut.\n\nTerima kasih,\nAdmin SCRS PMU";
-            }
+            try {
+                // Konfigurasi Server Gmail SMTP
+                $mail->isSMTP();
+                $mail->Host       = 'smtp.gmail.com';
+                $mail->SMTPAuth   = true;
+                
+                // ⚠️ MASUKKAN E-MEL & APP PASSWORD ANDA DI SINI ⚠️
+                $mail->Username   = 'chickenmasterz26@gmail.com';   // Ganti dengan e-mel admin anda
+                $mail->Password   = 'pcccoszzikvwmzsd';        // Ganti dengan App Password 16 digit
+                
+                $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                $mail->Port       = 587;
 
-            // Tetapan Header E-mel
-            $headers = "From: noreply@scrspmu.edu.my\r\n";
-            $headers .= "Reply-To: noreply@scrspmu.edu.my\r\n";
-            $headers .= "X-Mailer: PHP/" . phpversion();
+                // Tetapan Pengirim dan Penerima
+                $mail->setFrom('admin.jhepp@gmail.com', 'Admin SCRS PMU');
+                $mail->addAddress($to_email, $user_name);
 
-            // Hantar E-mel (Letak simbol @ untuk elak error paparan jika localhost tiada internet/server mail)
-            if (@mail($to_email, $subject, $body, $headers)) {
-                $message .= "<div class='alert alert-info'>Notifikasi e-mel telah dihantar kepada {$to_email}.</div>";
-            } else {
-                // Mesej ini keluar biasanya jika anda guna XAMPP (Localhost) tanpa setting SMTP
-                $message .= "<div class='alert alert-warning'>Akaun dikemaskini, tetapi e-mel gagal dihantar (Server e-mel tidak dikonfigurasi).</div>";
+                // Format E-mel
+                $mail->isHTML(true);
+                $mail->Subject = ($action === 'approve') ? "SCRS PMU - Akaun Diluluskan!" : "SCRS PMU - Akaun Ditolak";
+                
+                if ($action === 'approve') {
+                    $mail->Body = "Salam <b>$user_name</b>,<br><br>Tahniah! Pendaftaran akaun anda di SCRS PMU telah <b>DILULUSKAN</b> oleh pihak JHEPP.<br>Anda kini boleh log masuk ke dalam sistem.<br><br>Terima kasih,<br>Admin SCRS PMU";
+                } else {
+                    $mail->Body = "Salam <b>$user_name</b>,<br><br>Dukacita dimaklumkan bahawa pendaftaran akaun anda di SCRS PMU telah <b>DITOLAK</b> oleh pihak JHEPP. Sila rujuk pihak pengurusan untuk maklumat lanjut.<br><br>Terima kasih,<br>Admin SCRS PMU";
+                }
+
+                // Hantar E-mel
+                $mail->send();
+                $message .= "<div class='alert alert-info'>Notifikasi e-mel berjaya dihantar ke <strong>{$to_email}</strong>.</div>";
+            } catch (Exception $e) {
+                // Mesej ralat jika gagal hantar e-mel
+                $message .= "<div class='alert alert-warning'>Akaun dikemaskini, tetapi e-mel gagal dihantar. Ralat: {$mail->ErrorInfo}</div>";
             }
         }
         $stmt_email->close();

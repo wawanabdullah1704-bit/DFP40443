@@ -2,7 +2,7 @@
 session_start();
 require 'db.php';
 
-// Semak jika pengguna telah log masuk dan merupakan seorang pelajar
+// Check if the user is logged in and is a student.
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
     header("Location: login.php");
     exit();
@@ -20,17 +20,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['confirm_booking'])) {
     $end_date = $_POST['end_date'];
     $total_price = (float)$_POST['total_price'];
 
-    // Masukkan data tempahan ke dalam pangkalan data
+    // Enter the booking data into the database.
     $sql_book = "INSERT INTO bookings (student_id, car_id, rent_type, start_date, end_date, total_price) 
                  VALUES (?, ?, ?, ?, ?, ?)";
     $stmt_book = $conn->prepare($sql_book);
     $stmt_book->bind_param("iisssd", $student_id, $car_id, $rent_type, $start_date, $end_date, $total_price);
 
     if ($stmt_book->execute()) {
-        // Dapatkan ID tempahan yang baru sahaja dicipta
+        // Retrieve the newly created booking ID.
         $booking_id = $stmt_book->insert_id;
         
-        // Bawa pelajar terus ke halaman pembayaran (payment.php)
+        // Take the student directly to the payment page (payment.php).
         header("Location: payment.php?id=" . $booking_id);
         exit();
     } else {
@@ -54,15 +54,15 @@ if ($search_start && $search_end && $rent_type) {
     if ($start_ts >= $end_ts) {
         $search_error = "Return date/time must be after Pick-up date/time.";
     } else {
-        // Kira tempoh masa untuk anggaran harga
+        //Calculate the duration for a price estimate.
         if ($rent_type === 'Hourly') {
-            $duration = ceil(($end_ts - $start_ts) / 3600); // Jumlah jam
+            $duration = ceil(($end_ts - $start_ts) / 3600); // Total hours
         } else {
-            $duration = ceil(($end_ts - $start_ts) / 86400); // Jumlah hari
+            $duration = ceil(($end_ts - $start_ts) / 86400); // Total days
             if ($duration < 1) $duration = 1;
         }
 
-        // Kueri mencari kereta yang Available (menapis tempahan yang bertindih)
+        // Query to search for available cars (filtering out overlapping bookings)
         $sql_cars = "SELECT * FROM cars 
                      WHERE status = 'Available' 
                      AND id NOT IN (
