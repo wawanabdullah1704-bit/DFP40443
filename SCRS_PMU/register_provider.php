@@ -1,11 +1,11 @@
 <?php
-// Call the database connection file
+// Memanggil fail db.php untuk menyambungkan sistem ke pangkalan data
 require 'db.php';
 
 $message = "";
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    // Retrieve data from the form
+    // 1. Ambil dan bersihkan data dari borang
     $username = htmlspecialchars($_POST['username']);
     $email = htmlspecialchars($_POST['email']);
     $fullName = htmlspecialchars($_POST['fullName']);
@@ -14,82 +14,101 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userPassword = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
-    // Password check
-    if ($userPassword !== $confirmPassword) {
-        $message = '<div class="alert alert-danger">Error: Password do not match!</div>';
-    } else {
-        $hashedPassword = password_hash($userPassword, PASSWORD_DEFAULT);
+    // 2. Semakan Kata Laluan (Lebih daripada 8 aksara)
+    if (strlen($userPassword) <= 8) {
+        $message = '<div class="alert alert-danger">Ralat: Kata laluan mestilah lebih daripada 8 aksara!</div>';
+    } 
+    // Pastikan kata laluan yang diisi dan disahkan adalah sama
+    else if ($userPassword !== $confirmPassword) {
+        $message = '<div class="alert alert-danger">Ralat: Kata laluan tidak sepadan!</div>';
+    } 
+    else {
+        
+        // 3. Semakan Data Unik (Username dan Email tidak boleh sama dengan orang lain)
+        $check_sql = "SELECT id FROM providers WHERE username = ? OR email = ?";
+        $check_stmt = $conn->prepare($check_sql);
+        $check_stmt->bind_param("ss", $username, $email);
+        $check_stmt->execute();
+        $check_result = $check_stmt->get_result();
 
-        // Ensure the uploads folder exists.
-        $targetDir = "uploads/";
-        if (!is_dir($targetDir)) {
-            mkdir($targetDir, 0777, true);
-        }
-
-        // Get the original names of all 5 files.
-        $icName = basename($_FILES["ic_file"]["name"]);
-        $licenceName = basename($_FILES["licence_file"]["name"]);
-        $insuranceName = basename($_FILES["insurance_file"]["name"]);
-        $greencardName = basename($_FILES["greencard_file"]["name"]);
-        $roadtaxName = basename($_FILES["roadtax_file"]["name"]);
-
-        $time = time(); // Use the same time for all files
-
-        // Unique file name to prevent overwriting
-        $newIc = $noIC . "_IC_" . $time . "_" . $icName;
-        $newLicence = $noIC . "_Licence_" . $time . "_" . $licenceName;
-        $newInsurance = $noIC . "_Ins_" . $time . "_" . $insuranceName;
-        $newGreencard = $noIC . "_GC_" . $time . "_" . $greencardName;
-        $newRoadtax = $noIC . "_RT_" . $time . "_" . $roadtaxName;
-
-        // Full file path
-        $targetIc = $targetDir . $newIc;
-        $targetLicence = $targetDir . $newLicence;
-        $targetInsurance = $targetDir . $newInsurance;
-        $targetGreencard = $targetDir . $newGreencard;
-        $targetRoadtax = $targetDir . $newRoadtax;
-
-        // The process of uploading all five files simultaneously.
-        if (
-            move_uploaded_file($_FILES["ic_file"]["tmp_name"], $targetIc) &&
-            move_uploaded_file($_FILES["licence_file"]["tmp_name"], $targetLicence) &&
-            move_uploaded_file($_FILES["insurance_file"]["tmp_name"], $targetInsurance) &&
-            move_uploaded_file($_FILES["greencard_file"]["tmp_name"], $targetGreencard) &&
-            move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $targetRoadtax)
-        ) {
-            // Enter the data into the providers table
-            $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, insurance_file, greencard_file, roadtax_file) 
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
-
-            $stmt = $conn->prepare($sql);
-            // 11 data (String) = "sssssssssss"
-            $stmt->bind_param("sssssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $targetInsurance, $targetGreencard, $targetRoadtax);
-
-            if ($stmt->execute()) {
-                // UPDATE: Direct the user to the pending page after successful registration.
-                header("Location: pending.php");
-                exit();
-            } else {
-                $message = '<div class="alert alert-danger">Database error: ' . $stmt->error . '</div>';
-            }
-            $stmt->close();
+        if ($check_result->num_rows > 0) {
+            $message = '<div class="alert alert-danger">Ralat: Nama Pengguna (Username) atau E-mel ini telah digunakan. Sila gunakan yang lain.</div>';
         } else {
-            $message = '<div class="alert alert-danger">Fail to upload one or more documents.</div>';
+            // 4. Enkripsi kata laluan
+            $hashedPassword = password_hash($userPassword, PASSWORD_DEFAULT);
+
+            // 5. Pengurusan folder muat naik
+            $targetDir = "uploads/";
+            if (!is_dir($targetDir)) {
+                mkdir($targetDir, 0777, true);
+            }
+
+            // Ambil nama asal kesemua 5 fail
+            $icName = basename($_FILES["ic_file"]["name"]);
+            $licenceName = basename($_FILES["licence_file"]["name"]);
+            $insuranceName = basename($_FILES["insurance_file"]["name"]);
+            $greencardName = basename($_FILES["greencard_file"]["name"]);
+            $roadtaxName = basename($_FILES["roadtax_file"]["name"]);
+
+            $time = time(); // Gunakan masa yang sama untuk semua fail
+
+            // Nama fail unik untuk mengelakkan tertindih (buang simbol pelik)
+            $newIc = $noIC . "_IC_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $icName);
+            $newLicence = $noIC . "_Licence_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $licenceName);
+            $newInsurance = $noIC . "_Ins_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $insuranceName);
+            $newGreencard = $noIC . "_GC_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $greencardName);
+            $newRoadtax = $noIC . "_RT_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $roadtaxName);
+
+            // Laluan penuh fail
+            $targetIc = $targetDir . $newIc;
+            $targetLicence = $targetDir . $newLicence;
+            $targetInsurance = $targetDir . $newInsurance;
+            $targetGreencard = $targetDir . $newGreencard;
+            $targetRoadtax = $targetDir . $newRoadtax;
+
+            // 6. Proses muat naik kelima-lima fail serentak
+            if (
+                move_uploaded_file($_FILES["ic_file"]["tmp_name"], $targetIc) &&
+                move_uploaded_file($_FILES["licence_file"]["tmp_name"], $targetLicence) &&
+                move_uploaded_file($_FILES["insurance_file"]["tmp_name"], $targetInsurance) &&
+                move_uploaded_file($_FILES["greencard_file"]["tmp_name"], $targetGreencard) &&
+                move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $targetRoadtax)
+            ) {
+                // 7. Masukkan data ke dalam table providers
+                $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, insurance_file, greencard_file, roadtax_file) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+
+                $stmt = $conn->prepare($sql);
+                // 11 data (String) = "sssssssssss"
+                $stmt->bind_param("sssssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $targetInsurance, $targetGreencard, $targetRoadtax);
+
+                if ($stmt->execute()) {
+                    // Bawa pengguna ke muka surat pending selepas berjaya daftar
+                    header("Location: pending.php");
+                    exit();
+                } else {
+                    $message = '<div class="alert alert-danger">Ralat Pangkalan Data: ' . $stmt->error . '</div>';
+                }
+                $stmt->close();
+            } else {
+                $message = '<div class="alert alert-danger">Ralat: Gagal memuat naik satu atau lebih dokumen. Sila cuba lagi.</div>';
+            }
         }
+        $check_stmt->close();
     }
 }
 $conn->close();
 ?>
 
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ms">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Create Account - Car Provider</title>
+    <title>Cipta Akaun - Penyedia Kereta</title>
     <style>
-        /* Set the body to flex so that the footer can be placed at the bottom. */
+        /* Tetapkan body sebagai flex supaya footer boleh diletakkan di bawah */
         body { 
             background-color: #f8f9fa; 
             min-height: 100vh;
@@ -98,9 +117,13 @@ $conn->close();
         }
         .navbar-brand { font-weight: bold; color: #0d6efd !important; }
         
-        /* Make the central area flexible so that the footer stays at the bottom. */
+        /* Jadikan ruang tengah fleksibel supaya footer kekal di bawah */
         .main-content {
             flex-grow: 1;
+        }
+        
+        .password-toggle {
+            cursor: pointer;
         }
     </style>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
@@ -121,26 +144,26 @@ $conn->close();
     <!-- Offcanvas Menu -->
     <div class="offcanvas offcanvas-start" tabindex="-1" id="sidebarMenu" aria-labelledby="sidebarMenuLabel">
         <div class="offcanvas-header border-bottom">
-            <h5 class="offcanvas-title text-primary fw-bold" id="sidebarMenuLabel">Main Menu</h5>
-            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+            <h5 class="offcanvas-title text-primary fw-bold" id="sidebarMenuLabel">Menu Utama</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" aria-label="Tutup"></button>
         </div>
         <div class="offcanvas-body">
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
                     <a class="nav-link text-dark fs-5 d-flex align-items-center" href="#">
-                        <i class="bi bi-person-circle text-primary me-3 fs-4"></i> My Profile
+                        <i class="bi bi-person-circle text-primary me-3 fs-4"></i> Profil Saya
                     </a>
                 </li>
                 <li class="nav-item mb-2">
                     <a class="nav-link text-dark fs-5 d-flex align-items-center" href="choose_role.php">
-                        <i class="bi bi-house-door text-secondary me-3 fs-4"></i> Choose Role
+                        <i class="bi bi-house-door text-secondary me-3 fs-4"></i> Pilih Peranan
                     </a>
                 </li>
             </ul>
         </div>
     </div>
 
-    <!--Use this div wrapper so that the page expands correctly. -->
+    <!-- Gunakan div wrapper ini supaya halaman mengembang dengan betul -->
     <div class="main-content">
         <div class="container">
             <div class="row justify-content-center">
@@ -149,86 +172,99 @@ $conn->close();
                     <?php echo $message; ?>
 
                     <div class="mb-4 mt-3">
-                        <h2>Create your account - Car Provider</h2>
+                        <h2>Cipta Akaun Anda - Penyedia Kereta</h2>
                     </div>
 
                     <form action="" method="POST" enctype="multipart/form-data" class="bg-white p-4 shadow-sm rounded border">
-                        <h5 class="text-secondary mb-3">PERSONAL DETAILS</h5>
+                        <h5 class="text-secondary mb-3">MAKLUMAT PERIBADI</h5>
 
                         <div class="mb-3">
-                            <label for="username" class="form-label fw-bold">Username</label>
-                            <input type="text" class="form-control" id="username" name="username" placeholder="e.g. provider123" required>
+                            <label for="username" class="form-label fw-bold">Nama Pengguna (Username)</label>
+                            <input type="text" class="form-control" id="username" name="username" placeholder="Cth: provider123" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="fullName" class="form-label fw-bold">Full Name</label>
+                            <label for="fullName" class="form-label fw-bold">Nama Penuh</label>
                             <input type="text" class="form-control" id="fullName" name="fullName" placeholder="Ali bin Abu" required>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="phoneNo" class="form-label fw-bold">Phone No.</label>
-                            <input type="text" class="form-control" id="phoneNo" name="phoneNo" placeholder="0123456789" required>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phoneNo" class="form-label fw-bold">No. Telefon</label>
+                                <input type="text" class="form-control" id="phoneNo" name="phoneNo" placeholder="0123456789" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="noIC" class="form-label fw-bold">No. Kad Pengenalan</label>
+                                <input type="text" class="form-control" id="noIC" name="noIC" placeholder="000000-00-0000" required>
+                            </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="email" class="form-label fw-bold">Email</label>
-                            <input type="email" class="form-control" id="email" name="email" placeholder="example@email.com" required>
+                            <label for="email" class="form-label fw-bold">E-mel</label>
+                            <input type="email" class="form-control" id="email" name="email" placeholder="contoh@email.com" required>
                         </div>
 
+                        <!-- Ruangan Kata Laluan dengan fungsi Show/Hide -->
                         <div class="mb-3">
-                            <label for="noIC" class="form-label fw-bold">No. IC</label>
-                            <input type="text" class="form-control" id="noIC" name="noIC" placeholder="000000-00-0000" required>
+                            <label for="password" class="form-label fw-bold">Kata Laluan <small class="text-danger fw-normal">(Mesti lebih 8 aksara)</small></label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="password" name="password" minlength="9" placeholder="Masukkan kata laluan" required>
+                                <span class="input-group-text password-toggle bg-white" onclick="togglePassword('password', 'icon1')">
+                                    <i class="bi bi-eye" id="icon1"></i>
+                                </span>
+                            </div>
                         </div>
 
-                        <div class="mb-3">
-                            <label for="password" class="form-label fw-bold">Password</label>
-                            <input type="password" class="form-control" id="password" name="password" placeholder="Maximum 8 characters" maxlength="8" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="confirmPassword" class="form-label fw-bold">Confirm Password</label>
-                            <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" placeholder="Maximum 8 characters" maxlength="8" required>
+                        <div class="mb-4">
+                            <label for="confirmPassword" class="form-label fw-bold">Sahkan Kata Laluan</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" minlength="9" placeholder="Sahkan kata laluan" required>
+                                <span class="input-group-text password-toggle bg-white" onclick="togglePassword('confirmPassword', 'icon2')">
+                                    <i class="bi bi-eye" id="icon2"></i>
+                                </span>
+                            </div>
                         </div>
 
                         <hr class="mb-4">
 
-                        <h5 class="text-secondary mb-3">DOCUMENT VERIFICATION (PROVIDER)</h5>
+                        <h5 class="text-secondary mb-3">PENGESAHAN DOKUMEN (PROVIDER)</h5>
 
                         <!-- 5 File Uploads -->
                         <div class="mb-3">
-                            <label for="ic_file" class="form-label fw-bold">IDENTITY CARD</label>
+                            <label for="ic_file" class="form-label fw-bold">KAD PENGENALAN (IC)</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="ic_file" name="ic_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="licence_file" class="form-label fw-bold">DRIVING LICENSE</label>
+                            <label for="licence_file" class="form-label fw-bold">LESEN MEMANDU</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="licence_file" name="licence_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="insurance_file" class="form-label fw-bold">CAR INSURANCE COVER NOTE</label>
+                            <label for="insurance_file" class="form-label fw-bold">NOTA PERLINDUNGAN INSURANS (COVER NOTE)</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="insurance_file" name="insurance_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="mb-3">
-                            <label for="greencard_file" class="form-label fw-bold">VEHICLE GREEN CARD</label>
+                            <label for="greencard_file" class="form-label fw-bold">GERAN KERETA (GREEN CARD)</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="greencard_file" name="greencard_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="mb-4">
-                            <label for="roadtax_file" class="form-label fw-bold">ROADTAX</label>
+                            <label for="roadtax_file" class="form-label fw-bold">SALINAN CUKAI JALAN (ROADTAX)</label>
                             <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" id="roadtax_file" name="roadtax_file" accept=".jpg, .jpeg, .png, .pdf" required>
                         </div>
 
                         <div class="form-check mb-4">
                             <input class="form-check-input" type="checkbox" id="termsCheck" required>
                             <label class="form-check-label" for="termsCheck">
-                                I agree to <a href="#" class="text-decoration-none">Terms and Conditions</a>
+                                Saya bersetuju dengan <a href="#" data-bs-toggle="modal" data-bs-target="#termsModal" class="text-decoration-none">Terma dan Syarat</a>
                             </label>
                         </div>
 
                         <div class="d-flex gap-3">
-                            <button type="button" onclick="window.location.href='index.php';" class="btn btn-primary bg-opacity-75 text-white w-50">Cancel</button>
-                            <button type="submit" class="btn btn-primary w-50">Submit</button>
+                            <button type="button" onclick="window.location.href='index.php';" class="btn btn-primary bg-opacity-75 text-white w-50">Batal</button>
+                            <button type="submit" class="btn btn-primary w-50">Hantar</button>
                         </div>
 
                     </form>
@@ -237,11 +273,65 @@ $conn->close();
         </div>
     </div>
 
+    <!-- MODAL TERMA DAN SYARAT KHUSUS PROVIDER (POP-UP) -->
+    <div class="modal fade" id="termsModal" tabindex="-1" aria-labelledby="termsModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-scrollable modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold text-primary" id="termsModalLabel">Terma dan Syarat / Terms and Conditions</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body">
+                    <!-- Versi Bahasa Melayu -->
+                    <h6 class="fw-bold text-dark border-bottom pb-2">Terma dan Syarat (Penyedia Kereta)</h6>
+                    <ol class="mb-4">
+                        <li><strong>Keadaan Kenderaan:</strong> Kenderaan yang disewakan mestilah diselenggara dengan baik, selamat untuk dipandu, dan tidak mempunyai masalah mekanikal yang kritikal.</li>
+                        <li><strong>Dokumen Kenderaan:</strong> Penyedia wajib memastikan Cukai Jalan (Roadtax) dan Insurans kenderaan adalah sah dan tidak tamat tempoh sepanjang urusan sewaan dijalankan.</li>
+                        <li><strong>Pemeriksaan Sebelum Sewaan:</strong> Penyedia bertanggungjawab untuk memeriksa keadaan fizikal kenderaan dan merekodkan tahap minyak bersama penyewa sebelum menyerahkan kunci.</li>
+                        <li><strong>Ketepatan Maklumat:</strong> Segala maklumat pengenalan diri dan dokumen kenderaan yang dimuat naik ke dalam sistem mestilah sah dan benar.</li>
+                        <li><strong>Pengecualian Liabiliti:</strong> Pihak pengurusan sistem (termasuk JHEPP) tidak akan bertanggungjawab ke atas sebarang kerosakan, kemalangan, kehilangan, atau pertikaian kewangan. Segala risiko dan tuntutan adalah di antara penyedia kereta dan penyewa sahaja.</li>
+                    </ol>
+
+                    <!-- Versi Bahasa Inggeris -->
+                    <h6 class="fw-bold text-dark border-bottom pb-2">Terms and Conditions (Car Provider)</h6>
+                    <ol>
+                        <li><strong>Vehicle Condition:</strong> The rented vehicle must be well-maintained, safe to drive, and have no critical mechanical issues.</li>
+                        <li><strong>Vehicle Documents:</strong> Providers must ensure the Roadtax and Insurance are valid and not expired during the rental period.</li>
+                        <li><strong>Pre-Rental Inspection:</strong> Providers are responsible for physically inspecting the vehicle and recording fuel levels with the renter before handing over the keys.</li>
+                        <li><strong>Information Accuracy:</strong> All personal details and vehicle documents uploaded into the system must be valid and authentic.</li>
+                        <li><strong>Liability Exemption:</strong> System management (including JHEPP) will not be liable for any damage, accident, loss, or financial dispute. All risks and claims are strictly between the car provider and the renter.</li>
+                    </ol>
+                </div>
+                <div class="modal-footer d-flex justify-content-center">
+                    <button type="button" class="btn btn-primary px-5" data-bs-dismiss="modal">Saya Faham / I Understand</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- COPYRIGHT FOOTER/WATERMARK -->
     <footer class="text-center py-3 mt-auto text-secondary">
-        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. All Rights Reserved.</small>
+        <small>&copy; <?php echo date("Y"); ?> SCRS PMU. Hak Cipta Terpelihara.</small>
     </footer>
 
+    <!-- SKRIP JAVASCRIPT UNTUK SHOW/HIDE PASSWORD -->
+    <script>
+        function togglePassword(inputId, iconId) {
+            var inputField = document.getElementById(inputId);
+            var icon = document.getElementById(iconId);
+            
+            if (inputField.type === "password") {
+                inputField.type = "text";
+                icon.classList.remove("bi-eye");
+                icon.classList.add("bi-eye-slash");
+            } else {
+                inputField.type = "password";
+                icon.classList.remove("bi-eye-slash");
+                icon.classList.add("bi-eye");
+            }
+        }
+    </script>
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
