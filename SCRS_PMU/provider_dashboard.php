@@ -29,13 +29,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_car'])) {
     }
 
     $imageName = basename($_FILES["car_image"]["name"]);
-    // Cipta nama gambar yang unik
     $newImageName = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
     $targetPath = $targetDir . $newImageName;
 
-    // Muat naik gambar kereta
     if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-        
         $sql = "INSERT INTO cars (provider_id, car_model, car_plate, transmission, seat_capacity, price_per_day, price_per_hour, car_image, status) 
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Available')";
         
@@ -64,12 +61,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
     $price_per_day = (float)$_POST['price_per_day'];
     $price_per_hour = (float)$_POST['price_per_hour'];
 
-    // Jika pengguna memuat naik gambar baharu
     if (!empty($_FILES["car_image"]["name"])) {
         $targetDir = "uploads/cars/";
         $imageName = basename($_FILES["car_image"]["name"]);
         $newImageName = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
         $targetPath = $targetDir . $newImageName;
+
+        // Ambil gambar lama untuk dipadam (opsyenal tapi baik untuk jimat ruang server)
+        $sql_old_img = "SELECT car_image FROM cars WHERE id = ? AND provider_id = ?";
+        $stmt_old = $conn->prepare($sql_old_img);
+        $stmt_old->bind_param("ii", $car_id, $provider_id);
+        $stmt_old->execute();
+        $res_old = $stmt_old->get_result();
+        if ($old_row = $res_old->fetch_assoc()) {
+            if (file_exists($old_row['car_image'])) {
+                unlink($old_row['car_image']);
+            }
+        }
+        $stmt_old->close();
 
         if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
             $sql = "UPDATE cars SET car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=?, car_image=? WHERE id=? AND provider_id=?";
@@ -77,7 +86,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
             $stmt->bind_param("sssidssii", $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath, $car_id, $provider_id);
         }
     } else {
-        // Jika gambar tidak ditukar
         $sql = "UPDATE cars SET car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=? WHERE id=? AND provider_id=?";
         $stmt = $conn->prepare($sql);
         $stmt->bind_param("sssiddii", $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $car_id, $provider_id);
@@ -91,7 +99,41 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
     if (isset($stmt)) $stmt->close();
 }
 
-// 3. PROSES TUKAR STATUS (AVAILABLE / UNAVAILABLE)
+// 3. PROSES PADAM KERETA (DELETE)
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_car'])) {
+    $car_id = (int)$_POST['car_id'];
+
+    // Dapatkan laluan fail imej untuk memadamnya dari server
+    $sql_img = "SELECT car_image, car_model FROM cars WHERE id = ? AND provider_id = ?";
+    $stmt_img = $conn->prepare($sql_img);
+    $stmt_img->bind_param("ii", $car_id, $provider_id);
+    $stmt_img->execute();
+    $res_img = $stmt_img->get_result();
+
+    if ($row = $res_img->fetch_assoc()) {
+        $image_path = $row['car_image'];
+        $car_model_name = $row['car_model'];
+
+        // Padam rekod dari pangkalan data
+        $sql_del = "DELETE FROM cars WHERE id = ? AND provider_id = ?";
+        $stmt_del = $conn->prepare($sql_del);
+        $stmt_del->bind_param("ii", $car_id, $provider_id);
+        
+        if ($stmt_del->execute()) {
+            // Jika rekod berjaya dipadam, padam fail fizikal dari server
+            if (file_exists($image_path)) {
+                unlink($image_path);
+            }
+            $message = "<div class='alert alert-success'>Berjaya: Kereta <strong>{$car_model_name}</strong> telah dipadam dari sistem.</div>";
+        } else {
+            $message = "<div class='alert alert-danger'>Ralat: Gagal memadam kereta. Kereta mungkin sedang ditempah.</div>";
+        }
+        $stmt_del->close();
+    }
+    $stmt_img->close();
+}
+
+// 4. PROSES TUKAR STATUS (AVAILABLE / UNAVAILABLE)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $car_id = (int)$_POST['car_id'];
     $new_status = htmlspecialchars($_POST['new_status']);
@@ -109,12 +151,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
     $stmt->close();
 }
 
+// 5. PROSES MUAT NAIK QR CODE PEMBAYARAN
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['upload_qr'])) {
+    
+    if (!empty($_FILES["qr_image"]["name"])) {
+        $targetDir = "uploads/qr_codes/";
+        if (!is_dir($targetDir)) {
+            mkdir($targetDir, 0777, true);
+        }
+
+        $qrName = basename($_FILES["qr_image"]["name"]);
+        $newQrName = "QR_" . $provider_id . "_" . time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $qrName);
+        $targetPath = $targetDir . $newQrName;
+
+        // Dapatkan gambar QR lama untuk dipadam
+        $sql_old_qr = "SELECT qr_code_image FROM providers WHERE id = ?";
+        $stmt_old_qr = $conn->prepare($sql_old_qr);
+        $stmt_old_qr->bind_param("i", $provider_id);
+        $stmt_old_qr->execute();
+        $res_old_qr = $stmt_old_qr->get_result();
+        if ($old_qr_row = $res_old_qr->fetch_assoc()) {
+            if (!empty($old_qr_row['qr_code_image']) && file_exists($old_qr_row['qr_code_image'])) {
+                unlink($old_qr_row['qr_code_image']);
+            }
+        }
+        $stmt_old_qr->close();
+
+        if (move_uploaded_file($_FILES["qr_image"]["tmp_name"], $targetPath)) {
+            $sql = "UPDATE providers SET qr_code_image = ? WHERE id = ?";
+            $stmt = $conn->prepare($sql);
+            $stmt->bind_param("si", $targetPath, $provider_id);
+            if ($stmt->execute()) {
+                $message = "<div class='alert alert-success'>Berjaya: Kod QR Pembayaran anda telah dikemaskini.</div>";
+            }
+            $stmt->close();
+        } else {
+            $message = "<div class='alert alert-danger'>Ralat: Gagal memuat naik Kod QR.</div>";
+        }
+    }
+}
+
 // AMBIL SENARAI KERETA MILIK PROVIDER INI
 $sql_cars = "SELECT * FROM cars WHERE provider_id = ? ORDER BY created_at DESC";
 $stmt_cars = $conn->prepare($sql_cars);
 $stmt_cars->bind_param("i", $provider_id);
 $stmt_cars->execute();
 $result_cars = $stmt_cars->get_result();
+
+// AMBIL MAKLUMAT PROVIDER UNTUK CHECK STATUS QR
+$sql_prov = "SELECT qr_code_image FROM providers WHERE id = ?";
+$stmt_prov = $conn->prepare($sql_prov);
+$stmt_prov->bind_param("i", $provider_id);
+$stmt_prov->execute();
+$res_prov = $stmt_prov->get_result();
+$provider_data = $res_prov->fetch_assoc();
+$has_qr = !empty($provider_data['qr_code_image']);
+$stmt_prov->close();
 ?>
 
 <!DOCTYPE html>
@@ -167,13 +259,14 @@ $result_cars = $stmt_cars->get_result();
         <div class="offcanvas-body">
             <ul class="nav flex-column">
                 <li class="nav-item mb-2">
-                    <a class="nav-link text-dark fs-5 d-flex align-items-center" href="#">
+                    <a class="nav-link text-dark fs-5 d-flex align-items-center" href="provider_dashboard.php">
                         <i class="bi bi-speedometer2 text-primary me-3 fs-4"></i> Papan Pemuka
                     </a>
                 </li>
+                <!-- Pautan untuk buka Modal QR Code -->
                 <li class="nav-item mb-2">
-                    <a class="nav-link text-dark fs-5 d-flex align-items-center" href="#">
-                        <i class="bi bi-person-circle text-secondary me-3 fs-4"></i> Profil Saya
+                    <a class="nav-link text-dark fs-5 d-flex align-items-center" href="#" data-bs-toggle="modal" data-bs-target="#qrCodeModal" data-bs-dismiss="offcanvas">
+                        <i class="bi bi-qr-code text-success me-3 fs-4"></i> Kemaskini QR Bayaran
                     </a>
                 </li>
                 <li class="nav-item mb-2 mt-auto">
@@ -189,9 +282,18 @@ $result_cars = $stmt_cars->get_result();
     <div class="main-content">
         <div class="container mt-4">
             
+            <?php if (!$has_qr): ?>
+                <div class="alert alert-warning d-flex align-items-center shadow-sm" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill fs-4 me-3"></i>
+                    <div>
+                        Sila muat naik Kod QR DuitNow anda untuk membolehkan pelajar membuat pembayaran. 
+                        <a href="#" class="alert-link" data-bs-toggle="modal" data-bs-target="#qrCodeModal">Klik di sini untuk muat naik.</a>
+                    </div>
+                </div>
+            <?php endif; ?>
+
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3 class="fw-bold mb-0">Senarai Kereta Saya</h3>
-                <!-- Butang Buka Modal Tambah Kereta -->
                 <button type="button" class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#addCarModal">
                     <i class="bi bi-plus-circle me-1"></i> Tambah Kereta
                 </button>
@@ -204,13 +306,22 @@ $result_cars = $stmt_cars->get_result();
                 <?php 
                 if ($result_cars->num_rows > 0) {
                     while ($car = $result_cars->fetch_assoc()) { 
-                        // Warna lencana status
                         $is_available = ($car['status'] == 'Available');
                         $status_badge = $is_available ? 'bg-success' : 'bg-danger';
                         $status_text = $is_available ? 'Tersedia' : 'Tidak Tersedia';
                 ?>
                 <div class="col-md-6 col-lg-4">
                     <div class="card shadow-sm border-0 h-100 rounded-4">
+                        <!-- Butang Padam Merah di atas gambar -->
+                        <div class="position-absolute top-0 end-0 p-2">
+                            <form action="" method="POST" class="m-0 d-inline">
+                                <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
+                                <button type="submit" name="delete_car" class="btn btn-danger btn-sm shadow" onclick="return confirm('AMARAN: Adakah anda pasti ingin memadam kereta ini sepenuhnya dari sistem? Tindakan ini tidak boleh diundurkan.');" title="Padam Kereta">
+                                    <i class="bi bi-trash-fill"></i>
+                                </button>
+                            </form>
+                        </div>
+
                         <img src="<?php echo $car['car_image']; ?>" class="card-img-top car-image" alt="Gambar Kereta">
                         <div class="card-body d-flex flex-column">
                             <div class="d-flex justify-content-between align-items-start mb-2">
@@ -224,7 +335,6 @@ $result_cars = $stmt_cars->get_result();
                                 <span class="badge bg-light text-dark border"><i class="bi bi-people-fill me-1"></i> <?php echo htmlspecialchars($car['seat_capacity']); ?> Tempat Duduk</span>
                             </div>
                             
-                            <!-- Harga (Harian dan Jam) -->
                             <div class="d-flex justify-content-between align-items-center mt-auto border-top pt-3">
                                 <div>
                                     <span class="text-secondary" style="font-size: 0.85rem;">Kadar Harian</span><br>
@@ -236,14 +346,11 @@ $result_cars = $stmt_cars->get_result();
                                 </div>
                             </div>
 
-                            <!-- Tindakan: Edit & Tukar Status -->
                             <div class="d-flex gap-2 mt-3 pt-3 border-top">
-                                <!-- Butang Edit (Buka Modal Edit) -->
                                 <button type="button" class="btn btn-outline-primary flex-fill fw-bold" data-bs-toggle="modal" data-bs-target="#editCarModal<?php echo $car['id']; ?>">
                                     <i class="bi bi-pencil-square"></i> Edit
                                 </button>
 
-                                <!-- Borang Tukar Status -->
                                 <form action="" method="POST" class="flex-fill m-0">
                                     <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
                                     <?php if ($is_available): ?>
@@ -264,7 +371,7 @@ $result_cars = $stmt_cars->get_result();
                     </div>
                 </div>
 
-                <!-- MODAL KEMASKINI KERETA (EDIT) UNTUK SETIAP KERETA -->
+                <!-- MODAL KEMASKINI KERETA (EDIT) -->
                 <div class="modal fade" id="editCarModal<?php echo $car['id']; ?>" tabindex="-1" aria-hidden="true">
                     <div class="modal-dialog modal-dialog-centered">
                         <div class="modal-content rounded-4 border-0 shadow">
@@ -339,7 +446,7 @@ $result_cars = $stmt_cars->get_result();
     </div>
 
     <!-- MODAL TAMBAH KERETA -->
-    <div class="modal fade" id="addCarModal" tabindex="-1" aria-labelledby="addCarModalLabel" aria-hidden="true">
+    <div class="modal fade" id="addCarModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content rounded-4 border-0 shadow">
                 <div class="modal-header border-bottom-0">
@@ -400,8 +507,44 @@ $result_cars = $stmt_cars->get_result();
         </div>
     </div>
 
+    <!-- MODAL MUAT NAIK QR CODE PEMBAYARAN -->
+    <div class="modal fade" id="qrCodeModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content rounded-4 border-0 shadow">
+                <div class="modal-header border-bottom-0 bg-light rounded-top-4">
+                    <h5 class="modal-title fw-bold text-success">Kemaskini Kod QR Bayaran</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
+                </div>
+                <div class="modal-body text-center">
+                    
+                    <?php if ($has_qr): ?>
+                        <p class="text-muted small mb-2">QR Code Semasa Anda:</p>
+                        <img src="<?php echo $provider_data['qr_code_image']; ?>" alt="QR Code" class="img-fluid border rounded shadow-sm mb-4" style="max-height: 200px; object-fit: contain;">
+                    <?php else: ?>
+                        <div class="p-4 bg-light border rounded mb-4 text-secondary">
+                            <i class="bi bi-qr-code-scan fs-1 d-block mb-2"></i>
+                            <p class="mb-0">Tiada Kod QR dimuat naik lagi.</p>
+                        </div>
+                    <?php endif; ?>
+
+                    <form action="" method="POST" enctype="multipart/form-data">
+                        <div class="mb-4 text-start">
+                            <label class="form-label fw-bold">Muat Naik Imej QR DuitNow Baru</label>
+                            <input class="form-control border-secondary text-primary" style="border-style: dashed;" type="file" name="qr_image" accept=".jpg, .jpeg, .png" required>
+                            <small class="text-muted d-block mt-1">Sila pastikan gambar jelas supaya mudah diimbas oleh pelajar.</small>
+                        </div>
+                        <div class="d-grid">
+                            <button type="submit" name="upload_qr" class="btn btn-success fw-bold py-2"><i class="bi bi-cloud-arrow-up me-1"></i> Simpan Kod QR</button>
+                        </div>
+                    </form>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- COPYRIGHT FOOTER/WATERMARK -->
-    <footer class="text-center py-3 mt-auto text-secondary">
+    <footer class="text-center py-3 mt-auto text-secondary border-top bg-white">
         <small>&copy; <?php echo date("Y"); ?> SCRS PMU. Hak Cipta Terpelihara.</small>
     </footer>
 
