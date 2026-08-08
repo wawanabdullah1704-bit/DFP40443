@@ -171,6 +171,40 @@ if ($search_start && $search_end && $rent_type) {
             transition: var(--transition);
         }
         .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
+        .profile-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 10px);
+            right: 0;
+            background-color: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 6px 6px 0px var(--black);
+            width: 200px;
+            display: none;
+            flex-direction: column;
+            z-index: 1050;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        .dropdown-menu.show { display: flex; }
+        .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
+        
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
+            padding: 12px 15px;
+            font-weight: 800;
+            color: var(--black);
+            border-bottom: 2px solid var(--black);
+            transition: background 0.1s;
+            text-decoration: none;
+        }
+        .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
+        .dropdown-item:hover { background-color: var(--yellow); }
+        .dropdown-item:last-child:hover { background-color: #ff33aa; }
 
         /* --- SIDEBAR --- */
         .sidebar-overlay {
@@ -284,7 +318,8 @@ if ($search_start && $search_end && $rent_type) {
 
         /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {
-            .hide-mobile { display: none; }
+            .neo-brand { font-size: 1.2rem; }
+            .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
             .form-grid { grid-template-columns: 1fr; gap: 10px; }
             .cars-grid { grid-template-columns: 1fr; gap: 15px; }
             .modal-grid { grid-template-columns: 1fr; gap: 15px; }
@@ -301,13 +336,17 @@ if ($search_start && $search_end && $rent_type) {
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS<span class="hide-mobile"> PMU</span></div>
+            <div class="neo-brand">SCRS PMU</div>
         </div>
         <div class="profile-container">
-            <button class="profile-btn" onclick="window.location.href='edit_profile.php'">
+            <button class="profile-btn" id="profile-toggle">
                 <i class="bi bi-person-fill fs-5"></i>
-                <span class="hide-mobile"><?php echo htmlspecialchars($student_name); ?></span>
+                <span><?php echo htmlspecialchars($student_name); ?></span>
             </button>
+            <ul class="dropdown-menu" id="profile-menu">
+                <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
+                <li><a href="login.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+            </ul>
         </div>
     </header>
 
@@ -498,6 +537,23 @@ if ($search_start && $search_end && $rent_type) {
 
     <!-- SKRIP ASLI (VANILLA JS) -->
     <script>
+        // Dropdown Profil
+        const profileToggle = document.getElementById('profile-toggle');
+        const profileMenu = document.getElementById('profile-menu');
+        
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+                profileMenu.classList.toggle('show');
+            });
+
+            document.addEventListener('click', function(e) {
+                if (!profileToggle.contains(e.target) && !profileMenu.contains(e.target)) {
+                    profileMenu.classList.remove('show');
+                }
+            });
+        }
+
         // Sidebar Offcanvas
         const openSidebarBtn = document.getElementById('open-sidebar');
         const closeSidebarBtn = document.getElementById('close-sidebar');

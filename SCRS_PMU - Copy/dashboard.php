@@ -127,23 +127,32 @@ $stmt_my->close();
 
         .dropdown-menu {
             position: absolute;
-            top: 120%;
+            top: calc(100% + 10px);
             right: 0;
             background-color: var(--white);
             border: 3px solid var(--black);
-            box-shadow: var(--shadow-solid);
+            box-shadow: 6px 6px 0px var(--black);
             width: 200px;
-            display: none; /* Hidden by default */
+            display: none;
             flex-direction: column;
-            z-index: 1001;
+            z-index: 1050;
+            margin: 0;
+            padding: 0;
+            list-style: none;
         }
         .dropdown-menu.show { display: flex; }
+        .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
         
         .dropdown-item {
+            display: flex;
+            align-items: center;
+            width: 100%;
             padding: 12px 15px;
             font-weight: 800;
+            color: var(--black);
             border-bottom: 2px solid var(--black);
             transition: background 0.1s;
+            text-decoration: none;
         }
         .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
         .dropdown-item:hover { background-color: var(--yellow); }
@@ -331,29 +340,31 @@ $stmt_my->close();
 
         /* --- RESPONSIVE MOBILE --- */
         @media (max-width: 768px) {
-            .hide-mobile { display: none; }
             .neo-brand { font-size: 1.2rem; }
+            .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
             
             .carousel-container { height: 280px; }
-            .carousel-caption { bottom: 10%; padding: 10px; box-shadow: 4px 4px 0px var(--yellow); }
-            .carousel-caption h1 { font-size: 1.3rem; }
-            .carousel-caption p { font-size: 0.8rem; }
+            .carousel-caption { bottom: 8%; padding: 10px 15px; box-shadow: 4px 4px 0px var(--yellow); }
+            .carousel-caption h1 { font-size: 1.2rem; }
+            .carousel-caption p { font-size: 0.85rem; }
             .carousel-btn { padding: 5px 10px; font-size: 1.2rem; }
 
             .section-container { padding: 1.5rem 10px; }
             
-            /* Tetapkan 3 Kotak Sebaris pada Mobile */
-            .neo-grid { gap: 8px; }
-            .neo-card { padding: 15px 5px; box-shadow: 4px 4px 0px var(--black); }
+            .neo-grid { gap: 12px; grid-template-columns: repeat(3, 1fr); }
+            @media (max-width: 480px) {
+                .neo-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            }
+            .neo-card { padding: 12px 8px; box-shadow: 4px 4px 0px var(--black); }
             .clickable-card:hover { transform: none; box-shadow: 4px 4px 0px var(--black); }
             .clickable-card:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
 
-            .neo-card h2 { font-size: 1.5rem; }
-            .neo-card p { font-size: 0.6rem; margin-top: 5px; }
-            .neo-icon { font-size: 1.8rem; margin-top: 5px; }
+            .neo-card h2 { font-size: 1.6rem; }
+            .neo-card p { font-size: 0.75rem; margin-top: 3px; font-weight: 800; }
+            .neo-icon { font-size: 1.5rem; margin-top: 5px; }
 
-            .neo-card h4 { font-size: 0.75rem; margin-top: 5px; }
-            .neo-card .desc { display: none; } /* Sorok deskripsi panjang di mobile */
+            .neo-card h4 { font-size: 0.9rem; margin-top: 5px; }
+            .neo-card .desc { font-size: 0.75rem; margin-top: 4px; display: block; }
             
             .section-title { font-size: 1rem; padding: 8px 15px; }
         }
@@ -367,13 +378,13 @@ $stmt_my->close();
             <button class="menu-toggle-btn" id="open-sidebar">
                 <i class="bi bi-list"></i>
             </button>
-            <div class="neo-brand">SCRS<span class="hide-mobile"> PMU</span></div>
+            <div class="neo-brand">SCRS PMU</div>
         </div>
 
         <div class="profile-container">
             <button class="profile-btn" id="profile-toggle">
                 <i class="bi bi-person-fill fs-5"></i>
-                <span class="hide-mobile"><?php echo htmlspecialchars($student_name); ?></span>
+                <span><?php echo htmlspecialchars($student_name); ?></span>
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
@@ -414,14 +425,14 @@ $stmt_my->close();
                     <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1000&q=80" alt="Kereta 2">
                     <div class="carousel-caption" style="box-shadow: 8px 8px 0px var(--green);">
                         <h1>Urusan Dipermudah</h1>
-                        <p class="hide-mobile">Sewa ikut jam atau harian mengikut bajet anda.</p>
+                        <p>Sewa ikut jam atau harian mengikut bajet anda.</p>
                     </div>
                 </div>
                 <div class="carousel-item carousel-slide">
                     <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=80" alt="Kereta 3">
                     <div class="carousel-caption" style="box-shadow: 8px 8px 0px var(--blue);">
                         <h1>Kekal Selamat</h1>
-                        <p class="hide-mobile">Setiap kenderaan dan penyedia telah disahkan.</p>
+                        <p>Setiap kenderaan dan penyedia telah disahkan.</p>
                     </div>
                 </div>
             </div>
@@ -437,17 +448,17 @@ $stmt_my->close();
                 <div class="neo-card bg-p">
                     <h2><?php echo $total_cars; ?></h2>
                     <p>Kereta</p>
-                    <i class="bi bi-car-front-fill neo-icon hide-mobile"></i>
+                    <i class="bi bi-car-front-fill neo-icon"></i>
                 </div>
                 <div class="neo-card bg-b">
                     <h2><?php echo $total_users; ?></h2>
                     <p>Pelajar</p>
-                    <i class="bi bi-people-fill neo-icon hide-mobile"></i>
+                    <i class="bi bi-people-fill neo-icon"></i>
                 </div>
                 <div class="neo-card bg-w">
                     <h2><?php echo $total_my_bookings; ?></h2>
                     <p>Tempahan</p>
-                    <i class="bi bi-journal-check neo-icon hide-mobile"></i>
+                    <i class="bi bi-journal-check neo-icon"></i>
                 </div>
             </div>
 
