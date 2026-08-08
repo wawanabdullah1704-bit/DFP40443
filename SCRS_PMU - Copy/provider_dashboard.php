@@ -15,6 +15,7 @@ $message = "";
 // 1. PROSES TAMBAH KERETA
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_car'])) {
     
+    $car_brand = htmlspecialchars($_POST['car_brand']);
     $car_model = htmlspecialchars($_POST['car_model']);
     $car_plate = htmlspecialchars($_POST['car_plate']);
     $transmission = htmlspecialchars($_POST['transmission']);
@@ -33,14 +34,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_car'])) {
     $targetPath = $targetDir . $newImageName;
 
     if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-        $sql = "INSERT INTO cars (provider_id, car_model, car_plate, transmission, seat_capacity, price_per_day, price_per_hour, car_image, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'Available')";
+        $sql = "INSERT INTO cars (provider_id, car_brand, car_model, car_plate, transmission, seat_capacity, price_per_day, price_per_hour, car_image, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Available')";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("isssidds", $provider_id, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath);
+        $stmt->bind_param("issssidds", $provider_id, $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath);
 
         if ($stmt->execute()) {
-            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: <strong>{$car_model}</strong> telah ditambah ke dalam senarai kereta anda!</div>";
+            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: <strong>{$car_brand} {$car_model}</strong> telah ditambah ke dalam senarai kereta anda!</div>";
         } else {
             $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt->error . "</div>";
         }
@@ -54,6 +55,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_car'])) {
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
     
     $car_id = (int)$_POST['car_id'];
+    $car_brand = htmlspecialchars($_POST['car_brand']);
     $car_model = htmlspecialchars($_POST['car_model']);
     $car_plate = htmlspecialchars($_POST['car_plate']);
     $transmission = htmlspecialchars($_POST['transmission']);
@@ -81,18 +83,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
         $stmt_old->close();
 
         if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-            $sql = "UPDATE cars SET car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=?, car_image=? WHERE id=? AND provider_id=?";
+            $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=?, car_image=? WHERE id=? AND provider_id=?";
             $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssidssii", $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath, $car_id, $provider_id);
+            $stmt->bind_param("sssiddssii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath, $car_id, $provider_id);
         }
     } else {
-        $sql = "UPDATE cars SET car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=? WHERE id=? AND provider_id=?";
+        $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=? WHERE id=? AND provider_id=?";
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("sssiddii", $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $car_id, $provider_id);
+        $stmt->bind_param("ssssiddii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $car_id, $provider_id);
     }
 
     if (isset($stmt) && $stmt->execute()) {
-        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Maklumat <strong>{$car_model}</strong> telah dikemaskini!</div>";
+        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Maklumat <strong>{$car_brand} {$car_model}</strong> telah dikemaskini!</div>";
     } else {
         $message = "<div class='neo-alert alert-danger'>Ralat: Gagal mengemaskini maklumat kereta.</div>";
     }
@@ -525,7 +527,10 @@ $stmt_prov->close();
                         <img src="<?php echo htmlspecialchars($car['car_image']); ?>" class="car-img" alt="Kereta">
                         <div class="car-body">
                             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
-                                <h3 class="car-title"><?php echo htmlspecialchars($car['car_model']); ?></h3>
+                                <div>
+                                    <div style="font-size:0.75rem; font-weight:900; text-transform:uppercase; color:#555; letter-spacing:1px;"><?php echo htmlspecialchars($car['car_brand'] ?? ''); ?></div>
+                                    <h3 class="car-title"><?php echo htmlspecialchars($car['car_model']); ?></h3>
+                                </div>
                                 <span class="neo-badge <?php echo $badge_class; ?>"><?php echo $status_text; ?></span>
                             </div>
                             <p class="car-plate"><i class="bi bi-123 me-1"></i><?php echo htmlspecialchars($car['car_plate']); ?></p>
@@ -575,6 +580,10 @@ $stmt_prov->close();
                             <form action="" method="POST" enctype="multipart/form-data">
                                 <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
                                 
+                                <div class="form-group">
+                                    <label class="form-label">Jenama Kereta (Brand)</label>
+                                    <input type="text" class="form-control" name="car_brand" value="<?php echo htmlspecialchars($car['car_brand'] ?? ''); ?>" placeholder="Cth: Perodua, Honda, Toyota" required>
+                                </div>
                                 <div class="form-group">
                                     <label class="form-label">Model Kereta</label>
                                     <input type="text" class="form-control" name="car_model" value="<?php echo htmlspecialchars($car['car_model']); ?>" required>
@@ -645,8 +654,12 @@ $stmt_prov->close();
             </div>
             <form action="" method="POST" enctype="multipart/form-data">
                 <div class="form-group">
+                    <label class="form-label">Jenama Kereta (Brand)</label>
+                    <input type="text" class="form-control" name="car_brand" placeholder="Cth: Perodua, Honda, Toyota" required>
+                </div>
+                <div class="form-group">
                     <label class="form-label">Model Kereta</label>
-                    <input type="text" class="form-control" name="car_model" placeholder="Cth: Perodua Myvi 1.5" required>
+                    <input type="text" class="form-control" name="car_model" placeholder="Cth: Myvi 1.5, Civic, Vios" required>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Nombor Plat</label>

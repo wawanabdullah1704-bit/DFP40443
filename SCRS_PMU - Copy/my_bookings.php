@@ -11,6 +11,29 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
 $student_id = $_SESSION['student_id'];
 $student_name = $_SESSION['username'];
 
+// PROSES MUAT NAIK GAMBAR PULANGAN KERETA
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['upload_return_image'])) {
+    $booking_id = (int)$_POST['booking_id'];
+    if (!empty($_FILES['return_image']['name'])) {
+        $targetDir = "uploads/returns/";
+        if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
+
+        $imgName = basename($_FILES["return_image"]["name"]);
+        $newImgName = "Return_" . $booking_id . "_" . time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imgName);
+        $targetPath = $targetDir . $newImgName;
+
+        if (move_uploaded_file($_FILES["return_image"]["tmp_name"], $targetPath)) {
+            $sql_ret = "UPDATE bookings SET return_image = ? WHERE id = ? AND student_id = ?";
+            $stmt_ret = $conn->prepare($sql_ret);
+            $stmt_ret->bind_param("sii", $targetPath, $booking_id, $student_id);
+            $stmt_ret->execute();
+            $stmt_ret->close();
+        }
+    }
+    header("Location: my_bookings.php");
+    exit();
+}
+
 // Ambil senarai tempahan yang MASIH AKTIF (Pending atau Approved)
 $sql_bookings = "SELECT b.*, c.car_model, c.car_plate, c.car_image, 
                  p.full_name AS provider_name, p.phone_no AS provider_phone 
@@ -413,6 +436,30 @@ $result_bookings = $stmt->get_result();
                                 <a href="https://wa.me/<?php echo $phone; ?>?text=Hai,%20saya%20pelajar%20dari%20SCRS%20PMU.%20Tempahan%20kereta%20<?php echo urlencode($booking['car_model']); ?>%20saya%20telah%20diluluskan." target="_blank" class="neo-btn btn-green">
                                     <i class="bi bi-whatsapp"></i> Hubungi Penyedia
                                 </a>
+
+                                <!-- RETURN IMAGE UPLOAD -->
+                                <div style="margin-top: 15px; border-top: 2px dashed var(--black); padding-top: 15px; text-align: left;">
+                                    <?php if (!empty($booking['return_image']) && file_exists($booking['return_image'])): ?>
+                                        <p style="font-weight:900; text-transform:uppercase; font-size:0.8rem; margin-bottom:8px; color:#007700;">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Gambar Pulangan Dimuat Naik
+                                        </p>
+                                        <img src="<?php echo htmlspecialchars($booking['return_image']); ?>" alt="Gambar Pulangan" style="max-width:100%; max-height:160px; border:3px solid var(--black); box-shadow:3px 3px 0 var(--black); object-fit:cover; margin-bottom:8px;">
+                                        <br>
+                                    <?php else: ?>
+                                        <p style="font-weight:900; text-transform:uppercase; font-size:0.8rem; margin-bottom:8px; color:#555;">
+                                            <i class="bi bi-camera-fill me-1"></i> Muat Naik Gambar Kereta Selepas Dipulangkan
+                                        </p>
+                                    <?php endif; ?>
+                                    <form action="" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+                                        <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
+                                        <input type="file" name="return_image" accept=".jpg,.jpeg,.png" required
+                                            style="border:3px solid var(--black); padding:6px; font-weight:700; background:var(--bg-color); flex:1; min-width:0;">
+                                        <button type="submit" name="upload_return_image" class="neo-btn btn-blue" style="margin-top:0; padding:8px 16px; font-size:0.85rem; white-space:nowrap;">
+                                            <i class="bi bi-cloud-arrow-up-fill"></i> Muat Naik
+                                        </button>
+                                    </form>
+                                </div>
+
                             <?php else: ?>
                                 <span style="font-weight: 800; font-size: 0.85rem; color: #777;">
                                     <i class="bi bi-info-circle me-1"></i> Anda boleh menghubungi penyedia selepas tempahan diluluskan.

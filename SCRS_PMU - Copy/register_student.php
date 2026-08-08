@@ -15,7 +15,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     if (strlen($userPassword) <= 8) {
         $message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan mestilah lebih daripada 8 aksara!</div>';
-    } 
+    }
+    else if (!preg_match('/[A-Z]/', $userPassword) || !preg_match('/[a-z]/', $userPassword) || !preg_match('/[0-9]/', $userPassword) || !preg_match('/[^A-Za-z0-9]/', $userPassword)) {
+        $message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan mesti mengandungi huruf besar, huruf kecil, nombor, dan simbol!</div>';
+    }
     else if ($userPassword !== $confirmPassword) {
         $message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan tidak sepadan!</div>';
     } 
@@ -268,6 +271,130 @@ $conn->close();
             margin-top: auto;
         }
 
+        /* TERMS CHECKBOX */
+        .terms-box {
+            background-color: #fffde7;
+            border: 3px solid var(--black);
+            box-shadow: 3px 3px 0px var(--black);
+            padding: 14px 16px;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+        }
+        .terms-box input[type="checkbox"] {
+            width: 22px;
+            height: 22px;
+            min-width: 22px;
+            border: 3px solid var(--black);
+            cursor: pointer;
+            accent-color: var(--black);
+            margin-top: 2px;
+        }
+        .terms-box label {
+            font-weight: 800;
+            font-size: 0.85rem;
+            cursor: pointer;
+            line-height: 1.5;
+        }
+        .terms-link {
+            color: #0055ff;
+            text-decoration: underline;
+            font-weight: 900;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-family: inherit;
+            font-size: inherit;
+            padding: 0;
+        }
+        .terms-link:hover { color: #ff2200; }
+
+        /* MODAL OVERLAY */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+        }
+        .modal-overlay.active { display: flex; }
+        .modal-box {
+            background: var(--white);
+            border: 4px solid var(--black);
+            box-shadow: 8px 8px 0px var(--black);
+            max-width: 680px;
+            width: 100%;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+        }
+        .modal-header-custom {
+            background-color: var(--yellow);
+            border-bottom: 3px solid var(--black);
+            padding: 16px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header-custom h5 {
+            font-weight: 900;
+            font-size: 1.1rem;
+            text-transform: uppercase;
+        }
+        .modal-close-btn {
+            background: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 2px 2px 0px var(--black);
+            font-size: 1.2rem;
+            font-weight: 900;
+            cursor: pointer;
+            padding: 2px 10px;
+            line-height: 1.4;
+        }
+        .modal-close-btn:hover { background: var(--pink); }
+        .modal-body-custom {
+            padding: 20px;
+            overflow-y: auto;
+            flex: 1;
+            font-size: 0.88rem;
+        }
+        .modal-body-custom h6 {
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 6px;
+            margin-bottom: 10px;
+        }
+        .modal-body-custom ol {
+            padding-left: 20px;
+            line-height: 1.7;
+        }
+        .modal-body-custom ol li { margin-bottom: 8px; }
+        .modal-footer-custom {
+            border-top: 3px solid var(--black);
+            padding: 14px 20px;
+            display: flex;
+            justify-content: center;
+        }
+        .modal-agree-btn {
+            background-color: var(--green);
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 10px 40px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.95rem;
+            transition: var(--transition);
+        }
+        .modal-agree-btn:hover { transform: translate(-2px,-2px); box-shadow: 6px 6px 0px var(--black); }
+
         @media (max-width: 600px) {
             .form-row { grid-template-columns: 1fr; }
             .reg-card { padding: 20px 15px; }
@@ -352,6 +479,21 @@ $conn->close();
                                 <i class="bi bi-eye-fill"></i>
                             </button>
                         </div>
+                        <!-- Strength Indicator -->
+                        <div id="strength-box" style="display:none; margin-top:8px; border:2px solid var(--black); padding:8px; background:#fafafa;">
+                            <div style="display:flex; gap:4px; margin-bottom:6px;">
+                                <div id="s1" style="flex:1;height:5px;background:#ddd;"></div>
+                                <div id="s2" style="flex:1;height:5px;background:#ddd;"></div>
+                                <div id="s3" style="flex:1;height:5px;background:#ddd;"></div>
+                                <div id="s4" style="flex:1;height:5px;background:#ddd;"></div>
+                            </div>
+                            <div style="font-size:0.78rem; font-weight:800;">
+                                <span id="chk-upper" style="margin-right:8px;">&#x2715; Huruf Besar</span>
+                                <span id="chk-lower" style="margin-right:8px;">&#x2715; Huruf Kecil</span>
+                                <span id="chk-num" style="margin-right:8px;">&#x2715; Nombor</span>
+                                <span id="chk-sym">&#x2715; Simbol</span>
+                            </div>
+                        </div>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Sahkan Kata Laluan</label>
@@ -373,6 +515,16 @@ $conn->close();
                     </div>
                 </div>
 
+                <!-- TERMS & CONDITIONS CHECKBOX -->
+                <div class="terms-box">
+                    <input type="checkbox" id="agreeTerms" name="agreeTerms" required>
+                    <label for="agreeTerms">
+                        Saya telah membaca dan bersetuju dengan 
+                        <button type="button" class="terms-link" onclick="openTermsModal()">Terma dan Syarat / Terms and Conditions</button>
+                        sistem sewaan kereta SCRS PMU.
+                    </label>
+                </div>
+
                 <button type="submit" class="neo-btn">
                     <i class="bi bi-cloud-arrow-up-fill me-1"></i> Hantar Pendaftaran Pelajar
                 </button>
@@ -383,6 +535,44 @@ $conn->close();
             </div>
         </div>
     </main>
+
+    <!-- MODAL TERMA DAN SYARAT - PELAJAR -->
+    <div class="modal-overlay" id="termsModalOverlay">
+        <div class="modal-box">
+            <div class="modal-header-custom">
+                <h5><i class="bi bi-file-earmark-text-fill me-2"></i>Terma &amp; Syarat / Terms &amp; Conditions</h5>
+                <button class="modal-close-btn" onclick="closeTermsModal()">&times;</button>
+            </div>
+            <div class="modal-body-custom">
+                <!-- Versi Bahasa Melayu -->
+                <h6>Terma dan Syarat (Pelajar / Penyewa)</h6>
+                <ol class="mb-4">
+                    <li><strong>Kelayakan:</strong> Penyewa mestilah pelajar yang berdaftar dan wajib memiliki Lesen Memandu Malaysia yang masih sah tempoh.</li>
+                    <li><strong>Tanggungjawab Penjagaan:</strong> Penyewa bertanggungjawab sepenuhnya ke atas keselamatan, kebersihan, dan penjagaan kenderaan sepanjang tempoh sewaan.</li>
+                    <li><strong>Saman dan Kesalahan Trafik:</strong> Sebarang saman lalu lintas, kompaun, atau denda yang dikenakan semasa tempoh sewaan adalah tanggungjawab penyewa sepenuhnya.</li>
+                    <li><strong>Larangan Menyewa Semula:</strong> Penyewa dilarang sama sekali menyewakan semula (sublet) kenderaan tersebut kepada pihak ketiga atau rakan lain.</li>
+                    <li><strong>Kerosakan dan Kemalangan:</strong> Sebarang kerosakan kenderaan akibat kecuaian penyewa perlu dilaporkan segera kepada penyedia kereta. Kos pembaikan adalah di bawah tanggungjawab penyewa.</li>
+                    <li><strong>Pemulangan Kenderaan:</strong> Kenderaan hendaklah dipulangkan pada masa dan tarikh yang telah dipersetujui beserta tahap minyak yang sama seperti sebelum disewa. Kelewatan boleh menyebabkan caj tambahan dikenakan.</li>
+                </ol>
+
+                <!-- Versi Bahasa Inggeris -->
+                <h6 style="margin-top:18px;">Terms and Conditions (Student / Renter)</h6>
+                <ol>
+                    <li><strong>Eligibility:</strong> The renter must be a registered student and possess a valid Malaysian Driving License.</li>
+                    <li><strong>Care Responsibility:</strong> The renter is fully responsible for the safety, cleanliness, and care of the vehicle throughout the rental period.</li>
+                    <li><strong>Summons and Traffic Offences:</strong> Any traffic summons, compounds, or fines incurred during the rental period are the sole responsibility of the renter.</li>
+                    <li><strong>Prohibition of Subletting:</strong> The renter is strictly prohibited from subletting the vehicle to a third party or other friends.</li>
+                    <li><strong>Damages and Accidents:</strong> Any damage to the vehicle due to the renter's negligence must be reported immediately to the car provider. Repair costs are the renter's responsibility.</li>
+                    <li><strong>Vehicle Return:</strong> The vehicle must be returned at the agreed time and date with the same fuel level as before the rental. Delays may incur additional charges.</li>
+                </ol>
+            </div>
+            <div class="modal-footer-custom">
+                <button class="modal-agree-btn" onclick="agreeAndClose()">
+                    <i class="bi bi-check-circle-fill me-2"></i>Saya Faham / I Understand
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- FOOTER -->
     <footer>
@@ -401,6 +591,45 @@ $conn->close();
                 password.setAttribute('type', type);
                 this.querySelector('i').classList.toggle('bi-eye-fill');
                 this.querySelector('i').classList.toggle('bi-eye-slash-fill');
+            });
+        }
+
+        // Password Strength Indicator
+        const strengthBox = document.getElementById('strength-box');
+        const bars = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+        const chkUpper = document.getElementById('chk-upper');
+        const chkLower = document.getElementById('chk-lower');
+        const chkNum   = document.getElementById('chk-num');
+        const chkSym   = document.getElementById('chk-sym');
+        const colors   = ['#ff4444','#ffbb00','#00bbff','#00e676'];
+
+        function updateCheck(el, pass) {
+            el.style.color = pass ? '#007700' : '#cc0000';
+            el.innerHTML = (pass ? '&#x2714;' : '&#x2715;') + el.innerHTML.slice(1);
+        }
+
+        if (password) {
+            password.addEventListener('input', function() {
+                const v = this.value;
+                if (!v) { strengthBox.style.display = 'none'; return; }
+                strengthBox.style.display = 'block';
+
+                const hasUpper = /[A-Z]/.test(v);
+                const hasLower = /[a-z]/.test(v);
+                const hasNum   = /[0-9]/.test(v);
+                const hasSym   = /[^A-Za-z0-9]/.test(v);
+                const score    = [hasUpper, hasLower, hasNum, hasSym].filter(Boolean).length;
+
+                bars.forEach((b, i) => b.style.background = i < score ? colors[score - 1] : '#ddd');
+
+                chkUpper.innerHTML = (hasUpper ? '&#x2714;' : '&#x2715;') + ' Huruf Besar';
+                chkUpper.style.color = hasUpper ? '#007700' : '#cc0000';
+                chkLower.innerHTML = (hasLower ? '&#x2714;' : '&#x2715;') + ' Huruf Kecil';
+                chkLower.style.color = hasLower ? '#007700' : '#cc0000';
+                chkNum.innerHTML   = (hasNum   ? '&#x2714;' : '&#x2715;') + ' Nombor';
+                chkNum.style.color = hasNum ? '#007700' : '#cc0000';
+                chkSym.innerHTML   = (hasSym   ? '&#x2714;' : '&#x2715;') + ' Simbol';
+                chkSym.style.color = hasSym ? '#007700' : '#cc0000';
             });
         }
 
@@ -423,6 +652,35 @@ $conn->close();
         openSidebarBtn.addEventListener('click', openSidebar);
         closeSidebarBtn.addEventListener('click', closeSidebar);
         sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // Terms & Conditions Modal
+        const termsOverlay = document.getElementById('termsModalOverlay');
+        const agreeCheckbox = document.getElementById('agreeTerms');
+
+        function openTermsModal() {
+            termsOverlay.classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeTermsModal() {
+            termsOverlay.classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function agreeAndClose() {
+            agreeCheckbox.checked = true;
+            closeTermsModal();
+        }
+
+        // Close modal when clicking outside the box
+        termsOverlay.addEventListener('click', function(e) {
+            if (e.target === termsOverlay) closeTermsModal();
+        });
+
+        // Close modal with Escape key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') closeTermsModal();
+        });
     </script>
 </body>
 </html>
