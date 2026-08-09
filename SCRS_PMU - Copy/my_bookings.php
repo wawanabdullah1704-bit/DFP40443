@@ -34,9 +34,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['upload_return_image'])
     exit();
 }
 
-// Ambil senarai tempahan yang MASIH AKTIF (Pending atau Approved)
-$sql_bookings = "SELECT b.*, c.car_model, c.car_plate, c.car_image, 
-                 p.full_name AS provider_name, p.phone_no AS provider_phone 
+// PROSES SAHKAN KERETA TELAH DIKEMBALIKAN
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['complete_return'])) {
+    $booking_id = (int)$_POST['booking_id'];
+    
+    // Semak jika gambar pulangan telah dimuat naik
+    $sql_chk = "SELECT return_image FROM bookings WHERE id = ? AND student_id = ?";
+    $stmt_chk = $conn->prepare($sql_chk);
+    $stmt_chk->bind_param("ii", $booking_id, $student_id);
+    $stmt_chk->execute();
+    $res_chk = $stmt_chk->get_result()->fetch_assoc();
+    $stmt_chk->close();
+
+    if ($res_chk && !empty($res_chk['return_image'])) {
+        $sql_comp = "UPDATE bookings SET status = 'Completed' WHERE id = ? AND student_id = ?";
+        $stmt_comp = $conn->prepare($sql_comp);
+        $stmt_comp->bind_param("ii", $booking_id, $student_id);
+        $stmt_comp->execute();
+        $stmt_comp->close();
+    }
+    header("Location: my_bookings.php");
+    exit();
+}
+
+// Ambil senarai tempahan yang MASIH AKTIF / DALAM PROGRESS (Pending atau Approved)
+$sql_bookings = "SELECT b.*, c.car_brand, c.car_model, c.car_plate, c.car_image, c.transmission, c.seat_capacity, c.price_per_day, c.price_per_hour,
+                 p.username AS provider_username, p.email AS provider_email,
+                 p.full_name AS provider_name, p.phone_no AS provider_phone,
+                 p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance,
+                 p.profile_picture AS provider_profile_picture
                  FROM bookings b
                  JOIN cars c ON b.car_id = c.id
                  JOIN providers p ON c.provider_id = p.id
@@ -309,6 +335,28 @@ $result_bookings = $stmt->get_result();
         }
         .empty-box i { font-size: 4rem; display: block; margin-bottom: 15px; }
 
+        /* Modal Popup */
+        .neo-modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        .neo-modal-overlay.show { display: flex; }
+        .neo-modal {
+            background: var(--white);
+            border: var(--border-thick);
+            box-shadow: 10px 10px 0px var(--black);
+            width: 100%;
+            max-width: 480px;
+            padding: 25px;
+            position: relative;
+        }
+
         /* FOOTER */
         footer {
             background-color: var(--yellow);
@@ -393,8 +441,23 @@ $result_bookings = $stmt->get_result();
                         <div>
                             <div class="booking-header">
                                 <div>
-                                    <div class="car-name"><?php echo htmlspecialchars($booking['car_model']); ?></div>
+                                    <div class="car-name">
+                                        <?php echo !empty($booking['car_brand']) ? htmlspecialchars($booking['car_brand']) . ' ' : ''; ?><?php echo htmlspecialchars($booking['car_model']); ?>
+                                    </div>
                                     <div class="car-plate"><i class="bi bi-123 me-1"></i><?php echo htmlspecialchars($booking['car_plate']); ?></div>
+
+                                    <div style="display: flex; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                                        <?php if (!empty($booking['transmission'])): ?>
+                                            <span style="border: 2px solid var(--black); padding: 2px 8px; font-weight: 800; font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase;">
+                                                <i class="bi bi-gear-fill me-1"></i><?php echo htmlspecialchars($booking['transmission']); ?>
+                                            </span>
+                                        <?php endif; ?>
+                                        <?php if (!empty($booking['seat_capacity'])): ?>
+                                            <span style="border: 2px solid var(--black); padding: 2px 8px; font-weight: 800; font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase;">
+                                                <i class="bi bi-people-fill me-1"></i><?php echo htmlspecialchars($booking['seat_capacity']); ?> Tempat Duduk
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
                                 </div>
                                 <span class="neo-badge <?php echo $badge_class; ?>">
                                     <i class="bi <?php echo $status_icon; ?> me-1"></i> <?php echo $status_text; ?>
@@ -412,11 +475,23 @@ $result_bookings = $stmt->get_result();
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Penyedia Kereta</span>
-                                    <div class="detail-value"><i class="bi bi-person-badge text-primary"></i> <?php echo htmlspecialchars($booking['provider_name']); ?></div>
+                                    <div class="detail-value">
+                                        <i class="bi bi-person-badge text-primary"></i> 
+                                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($booking['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_roadtax'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_insurance'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_profile_picture'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
+                                            <?php echo htmlspecialchars($booking['provider_name']); ?> <i class="bi bi-info-circle-fill ms-1 fs-6"></i>
+                                        </a>
+                                    </div>
                                 </div>
                                 <div class="detail-item">
                                     <span class="detail-label">Jenis Sewaan</span>
                                     <div class="detail-value"><i class="bi bi-clock"></i> <?php echo ($booking['rent_type'] == 'Daily') ? 'Harian (Daily)' : 'Jam (Hourly)'; ?></div>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Kadar Asas</span>
+                                    <div class="detail-value">
+                                        <i class="bi bi-tag-fill text-warning"></i> 
+                                        RM <?php echo number_format(($booking['rent_type'] == 'Daily') ? $booking['price_per_day'] : $booking['price_per_hour'], 2); ?> / <?php echo ($booking['rent_type'] == 'Daily') ? 'Hari' : 'Jam'; ?>
+                                    </div>
                                 </div>
                             </div>
 
@@ -437,9 +512,12 @@ $result_bookings = $stmt->get_result();
                                     <i class="bi bi-whatsapp"></i> Hubungi Penyedia
                                 </a>
 
-                                <!-- RETURN IMAGE UPLOAD -->
+                                <!-- RETURN IMAGE UPLOAD & BUTTON DIKEMBALIKAN -->
                                 <div style="margin-top: 15px; border-top: 2px dashed var(--black); padding-top: 15px; text-align: left;">
-                                    <?php if (!empty($booking['return_image']) && file_exists($booking['return_image'])): ?>
+                                    <?php 
+                                    $has_return_img = (!empty($booking['return_image']) && file_exists($booking['return_image']));
+                                    if ($has_return_img): 
+                                    ?>
                                         <p style="font-weight:900; text-transform:uppercase; font-size:0.8rem; margin-bottom:8px; color:#007700;">
                                             <i class="bi bi-check-circle-fill me-1"></i> Gambar Pulangan Dimuat Naik
                                         </p>
@@ -450,14 +528,29 @@ $result_bookings = $stmt->get_result();
                                             <i class="bi bi-camera-fill me-1"></i> Muat Naik Gambar Kereta Selepas Dipulangkan
                                         </p>
                                     <?php endif; ?>
-                                    <form action="" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+
+                                    <form action="" method="POST" enctype="multipart/form-data" style="display:flex; gap:10px; align-items:center; flex-wrap:wrap; margin-bottom:12px;">
                                         <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
                                         <input type="file" name="return_image" accept=".jpg,.jpeg,.png" required
                                             style="border:3px solid var(--black); padding:6px; font-weight:700; background:var(--bg-color); flex:1; min-width:0;">
                                         <button type="submit" name="upload_return_image" class="neo-btn btn-blue" style="margin-top:0; padding:8px 16px; font-size:0.85rem; white-space:nowrap;">
-                                            <i class="bi bi-cloud-arrow-up-fill"></i> Muat Naik
+                                            <i class="bi bi-cloud-arrow-up-fill"></i> Muat Naik Gambar
                                         </button>
                                     </form>
+
+                                    <!-- BUTTON KERETA TELAH DIKEMBALIKAN -->
+                                    <?php if ($has_return_img): ?>
+                                        <form action="" method="POST" style="display:block; width:100%;">
+                                            <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
+                                            <button type="submit" name="complete_return" class="neo-btn btn-green" style="width: 100%; justify-content: center;">
+                                                <i class="bi bi-check-circle-fill me-1"></i> Kereta Telah Dikembalikan
+                                            </button>
+                                        </form>
+                                    <?php else: ?>
+                                        <button type="button" class="neo-btn" style="width: 100%; justify-content: center; background-color: #e0e0e0; color: #888; border-color: #888; cursor: not-allowed; box-shadow: none;" disabled title="Sila muat naik gambar kereta dahulu">
+                                            <i class="bi bi-lock-fill me-1"></i> Kereta Telah Dikembalikan (Sila Muat Naik Gambar Dahulu)
+                                        </button>
+                                    <?php endif; ?>
                                 </div>
 
                             <?php else: ?>
@@ -481,6 +574,50 @@ $result_bookings = $stmt->get_result();
         <?php endif; ?>
 
     </main>
+
+    <!-- MODAL MAKLUMAT PROVIDER (POPUP) -->
+    <div class="neo-modal-overlay" id="providerModalOverlay" onclick="closeProviderModalOutside(event)">
+        <div class="neo-modal" onclick="event.stopPropagation()">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 class="modal-title" style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem;">Maklumat Penyedia Kereta</h3>
+                <button class="modal-close-btn" onclick="closeProviderModal()" style="border: 2px solid var(--black); background: var(--pink); padding: 2px 8px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px var(--black);">X</button>
+            </div>
+            <div class="modal-body" style="font-weight: 700; font-size: 0.95rem;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img id="modalProviderImg" src="" alt="Gambar Profil" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); object-fit: cover;">
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Username:</span>
+                    <span id="modalProviderUsername" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Email:</span>
+                    <span id="modalProviderEmail" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">No. Telefon:</span>
+                    <span id="modalProviderPhone" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Roadtax (Cukai Jalan):</span>
+                    <span>
+                        <a id="modalProviderRoadtax" href="" target="_blank" class="neo-badge bg-y" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--yellow); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Fail</a>
+                        <span id="modalProviderNoRoadtax" style="color: #999; display: none;">Tiada Fail</span>
+                    </span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Insurans (Insurance):</span>
+                    <span>
+                        <a id="modalProviderInsurance" href="" target="_blank" class="neo-badge bg-g" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--green); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Fail</a>
+                        <span id="modalProviderNoInsurance" style="color: #999; display: none;">Tiada Fail</span>
+                    </span>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="neo-btn bg-p" style="width: 100%;" onclick="closeProviderModal()"><i class="bi bi-arrow-left-short me-1"></i>Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- FOOTER -->
     <footer>
@@ -525,6 +662,54 @@ $result_bookings = $stmt->get_result();
         openSidebarBtn.addEventListener('click', openSidebar);
         closeSidebarBtn.addEventListener('click', closeSidebar);
         sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // POPUP PROVIDER MODAL CONTROL
+        function showProviderModal(username, email, phone, roadtax, insurance, profilePic) {
+            document.getElementById('modalProviderUsername').textContent = username;
+            document.getElementById('modalProviderEmail').textContent = email;
+            document.getElementById('modalProviderPhone').textContent = phone;
+            
+            const imgElem = document.getElementById('modalProviderImg');
+            if (profilePic && profilePic.trim() !== '') {
+                imgElem.src = profilePic;
+            } else {
+                imgElem.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            }
+            
+            const rtElem = document.getElementById('modalProviderRoadtax');
+            const noRtElem = document.getElementById('modalProviderNoRoadtax');
+            if (roadtax && roadtax.trim() !== '') {
+                rtElem.href = roadtax;
+                rtElem.style.display = 'inline-block';
+                noRtElem.style.display = 'none';
+            } else {
+                rtElem.style.display = 'none';
+                noRtElem.style.display = 'inline-block';
+            }
+            
+            const insElem = document.getElementById('modalProviderInsurance');
+            const noInsElem = document.getElementById('modalProviderNoInsurance');
+            if (insurance && insurance.trim() !== '') {
+                insElem.href = insurance;
+                insElem.style.display = 'inline-block';
+                noInsElem.style.display = 'none';
+            } else {
+                insElem.style.display = 'none';
+                noInsElem.style.display = 'inline-block';
+            }
+
+            document.getElementById('providerModalOverlay').classList.add('show');
+        }
+
+        function closeProviderModal() {
+            document.getElementById('providerModalOverlay').classList.remove('show');
+        }
+
+        function closeProviderModalOutside(e) {
+            if (e.target.id === 'providerModalOverlay') {
+                closeProviderModal();
+            }
+        }
     </script>
 </body>
 </html>

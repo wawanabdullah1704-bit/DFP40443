@@ -26,6 +26,20 @@ $stmt_my->bind_param("i", $student_id);
 $stmt_my->execute();
 $total_my_bookings = $stmt_my->get_result()->fetch_assoc()['total'] ?? 0;
 $stmt_my->close();
+
+// --- DAPATKAN TEMPAHAN TERBAHARU PELAJAR & MAKLUMAT PENYEDIA ---
+$sql_latest_booking = "SELECT b.*, c.car_model, c.car_plate, p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance 
+                       FROM bookings b 
+                       JOIN cars c ON b.car_id = c.id
+                       JOIN providers p ON c.provider_id = p.id
+                       WHERE b.student_id = ? 
+                       ORDER BY b.created_at DESC LIMIT 1";
+$stmt_latest = $conn->prepare($sql_latest_booking);
+$stmt_latest->bind_param("i", $student_id);
+$stmt_latest->execute();
+$res_latest = $stmt_latest->get_result();
+$latest_booking = $res_latest->fetch_assoc();
+$stmt_latest->close();
 ?>
 
 <!DOCTYPE html>
@@ -368,6 +382,27 @@ $stmt_my->close();
             
             .section-title { font-size: 1rem; padding: 8px 15px; }
         }
+
+        /* --- BOOKING STATUS CARD --- */
+        .booking-status-card {
+            transition: var(--transition);
+        }
+        .booking-status-card:hover {
+            transform: translate(-3px, -3px);
+            box-shadow: 8px 8px 0px var(--black) !important;
+        }
+        .status-badge {
+            border: 2px solid var(--black);
+            padding: 2px 6px;
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            font-weight: 900;
+        }
+        .status-badge.pending { background-color: var(--yellow); }
+        .status-badge.approved { background-color: var(--blue); }
+        .status-badge.completed { background-color: var(--green); }
+        .status-badge.rejected { background-color: var(--pink); }
+
     </style>
 </head>
 <body>
@@ -481,6 +516,43 @@ $stmt_my->close();
                     <p class="desc">Lihat rekod penggunaan dan tempahan lepas.</p>
                 </div>
             </div>
+
+            <?php if ($latest_booking): ?>
+                <!-- PROGRESS BAR TERKINI (INLINE, TIDAK BERTINDIH) -->
+                <div class="section-title" style="margin-top: 25px;"><i class="bi bi-activity me-1"></i> Status Tempahan Terkini</div>
+                <div class="booking-status-card" onclick="window.location.href='my_bookings.php'" style="background-color: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 20px; cursor: pointer; transition: var(--transition); margin-top: 15px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.95rem; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <span><i class="bi bi-car-front-fill me-1"></i> <strong><?php echo htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</strong></span>
+                        <span class="status-badge <?php echo strtolower($latest_booking['status']); ?>" style="border: 2px solid var(--black); padding: 3px 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 900;">
+                            <?php echo htmlspecialchars($latest_booking['status']); ?>
+                        </span>
+                    </div>
+                    
+                    <?php
+                    $progress = 0;
+                    $bar_color = "var(--yellow)";
+                    if ($latest_booking['status'] === 'Pending') {
+                        $progress = 33;
+                        $bar_color = "var(--yellow)";
+                    } elseif ($latest_booking['status'] === 'Approved') {
+                        $progress = 66;
+                        $bar_color = "var(--blue)";
+                    } elseif ($latest_booking['status'] === 'Completed') {
+                        $progress = 100;
+                        $bar_color = "var(--green)";
+                    } elseif ($latest_booking['status'] === 'Rejected') {
+                        $progress = 100;
+                        $bar_color = "var(--pink)";
+                    }
+                    ?>
+                    <div class="progress-bar-container" style="width: 100%; height: 14px; background-color: var(--bg-color); border: 3px solid var(--black); overflow: hidden; margin-bottom: 10px;">
+                        <div class="progress-bar-fill" style="width: <?php echo $progress; ?>%; height: 100%; background-color: <?php echo $bar_color; ?>; transition: width 0.3s ease-in-out;"></div>
+                    </div>
+                    <div style="font-size: 0.8rem; font-weight: 800; color: #555; text-align: right; text-transform: uppercase;">
+                        Tekan untuk lihat status penuh di Status Tempahan <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                    </div>
+                </div>
+            <?php endif; ?>
 
         </div>
     </main>

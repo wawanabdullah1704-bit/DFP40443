@@ -21,7 +21,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_booking'])) {
     $total_price = (float)$_POST['total_price'];
     $status = 'Pending';
 
-    // Pengurusan muat naik resit
+    // Semak jika pelajar sudah mempunyai tempahan aktif pada waktu bertindih
+    $sql_check_student = "SELECT id FROM bookings 
+                          WHERE student_id = ? 
+                          AND status IN ('Pending', 'Approved') 
+                          AND (start_date < ? AND end_date > ?)";
+    $stmt_check = $conn->prepare($sql_check_student);
+    $stmt_check->bind_param("iss", $student_id, $end_date, $start_date);
+    $stmt_check->execute();
+    $res_check = $stmt_check->get_result();
+    if ($res_check->num_rows > 0) {
+        $message = "<div class='neo-alert alert-danger'><i class='bi bi-exclamation-octagon-fill me-2'></i>Ralat: Anda sudah mempunyai tempahan aktif (Pending/Approved) pada waktu yang dipilih. Setiap pelajar hanya dibenarkan menyewa 1 kereta dalam satu masa sahaja.</div>";
+        $stmt_check->close();
+    } else {
+        $stmt_check->close();
+        // Pengurusan muat naik resit
     $targetDir = "uploads/receipts/";
     if (!is_dir($targetDir)) {
         mkdir($targetDir, 0777, true);
@@ -50,6 +64,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_booking'])) {
     } else {
         $message = "<div class='neo-alert alert-danger'>Ralat: Gagal memuat naik resit pembayaran.</div>";
     }
+    }
 }
 
 // 2. PROSES CARIAN AJAX (GET)
@@ -71,6 +86,21 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         echo "<div class='neo-alert alert-danger' style='text-align: center;'>Tarikh/Masa pemulangan mestilah selepas tarikh/masa pengambilan.</div>";
         exit;
     }
+    // Semak jika pelajar sudah mempunyai tempahan aktif pada waktu bertindih
+    $sql_check_student = "SELECT id FROM bookings 
+                          WHERE student_id = ? 
+                          AND status IN ('Pending', 'Approved') 
+                          AND (start_date < ? AND end_date > ?)";
+    $stmt_check = $conn->prepare($sql_check_student);
+    $stmt_check->bind_param("iss", $student_id, $search_end, $search_start);
+    $stmt_check->execute();
+    $res_check = $stmt_check->get_result();
+    if ($res_check->num_rows > 0) {
+        echo "<div class='neo-alert alert-danger' style='text-align: center;'><i class='bi bi-exclamation-octagon-fill me-2'></i>Ralat: Anda sudah mempunyai tempahan aktif (Pending/Approved) yang bertindih dengan waktu yang dipilih! Setiap pelajar hanya dibenarkan menyewa 1 kereta dalam satu masa sahaja.</div>";
+        $stmt_check->close();
+        exit;
+    }
+    $stmt_check->close();
 
     // Kira tempoh masa
     if ($rent_type === 'Hourly') {
@@ -257,6 +287,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         .search-card { background-color: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 25px; margin-bottom: 30px; }
         .search-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
         .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: end; }
+        .form-grid.grid-hourly { grid-template-columns: repeat(5, 1fr); }
         .form-group { display: flex; flex-direction: column; gap: 5px; } .form-label { font-weight: 800; text-transform: uppercase; font-size: 0.85rem; }
         .form-control, .form-select { border: 3px solid var(--black); padding: 10px; font-weight: 700; background: var(--bg-color); outline: none; border-radius: 0; width: 100%; }
         .form-control:focus, .form-select:focus { background: var(--white); box-shadow: 3px 3px 0px var(--black); }
@@ -288,7 +319,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
         @media (max-width: 768px) {
             .neo-brand { font-size: 1.2rem; } .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
-            .form-grid { grid-template-columns: 1fr; gap: 10px; } .cars-grid { grid-template-columns: 1fr; gap: 15px; } .modal-grid { grid-template-columns: 1fr; gap: 15px; }
+            .form-grid, .form-grid.grid-hourly { grid-template-columns: 1fr !important; gap: 10px; } .cars-grid { grid-template-columns: 1fr; gap: 15px; } .modal-grid { grid-template-columns: 1fr; gap: 15px; }
             .modal-divider { border-right: none; padding-right: 0; border-bottom: 3px solid var(--black); padding-bottom: 15px; }
             .main-content { padding: 1rem 10px; } .search-card { padding: 15px; } .neo-modal { padding: 15px; }
         }
@@ -335,23 +366,40 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         <div class="search-card">
             <div class="search-title"><i class="bi bi-calendar-check text-dark"></i> Langkah 1: Pilih Tarikh & Masa Carian</div>
             <form id="ajaxSearchForm">
-                <div class="form-grid">
+                <div class="form-grid" id="formGridContainer">
                     <div class="form-group">
                         <label class="form-label">Jenis Sewaan</label>
-                        <select class="form-select" name="rent_type" required>
+                        <select class="form-select" name="rent_type" id="rent_type" required>
                             <option value="" disabled selected>Pilih...</option>
                             <option value="Daily">Harian (Daily)</option>
                             <option value="Hourly">Jam (Hourly)</option>
                         </select>
                     </div>
-                    <div class="form-group">
+                    
+                    <!-- Pilihan Harian (Daily) -->
+                    <div class="form-group daily-group">
                         <label class="form-label">Tarikh & Masa Ambil</label>
-                        <input type="datetime-local" class="form-control" name="start_date" required>
+                        <input type="datetime-local" class="form-control" name="start_date" id="daily_start" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group daily-group">
                         <label class="form-label">Tarikh & Masa Pulang</label>
-                        <input type="datetime-local" class="form-control" name="end_date" required>
+                        <input type="datetime-local" class="form-control" name="end_date" id="daily_end" required>
                     </div>
+                    
+                    <!-- Pilihan Jam (Hourly) - Tersembunyi -->
+                    <div class="form-group hourly-group" style="display: none;">
+                        <label class="form-label">Tarikh Sewaan</label>
+                        <input type="date" class="form-control" id="hourly_date">
+                    </div>
+                    <div class="form-group hourly-group" style="display: none;">
+                        <label class="form-label">Masa Ambil (Mula)</label>
+                        <input type="time" class="form-control" id="hourly_start_time">
+                    </div>
+                    <div class="form-group hourly-group" style="display: none;">
+                        <label class="form-label">Masa Pulang (Tamat)</label>
+                        <input type="time" class="form-control" id="hourly_end_time">
+                    </div>
+
                     <div class="form-group">
                         <button type="submit" class="neo-btn bg-y" style="width: 100%; margin-top: 22px;"><i class="bi bi-search me-1"></i> Cari Kereta</button>
                     </div>
@@ -379,6 +427,50 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         // --- 1. AJAX FETCH UNTUK CARIAN KERETA ---
         const searchForm = document.getElementById('ajaxSearchForm');
         const resultsContainer = document.getElementById('searchResultsContainer');
+        const rentTypeSelect = document.getElementById('rent_type');
+        const dailyGroups = document.querySelectorAll('.daily-group');
+        const hourlyGroups = document.querySelectorAll('.hourly-group');
+        const formGridContainer = document.getElementById('formGridContainer');
+        
+        const dailyStart = document.getElementById('daily_start');
+        const dailyEnd = document.getElementById('daily_end');
+        const hourlyDate = document.getElementById('hourly_date');
+        const hourlyStartTime = document.getElementById('hourly_start_time');
+        const hourlyEndTime = document.getElementById('hourly_end_time');
+
+        if (rentTypeSelect) {
+            rentTypeSelect.addEventListener('change', function() {
+                if (this.value === 'Hourly') {
+                    dailyGroups.forEach(g => {
+                        g.style.display = 'none';
+                        const input = g.querySelector('input');
+                        input.required = false;
+                        input.disabled = true;
+                    });
+                    hourlyGroups.forEach(g => {
+                        g.style.display = 'flex';
+                        const input = g.querySelector('input');
+                        input.required = true;
+                        input.disabled = false;
+                    });
+                    formGridContainer.classList.add('grid-hourly');
+                } else {
+                    hourlyGroups.forEach(g => {
+                        g.style.display = 'none';
+                        const input = g.querySelector('input');
+                        input.required = false;
+                        input.disabled = true;
+                    });
+                    dailyGroups.forEach(g => {
+                        g.style.display = 'flex';
+                        const input = g.querySelector('input');
+                        input.required = true;
+                        input.disabled = false;
+                    });
+                    formGridContainer.classList.remove('grid-hourly');
+                }
+            });
+        }
 
         if (searchForm) {
             searchForm.addEventListener('submit', function(e) {
@@ -395,6 +487,17 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
                 // Ambil Data Borang
                 const formData = new FormData(searchForm);
+                
+                // Jika jenis sewaan adalah Jam (Hourly), gabungkan tarikh dan masa
+                if (rentTypeSelect && rentTypeSelect.value === 'Hourly') {
+                    const dateVal = hourlyDate.value;
+                    const startVal = hourlyStartTime.value;
+                    const endVal = hourlyEndTime.value;
+                    
+                    formData.set('start_date', `${dateVal}T${startVal}`);
+                    formData.set('end_date', `${dateVal}T${endVal}`);
+                }
+
                 const params = new URLSearchParams(formData);
                 params.append('ajax', '1'); // Beritahu PHP ini adalah AJAX
 

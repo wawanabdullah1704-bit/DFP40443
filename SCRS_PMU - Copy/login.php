@@ -323,7 +323,7 @@ $conn->close();
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU</div>
         </div>
-        <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Daftar Akaun</a>
+        <a href="index.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Daftar Akaun</a>
     </header>
 
     <!-- SIDEBAR -->
@@ -335,7 +335,7 @@ $conn->close();
         </div>
         <nav class="sidebar-nav">
             <a href="login.php" class="sidebar-link active"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
-            <a href="choose_role.php" class="sidebar-link"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
+            <a href="index.php" class="sidebar-link"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
         </nav>
     </aside>
 
@@ -359,7 +359,7 @@ $conn->close();
                     <div class="input-wrapper">
                         <input type="password" class="form-control" name="password" id="password" placeholder="Masukkan kata laluan" required>
                         <button type="button" class="password-toggle-btn" id="togglePassword">
-                            <i class="bi bi-eye-fill"></i>
+                             <i class="bi bi-eye-fill"></i>
                         </button>
                     </div>
                 </div>
@@ -371,7 +371,7 @@ $conn->close();
 
             <div class="register-prompt">
                 Belum mempunyai akaun? <br>
-                <a href="choose_role.php" style="color: #0055ff; font-weight: 900; text-decoration: underline;">Daftar Akaun Baharu Di Sini!</a>
+                <a href="index.php" style="color: #0055ff; font-weight: 900; text-decoration: underline;">Daftar Akaun Baharu Di Sini!</a>
             </div>
         </div>
     </main>

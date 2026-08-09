@@ -423,7 +423,7 @@ $conn->close();
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU</div>
         </div>
-        <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Tukar Peranan</a>
+        <a href="index.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Tukar Peranan</a>
     </header>
 
     <!-- SIDEBAR -->
@@ -435,7 +435,7 @@ $conn->close();
         </div>
         <nav class="sidebar-nav">
             <a href="login.php" class="sidebar-link"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
-            <a href="choose_role.php" class="sidebar-link active"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
+            <a href="index.php" class="sidebar-link active"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
         </nav>
     </aside>
 
@@ -453,7 +453,7 @@ $conn->close();
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Nama Pengguna (Username)</label>
-                        <input type="text" class="form-control" name="username" placeholder="Cth: provider1" required>
+                        <input type="text" class="form-control" name="username" placeholder="Cth: Abu123" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">E-mel</label>
@@ -469,7 +469,7 @@ $conn->close();
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Nombor Telefon</label>
-                        <input type="text" class="form-control" name="phoneNo" placeholder="Cth: 0123456789" required>
+                        <input type="text" class="form-control" name="phoneNo" placeholder="Cth: +60123456789" required>
                     </div>
                     <div class="form-group">
                         <label class="form-label">Nombor Kad Pengenalan (IC)</label>
