@@ -4,7 +4,7 @@ require 'db.php';
 
 // Semak jika pengguna telah log masuk dan merupakan seorang pelajar
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -395,7 +395,7 @@ $result_bookings = $stmt->get_result();
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
-                <li><a href="login.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                <li><a href="index.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
             </ul>
         </div>
     </header>

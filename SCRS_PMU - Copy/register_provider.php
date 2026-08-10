@@ -423,7 +423,7 @@ $conn->close();
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU</div>
         </div>
-        <a href="index.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Tukar Peranan</a>
+        <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Tukar Peranan</a>
     </header>
 
     <!-- SIDEBAR -->
@@ -434,8 +434,8 @@ $conn->close();
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="login.php" class="sidebar-link"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
-            <a href="index.php" class="sidebar-link active"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
+            <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
+            <a href="choose_role.php" class="sidebar-link active"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
         </nav>
     </aside>
 
@@ -555,7 +555,7 @@ $conn->close();
             </form>
 
             <div style="text-align: center; margin-top: 20px; font-weight: 800; font-size: 0.9rem;">
-                Sudah mendaftar? <a href="login.php" style="color: #0055ff; text-decoration: underline;">Log Masuk di sini</a>
+                Sudah mendaftar? <a href="index.php" style="color: #0055ff; text-decoration: underline;">Log Masuk di sini</a>
             </div>
         </div>
     </main>

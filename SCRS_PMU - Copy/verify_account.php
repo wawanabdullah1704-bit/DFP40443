@@ -309,7 +309,7 @@ $result_providers = $conn->query($sql_pending_providers);
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU (JHEPP)</div>
         </div>
-        <a href="login.php" class="neo-btn" style="flex: none; width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--pink);">Log Keluar</a>
+        <a href="index.php" class="neo-btn" style="flex: none; width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--pink);">Log Keluar</a>
     </header>
 
     <!-- SIDEBAR -->
@@ -321,7 +321,7 @@ $result_providers = $conn->query($sql_pending_providers);
         </div>
         <nav class="sidebar-nav">
             <a href="verify_account.php" class="sidebar-link active"><i class="bi bi-person-lines-fill"></i> Pengesahan Pengguna</a>
-            <a href="login.php" class="sidebar-link"><i class="bi bi-box-arrow-left"></i> Log Keluar</a>
+            <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-left"></i> Log Keluar</a>
         </nav>
     </aside>
 

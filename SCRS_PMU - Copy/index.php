@@ -1,9 +1,123 @@
+<?php
+session_start();
+require 'db.php';
+
+$error_message = "";
+
+// Semak jika borang Log Masuk dihantar
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    
+    $username = htmlspecialchars($_POST['username']);
+    $password = $_POST['password'];
+    $user_found = false;
+
+    // 1. SEMAKAN JADUAL ADMINS (JHEPP)
+    $sql_admin = "SELECT id, username, password, full_name FROM admins WHERE username = ?";
+    $stmt = $conn->prepare($sql_admin);
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+    $res_admin = $stmt->get_result();
+
+    if ($res_admin->num_rows > 0) {
+        $user_found = true;
+        $row = $res_admin->fetch_assoc();
+        
+        if (password_verify($password, $row['password'])) {
+            $_SESSION['admin_id'] = $row['id'];
+            $_SESSION['username'] = $row['username'];
+            $_SESSION['role'] = 'admin';
+            
+            header("Location: verify_account.php"); 
+            exit();
+        } else {
+            $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan salah!</div>';
+        }
+    }
+    $stmt->close();
+
+    // 2. SEMAKAN JADUAL STUDENTS
+    if (!$user_found) {
+        $sql_student = "SELECT id, username, password, full_name, status FROM students WHERE username = ?";
+        $stmt = $conn->prepare($sql_student);
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $res_student = $stmt->get_result();
+
+        if ($res_student->num_rows > 0) {
+            $user_found = true;
+            $row = $res_student->fetch_assoc();
+            
+            if (password_verify($password, $row['password'])) {
+                
+                if ($row['status'] === 'pending') {
+                    header("Location: pending.php");
+                    exit();
+                } else if ($row['status'] === 'rejected') {
+                    $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>Maaf, pendaftaran akaun anda telah ditolak oleh JHEPP.</div>';
+                } else if ($row['status'] === 'approved') {
+                    $_SESSION['student_id'] = $row['id'];
+                    $_SESSION['username'] = $row['username'];
+                    $_SESSION['role'] = 'student';
+                    
+                    header("Location: dashboard.php");
+                    exit();
+                }
+                
+            } else {
+                $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan salah!</div>';
+            }
+        }
+        $stmt->close();
+    }
+
+    // 3. SEMAKAN JADUAL PROVIDERS
+    if (!$user_found) {
+        $sql_provider = "SELECT id, username, password, full_name, status FROM providers WHERE username = ?";
+        $stmt = $conn->prepare($sql_provider);
+        $stmt->bind_param("s", $username);
+        $stmt->execute();
+        $res_provider = $stmt->get_result();
+
+        if ($res_provider->num_rows > 0) {
+            $user_found = true;
+            $row = $res_provider->fetch_assoc();
+            
+            if (password_verify($password, $row['password'])) {
+                
+                if ($row['status'] === 'pending') {
+                    header("Location: pending.php");
+                    exit();
+                } else if ($row['status'] === 'rejected') {
+                    $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>Maaf, pendaftaran akaun Penyedia Kereta anda telah ditolak.</div>';
+                } else if ($row['status'] === 'approved') {
+                    $_SESSION['provider_id'] = $row['id'];
+                    $_SESSION['username'] = $row['username'];
+                    $_SESSION['role'] = 'provider';
+                    
+                    header("Location: provider_dashboard.php");
+                    exit();
+                }
+
+            } else {
+                $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan salah!</div>';
+            }
+        }
+        $stmt->close();
+    }
+
+    if (!$user_found) {
+        $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-octagon-fill me-2"></i>Ralat: Nama Pengguna (Username) tidak wujud!</div>';
+    }
+}
+$conn->close();
+?>
+
 <!DOCTYPE html>
 <html lang="ms">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pilih Peranan - SCRS PMU</title>
+    <title>Log Masuk - SCRS PMU</title>
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -40,6 +154,7 @@
         }
 
         a { text-decoration: none; color: inherit; }
+        button, input { font-family: inherit; }
 
         /* NAVBAR */
         .neo-navbar {
@@ -93,49 +208,92 @@
             padding: 2rem 20px;
         }
 
-        .role-container {
+        .login-card {
             background-color: var(--white);
             border: var(--border-thick);
             box-shadow: 8px 8px 0px var(--black);
-            padding: 35px 25px;
+            padding: 30px;
             width: 100%;
-            max-width: 500px;
-            text-align: center;
+            max-width: 450px;
         }
 
-        .role-title {
-            font-size: 2rem;
+        .login-title {
+            font-size: 1.8rem;
             font-weight: 900;
             text-transform: uppercase;
-            margin-bottom: 30px;
-            line-height: 1.2;
+            text-align: center;
+            margin-bottom: 20px;
+            background-color: var(--yellow);
+            border: 3px solid var(--black);
+            padding: 8px;
+            box-shadow: 4px 4px 0px var(--black);
         }
 
-        .role-card {
-            border: var(--border-thick);
-            box-shadow: var(--shadow-solid);
-            padding: 20px;
+        .form-group {
             margin-bottom: 20px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 5px;
-            transition: var(--transition);
-            cursor: pointer;
+            gap: 6px;
         }
-        .role-card:hover { transform: translate(-4px, -4px); box-shadow: 8px 8px 0px var(--black); }
-        .role-card:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
 
-        .role-card.student-card { background-color: var(--yellow); }
-        .role-card.provider-card { background-color: var(--green); }
-
-        .role-card i { font-size: 2.5rem; }
-        .role-card .label { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; }
-        .role-card .title { font-size: 1.4rem; font-weight: 900; text-transform: uppercase; }
-
-        .login-prompt {
-            margin-top: 25px;
+        .form-label {
             font-weight: 800;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .form-control {
+            border: 3px solid var(--black);
+            padding: 12px;
+            font-weight: 700;
+            background-color: var(--bg-color);
+            outline: none;
+            width: 100%;
+        }
+        .form-control:focus { background-color: var(--white); box-shadow: 3px 3px 0px var(--black); }
+
+        .password-toggle-btn {
+            position: absolute;
+            right: 12px;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: var(--black);
+            background: none;
+            border: none;
+        }
+
+        .neo-btn {
+            background-color: var(--green);
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 12px;
+            cursor: pointer;
+            transition: var(--transition);
+            width: 100%;
+            font-size: 1rem;
+            margin-top: 10px;
+        }
+        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
+        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
+
+        .neo-alert {
+            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
+            padding: 12px 15px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; font-size: 0.85rem;
+        }
+        .alert-danger { background-color: var(--pink); }
+
+        .register-prompt {
+            text-align: center;
+            margin-top: 20px;
+            font-weight: 700;
             font-size: 0.9rem;
             border-top: 2px dashed var(--black);
             padding-top: 15px;
@@ -152,8 +310,7 @@
         }
 
         @media (max-width: 480px) {
-            .role-container { padding: 25px 15px; }
-            .role-title { font-size: 1.5rem; }
+            .login-card { padding: 20px 15px; }
             .neo-brand { font-size: 1.2rem; }
         }
     </style>
@@ -166,9 +323,7 @@
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU</div>
         </div>
-        <a href="login.php" class="role-card" style="margin-bottom: 0; padding: 6px 12px; font-size: 0.8rem; background: var(--blue); border-width: 3px; box-shadow: 3px 3px 0px var(--black);">
-            Log Masuk
-        </a>
+        <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Daftar Akaun</a>
     </header>
 
     <!-- SIDEBAR -->
@@ -179,31 +334,48 @@
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="login.php" class="sidebar-link"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
-            <a href="index.php" class="sidebar-link active"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
+            <a href="index.php" class="sidebar-link active"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
+            <a href="choose_role.php" class="sidebar-link"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
         </nav>
     </aside>
 
-    <!-- KANDUNGAN UTAMA -->
+    <!-- MAIN CONTENT -->
     <main class="main-content">
-        <div class="role-container">
-            <h1 class="role-title">Pilih Peranan<br>Pendaftaran Anda</h1>
+        <div class="login-card">
+            <div class="login-title">
+                <i class="bi bi-shield-lock-fill me-1"></i> Log Masuk
+            </div>
 
-            <a href="register_student.php" class="role-card student-card">
-                <i class="bi bi-mortarboard-fill"></i>
-                <span class="label">Daftar Sebagai</span>
-                <span class="title">Pelajar</span>
-            </a>
+            <div class="welcome-banner" style="background: var(--yellow); border: 2px solid var(--black); padding: 10px; font-weight: 700; margin-bottom: 20px; text-align: center; box-shadow: 3px 3px 0px var(--black);">
+                <i class="bi bi-emoji-smile-fill me-1"></i> Selamat Datang ke SCRS PMU! Sila log masuk ke akaun anda.
+            </div>
 
-            <a href="register_provider.php" class="role-card provider-card">
-                <i class="bi bi-car-front-fill"></i>
-                <span class="label">Daftar Sebagai</span>
-                <span class="title">Penyedia Kereta</span>
-            </a>
+            <?php echo $error_message; ?>
 
-            <div class="login-prompt">
-                Sudah mempunyai akaun? <br>
-                <a href="login.php" style="color: #0055ff; font-weight: 900; text-decoration: underline;">Log Masuk Di Sini</a>
+            <form action="" method="POST">
+                <div class="form-group">
+                    <label class="form-label" for="username">Nama Pengguna (Username)</label>
+                    <input type="text" class="form-control" name="username" id="username" placeholder="Masukkan nama pengguna" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="password">Kata Laluan</label>
+                    <div class="input-wrapper">
+                        <input type="password" class="form-control" name="password" id="password" placeholder="Masukkan kata laluan" required>
+                        <button type="button" class="password-toggle-btn" id="togglePassword">
+                             <i class="bi bi-eye-fill"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <button type="submit" class="neo-btn">
+                    Log Masuk <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                </button>
+            </form>
+
+            <div class="register-prompt">
+                Belum mempunyai akaun? <br>
+                <a href="choose_role.php" style="color: #0055ff; font-weight: 900; text-decoration: underline;">Daftar Akaun Baharu Di Sini!</a>
             </div>
         </div>
     </main>
@@ -215,6 +387,20 @@
 
     <!-- SKRIP ASLI (VANILLA JS) -->
     <script>
+        // Toggle Password Visibility
+        const togglePassword = document.getElementById('togglePassword');
+        const password = document.getElementById('password');
+
+        if (togglePassword && password) {
+            togglePassword.addEventListener('click', function () {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+                this.querySelector('i').classList.toggle('bi-eye-fill');
+                this.querySelector('i').classList.toggle('bi-eye-slash-fill');
+            });
+        }
+
+        // Sidebar Offcanvas
         const openSidebarBtn = document.getElementById('open-sidebar');
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');

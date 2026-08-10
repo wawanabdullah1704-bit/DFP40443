@@ -3,7 +3,7 @@ session_start();
 require 'db.php';
 
 if (!isset($_SESSION['role'])) {
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -19,7 +19,7 @@ if ($role === 'student') {
     $user_id = $_SESSION['provider_id'];
     $table = 'providers';
 } else {
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 

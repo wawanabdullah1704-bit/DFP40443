@@ -4,7 +4,7 @@ require 'db.php';
 
 // Semak jika pengguna telah log masuk dan merupakan Penyedia Kereta (Provider)
 if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'provider') {
-    header("Location: login.php");
+    header("Location: index.php");
     exit();
 }
 
@@ -459,7 +459,7 @@ $stmt_prov->close();
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
-                <li><a href="login.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                <li><a href="index.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
             </ul>
         </div>
     </header>
@@ -474,7 +474,7 @@ $stmt_prov->close();
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link active"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="#" class="sidebar-link" onclick="openModal('qrCodeModal')"><i class="bi bi-qr-code"></i> Kemaskini QR Bayaran</a>
-            <a href="login.php" class="sidebar-link"><i class="bi bi-box-arrow-left"></i> Log Keluar</a>
+            <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-left"></i> Log Keluar</a>
         </nav>
     </aside>
 

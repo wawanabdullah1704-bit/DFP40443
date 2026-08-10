@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Tunggu Pengesahan - SCRS PMU</title>
+    <title>Pilih Peranan - SCRS PMU</title>
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -93,56 +93,53 @@
             padding: 2rem 20px;
         }
 
-        .pending-card {
+        .role-container {
             background-color: var(--white);
             border: var(--border-thick);
             box-shadow: 8px 8px 0px var(--black);
-            padding: 40px 30px;
+            padding: 35px 25px;
             width: 100%;
             max-width: 500px;
             text-align: center;
         }
 
-        .hourglass-icon {
-            font-size: 4rem;
-            color: var(--black);
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            display: inline-block;
-            padding: 15px 25px;
-            margin-bottom: 25px;
-        }
-
-        .pending-title {
-            font-size: 1.4rem;
+        .role-title {
+            font-size: 2rem;
             font-weight: 900;
             text-transform: uppercase;
-            margin-bottom: 15px;
-            line-height: 1.3;
+            margin-bottom: 30px;
+            line-height: 1.2;
         }
 
-        .pending-desc {
-            font-weight: 700;
-            color: #555;
-            margin-bottom: 25px;
-            font-size: 0.95rem;
-            line-height: 1.5;
-        }
-
-        .neo-btn {
-            background-color: var(--green);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 12px 25px;
-            cursor: pointer;
+        .role-card {
+            border: var(--border-thick);
+            box-shadow: var(--shadow-solid);
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
             transition: var(--transition);
-            display: inline-block;
+            cursor: pointer;
         }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
+        .role-card:hover { transform: translate(-4px, -4px); box-shadow: 8px 8px 0px var(--black); }
+        .role-card:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
+
+        .role-card.student-card { background-color: var(--yellow); }
+        .role-card.provider-card { background-color: var(--green); }
+
+        .role-card i { font-size: 2.5rem; }
+        .role-card .label { font-size: 0.85rem; font-weight: 800; text-transform: uppercase; }
+        .role-card .title { font-size: 1.4rem; font-weight: 900; text-transform: uppercase; }
+
+        .login-prompt {
+            margin-top: 25px;
+            font-weight: 800;
+            font-size: 0.9rem;
+            border-top: 2px dashed var(--black);
+            padding-top: 15px;
+        }
 
         footer {
             background-color: var(--yellow);
@@ -155,8 +152,8 @@
         }
 
         @media (max-width: 480px) {
-            .pending-card { padding: 30px 15px; }
-            .pending-title { font-size: 1.2rem; }
+            .role-container { padding: 25px 15px; }
+            .role-title { font-size: 1.5rem; }
             .neo-brand { font-size: 1.2rem; }
         }
     </style>
@@ -169,7 +166,9 @@
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU</div>
         </div>
-        <a href="index.php" class="neo-btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--yellow);">Log Masuk</a>
+        <a href="index.php" class="role-card" style="margin-bottom: 0; padding: 6px 12px; font-size: 0.8rem; background: var(--blue); border-width: 3px; box-shadow: 3px 3px 0px var(--black);">
+            Log Masuk
+        </a>
     </header>
 
     <!-- SIDEBAR -->
@@ -181,25 +180,31 @@
         </div>
         <nav class="sidebar-nav">
             <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
-            <a href="choose_role.php" class="sidebar-link"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
+            <a href="choose_role.php" class="sidebar-link active"><i class="bi bi-person-plus-fill"></i> Pilih Peranan / Daftar</a>
         </nav>
     </aside>
 
-    <!-- MAIN CONTENT -->
+    <!-- KANDUNGAN UTAMA -->
     <main class="main-content">
-        <div class="pending-card">
-            <div class="hourglass-icon">
-                <i class="bi bi-hourglass-split"></i>
-            </div>
-            <h2 class="pending-title">
-                Sila tunggu pihak JHEPP membuat pengesahan akaun anda...
-            </h2>
-            <p class="pending-desc">
-                Proses semakan dokumen pendaftaran anda sedang dilakukan. Anda boleh cuba log masuk semula selepas akaun disahkan.
-            </p>
-            <a href="index.php" class="neo-btn">
-                <i class="bi bi-arrow-left-circle-fill me-1"></i> Kembali ke Log Masuk
+        <div class="role-container">
+            <h1 class="role-title">Pilih Peranan<br>Pendaftaran Anda</h1>
+
+            <a href="register_student.php" class="role-card student-card">
+                <i class="bi bi-mortarboard-fill"></i>
+                <span class="label">Daftar Sebagai</span>
+                <span class="title">Pelajar</span>
             </a>
+
+            <a href="register_provider.php" class="role-card provider-card">
+                <i class="bi bi-car-front-fill"></i>
+                <span class="label">Daftar Sebagai</span>
+                <span class="title">Penyedia Kereta</span>
+            </a>
+
+            <div class="login-prompt">
+                Sudah mempunyai akaun? <br>
+                <a href="index.php" style="color: #0055ff; font-weight: 900; text-decoration: underline;">Log Masuk Di Sini</a>
+            </div>
         </div>
     </main>
 
