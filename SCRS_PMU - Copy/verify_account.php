@@ -2,6 +2,14 @@
 session_start();
 require 'db.php';
 
+// Semak jika pengguna telah log masuk dan merupakan pegawai JHEPP
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'jhepp') {
+    header("Location: index.php");
+    exit();
+}
+
+$jhepp_username = $_SESSION['username'] ?? 'JHEPP';
+
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -56,22 +64,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
-                $mail->setFrom('admin.jhepp@gmail.com', 'Admin SCRS PMU');
+                $mail->setFrom('admin.jhepp@gmail.com', 'Pegawai JHEPP PMU');
                 $mail->addAddress($to_email, $user_name);
 
                 $mail->isHTML(true);
                 $mail->Subject = ($action === 'approve') ? "SCRS PMU - Akaun Diluluskan!" : "SCRS PMU - Akaun Ditolak";
                 
                 if ($action === 'approve') {
-                    $mail->Body = "Salam <b>$user_name</b>,<br><br>Tahniah! Pendaftaran akaun anda di SCRS PMU telah <b>DILULUSKAN</b> oleh pihak JHEPP.<br>Anda kini boleh log masuk ke dalam sistem.<br><br>Terima kasih,<br>Admin SCRS PMU";
+                    $mail->Body = "Salam <b>$user_name</b>,<br><br>Tahniah! Pendaftaran akaun anda di SCRS PMU telah <b>DILULUSKAN</b> oleh pihak JHEPP.<br>Anda kini boleh log masuk ke dalam sistem.<br><br>Terima kasih,<br>Pegawai JHEPP PMU";
                 } else {
-                    $mail->Body = "Salam <b>$user_name</b>,<br><br>Dukacita dimaklumkan bahawa pendaftaran akaun anda di SCRS PMU telah <b>DITOLAK</b> oleh pihak JHEPP. Sila rujuk pihak pengurusan untuk maklumat lanjut.<br><br>Terima kasih,<br>Admin SCRS PMU";
+                    $mail->Body = "Salam <b>$user_name</b>,<br><br>Dukacita dimaklumkan bahawa pendaftaran akaun anda di SCRS PMU telah <b>DITOLAK</b> oleh pihak JHEPP. Sila rujuk pihak pengurusan untuk maklumat lanjut.<br><br>Terima kasih,<br>Pegawai JHEPP PMU";
                 }
 
                 $mail->send();
-                $message .= "<div class='neo-alert alert-success'><i class='bi bi-envelope-check-fill me-2'></i>Notifikasi e-mel berjaya dihantar ke <strong>{$to_email}</strong>.</div>";
+                $message .= "<div class='neo-alert alert-success mt-2'><i class='bi bi-envelope-check-fill me-2'></i>Notifikasi e-mel berjaya dihantar ke <strong>{$to_email}</strong>.</div>";
             } catch (Exception $e) {
-                $message .= "<div class='neo-alert alert-warning'><i class='bi bi-exclamation-triangle-fill me-2'></i>Akaun dikemaskini, tetapi e-mel gagal dihantar. Ralat: {$mail->ErrorInfo}</div>";
+                $message .= "<div class='neo-alert alert-warning mt-2'><i class='bi bi-exclamation-triangle-fill me-2'></i>Akaun dikemaskini, tetapi e-mel gagal dihantar. Ralat: {$mail->ErrorInfo}</div>";
             }
         }
         $stmt_email->close();
@@ -82,11 +90,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
 }
 
-// AMBIL SENARAI PELAJAR DAN PROVIDER PENDING
-$sql_pending_students = "SELECT * FROM students WHERE status = 'pending'";
+// AMBIL SENARAI PELAJAR PENDING YANG TELAH MENGESAHKAN E-MEL
+$sql_pending_students = "SELECT * FROM students WHERE status = 'pending' AND email_verified = 1 ORDER BY id DESC";
 $result_students = $conn->query($sql_pending_students);
 
-$sql_pending_providers = "SELECT * FROM providers WHERE status = 'pending'";
+$sql_pending_providers = "SELECT * FROM providers WHERE status = 'pending' ORDER BY id DESC";
 $result_providers = $conn->query($sql_pending_providers);
 ?>
 
@@ -95,7 +103,7 @@ $result_providers = $conn->query($sql_pending_providers);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pengesahan Akaun JHEPP - SCRS PMU</title>
+    <title>Pengesahan Akaun Pengguna - JHEPP PMU</title>
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -132,7 +140,6 @@ $result_providers = $conn->query($sql_pending_providers);
         }
 
         a { text-decoration: none; color: inherit; }
-        button { border: none; background: none; cursor: pointer; font-family: inherit; }
 
         /* NAVBAR */
         .neo-navbar {
@@ -242,22 +249,23 @@ $result_providers = $conn->query($sql_pending_providers);
             box-shadow: 3px 3px 0px var(--black);
             text-align: center;
             transition: var(--transition);
-            display: flex;
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            gap: 6px;
+            gap: 8px;
         }
-        .doc-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--black); background: var(--yellow); }
+        .doc-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--black); background: var(--white); }
 
-        .action-buttons {
+        .actions-group {
             display: flex;
             gap: 15px;
             margin-top: 15px;
-            border-top: 3px solid var(--black);
-            padding-top: 20px;
+            border-top: 3px dashed var(--black);
+            padding-top: 15px;
         }
 
         .neo-btn {
+            background-color: var(--yellow);
             border: 3px solid var(--black);
             box-shadow: 4px 4px 0px var(--black);
             font-weight: 900;
@@ -266,21 +274,44 @@ $result_providers = $conn->query($sql_pending_providers);
             cursor: pointer;
             transition: var(--transition);
             flex: 1;
-            text-align: center;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
         .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
         .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-
         .btn-approve { background-color: var(--green); }
         .btn-reject { background-color: var(--pink); }
 
+        .empty-box {
+            background: var(--white);
+            border: var(--border-thick);
+            box-shadow: var(--shadow-solid);
+            padding: 40px 20px;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .empty-box i { font-size: 3rem; display: block; margin-bottom: 10px; }
+
         .neo-alert {
             border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 12px 15px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; font-size: 0.85rem;
+            padding: 12px 15px; font-weight: 800; text-transform: uppercase; font-size: 0.85rem;
         }
         .alert-success { background-color: var(--green); }
         .alert-danger { background-color: var(--pink); }
         .alert-warning { background-color: var(--yellow); }
+
+        .neo-badge {
+            border: 2px solid var(--black);
+            padding: 4px 10px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
 
         footer {
             background-color: var(--yellow);
@@ -309,37 +340,58 @@ $result_providers = $conn->query($sql_pending_providers);
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
             <div class="neo-brand">SCRS PMU (JHEPP)</div>
         </div>
-        <a href="index.php" class="neo-btn" style="flex: none; width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--pink);">Log Keluar</a>
+        <div style="display: flex; align-items: center; gap: 10px;">
+            <span class="neo-badge" style="background: var(--yellow); padding: 6px 12px; font-size: 0.85rem;">
+                <i class="bi bi-shield-lock-fill"></i> PEGAWAI JHEPP: <?php echo htmlspecialchars($jhepp_username); ?>
+            </span>
+            <a href="logout.php" class="neo-btn" style="flex: none; width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--pink); margin: 0;">Log Keluar</a>
+        </div>
     </header>
 
-    <!-- SIDEBAR -->
+    <!-- SIDEBAR (KHUSUS UNTUK PEGAWAI JHEPP SAHAJA) -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Menu Admin</h2>
+            <h2>Portal JHEPP</h2>
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="verify_account.php" class="sidebar-link active"><i class="bi bi-person-lines-fill"></i> Pengesahan Pengguna</a>
-            <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-left"></i> Log Keluar</a>
+            <a href="verify_account.php" class="sidebar-link active"><i class="bi bi-shield-check"></i> Pengesahan Pelajar</a>
+            <a href="logout.php" class="sidebar-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
         </nav>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-        <div class="section-title"><i class="bi bi-check-all me-2"></i> Senarai Permohonan Akaun</div>
-        <p style="font-weight: 700; color: #555; margin-bottom: 25px;">Sahkan pendaftaran akaun pelajar dan penyedia kereta.</p>
+        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+        <div style="margin-bottom: 25px;">
+            <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-shield-check text-dark"></i> Pengesahan Akaun Pengguna (JHEPP)
+            </h1>
+            <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
+                Semak maklumat dan teliti dokumen pendaftaran pelajar dan penyedia kereta. Tekan butang "Luluskan" untuk mengaktifkan akaun atau "Tolak" jika dokumen tidak sah.
+            </p>
+        </div>
 
         <?php echo $message; ?>
 
         <!-- BAHAGIAN 1: PELAJAR -->
         <div class="sub-header">
-            <i class="bi bi-mortarboard-fill text-primary"></i> Permohonan Akaun Pelajar
+            <i class="bi bi-mortarboard-fill text-primary"></i> Permohonan Pelajar (E-mel Telah Disahkan)
         </div>
 
         <?php if ($result_students->num_rows > 0): ?>
             <?php while ($row = $result_students->fetch_assoc()): ?>
                 <div class="user-card" style="border-left: 8px solid var(--blue);">
+                    <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                        <span style="background: var(--green); color: var(--black); border: 2px solid var(--black); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; padding: 2px 8px; box-shadow: 2px 2px 0px var(--black);">
+                            <i class="bi bi-patch-check-fill me-1"></i> E-mel Telah Disahkan Pelajar
+                        </span>
+                        <span style="font-size: 0.8rem; font-weight: 700; color: #555;">
+                            Daftar: <?php echo date('d/m/Y h:i A', strtotime($row['created_at'])); ?>
+                        </span>
+                    </div>
+
                     <div class="user-info">
                         <div><label>Nama Penuh</label><span><?php echo htmlspecialchars($row['full_name']); ?></span></div>
                         <div><label>No. Telefon</label><span><?php echo htmlspecialchars($row['phone_no']); ?></span></div>
@@ -375,7 +427,7 @@ $result_providers = $conn->query($sql_pending_providers);
             <?php endwhile; ?>
         <?php else: ?>
             <div style="background: var(--white); border: 3px dashed var(--black); padding: 1.5rem; text-align: center; font-weight: 700; color: #666; margin-bottom: 30px;">
-                Tiada permohonan pendaftaran pelajar yang pending.
+                Tiada permohonan pendaftaran pelajar yang pending (pelajar perlu mengesahkan e-mel terlebih dahulu).
             </div>
         <?php endif; ?>
 

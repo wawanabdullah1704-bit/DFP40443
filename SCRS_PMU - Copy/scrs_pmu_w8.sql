@@ -26,13 +26,13 @@ DROP TABLE IF EXISTS `admins`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `admins` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
-  `username` varchar(50) NOT NULL,
-  `email` varchar(100) NOT NULL,
+  `username` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL,
   `full_name` varchar(150) NOT NULL,
   `password` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -41,7 +41,7 @@ CREATE TABLE `admins` (
 
 LOCK TABLES `admins` WRITE;
 /*!40000 ALTER TABLE `admins` DISABLE KEYS */;
-INSERT INTO `admins` VALUES (1,'admin','admin.jhepp@pmu.edu.my','Admin JHEPP PMU','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','2026-07-23 15:56:24'),(2,'admin','admin.jhepp@pmu.edu.my','Admin JHEPP PMU','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','2026-07-23 15:56:30'),(3,'admin','admin.jhepp@pmu.edu.my','Admin JHEPP PMU','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','2026-07-23 15:56:30');
+INSERT INTO `admins` VALUES (1,'jhepp1','wawanabdullah1704@gmail.com','Wawan bin Abdullah','$2a$12$cXczFDzcvBGA9KKfCJhigODHwTaKgRfckl.CzhounFw6DdIx1xUGi','2026-08-19 17:47:50');
 /*!40000 ALTER TABLE `admins` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -70,7 +70,7 @@ CREATE TABLE `bookings` (
   KEY `car_id` (`car_id`),
   CONSTRAINT `bookings_ibfk_1` FOREIGN KEY (`student_id`) REFERENCES `students` (`id`) ON DELETE CASCADE,
   CONSTRAINT `bookings_ibfk_2` FOREIGN KEY (`car_id`) REFERENCES `cars` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -79,7 +79,7 @@ CREATE TABLE `bookings` (
 
 LOCK TABLES `bookings` WRITE;
 /*!40000 ALTER TABLE `bookings` DISABLE KEYS */;
-INSERT INTO `bookings` VALUES (1,9,1,'Daily','2026-08-02 21:51:00','2026-08-03 22:51:00',1000.00,NULL,NULL,'Pending','2026-08-02 13:51:49',NULL),(2,9,1,'Daily','2026-08-02 21:51:00','2026-08-03 22:51:00',1000.00,NULL,NULL,'Pending','2026-08-02 14:01:24',NULL),(3,9,2,'Hourly','2026-08-02 22:03:00','2026-08-02 23:03:00',14.00,NULL,NULL,'Pending','2026-08-02 14:04:29',NULL),(4,9,2,'Hourly','2026-08-02 22:03:00','2026-08-02 23:03:00',14.00,NULL,'uploads/receipts/1785679496_Receipt_4_20250906_000624.jpg','Pending','2026-08-02 14:04:48',NULL),(5,9,3,'Daily','2026-08-08 10:04:00','2026-08-09 10:04:00',500.00,'uploads/receipts/Resit_9_1786155068_1314532.jpeg',NULL,'Completed','2026-08-08 02:11:08','uploads/returns/Return_5_1786155312_1314532.jpeg'),(6,9,4,'Hourly','2026-08-10 18:54:00','2026-08-10 19:54:00',15.00,'uploads/receipts/Resit_9_1786269282_images.jpg',NULL,'Completed','2026-08-09 09:54:42','uploads/returns/Return_6_1786271945_WhatsApp_Image_2025_04_23_at_09.37.03_6518886c.jpg'),(7,9,4,'Daily','2026-08-09 18:48:00','2026-08-10 18:48:00',100.00,'uploads/receipts/Resit_9_1786272520_WhatsApp_Image_2025_04_23_at_09.37.03_6518886c.jpg',NULL,'Approved','2026-08-09 10:48:40',NULL);
+INSERT INTO `bookings` VALUES (5,9,3,'Daily','2026-08-08 10:04:00','2026-08-09 10:04:00',500.00,'uploads/receipts/Resit_9_1786155068_1314532.jpeg',NULL,'Completed','2026-08-08 02:11:08','uploads/returns/Return_5_1786155312_1314532.jpeg'),(6,9,4,'Hourly','2026-08-10 18:54:00','2026-08-10 19:54:00',15.00,'uploads/receipts/Resit_9_1786269282_images.jpg',NULL,'Completed','2026-08-09 09:54:42','uploads/returns/Return_6_1786271945_WhatsApp_Image_2025_04_23_at_09.37.03_6518886c.jpg'),(7,9,4,'Daily','2026-08-09 18:48:00','2026-08-10 18:48:00',100.00,'uploads/receipts/Resit_9_1786272520_WhatsApp_Image_2025_04_23_at_09.37.03_6518886c.jpg',NULL,'Approved','2026-08-09 10:48:40',NULL),(8,9,3,'Daily','2026-08-20 00:57:00','2026-08-21 00:57:00',500.00,'uploads/receipts/Resit_9_1787158756_pmu_logo.png',NULL,'Approved','2026-08-19 16:57:18',NULL);
 /*!40000 ALTER TABLE `bookings` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -115,7 +115,7 @@ CREATE TABLE `cars` (
 
 LOCK TABLES `cars` WRITE;
 /*!40000 ALTER TABLE `cars` DISABLE KEYS */;
-INSERT INTO `cars` VALUES (1,1,'','BMW','WAN 123','Manual',2,500.00,50.00,'uploads/cars/1785678320_images.jpg','Available','2026-08-02 13:45:20'),(2,1,'','BMW 1','WAN 123','Manual',3,600.00,14.00,'uploads/cars/1785679387_wallpaperflare.com_wallpaper.jpg','Available','2026-08-02 14:03:07'),(3,1,'Honda','Civic','TES 6767','Auto',4,500.00,15.00,'uploads/cars/1786153595_images.jpg','Available','2026-08-08 01:46:35'),(4,3,'Perodua','Myvi','ABC 123','Auto',5,100.00,15.00,'uploads/cars/1786269187_Myvi.jpg','Available','2026-08-09 09:53:07');
+INSERT INTO `cars` VALUES (3,1,'Honda','Civic','TES 6767','Auto',4,500.00,15.00,'uploads/cars/1786153595_images.jpg','Available','2026-08-08 01:46:35'),(4,3,'Perodua','Myvi','ABC 123','Auto',5,100.00,15.00,'uploads/cars/1786269187_Myvi.jpg','Available','2026-08-09 09:53:07');
 /*!40000 ALTER TABLE `cars` ENABLE KEYS */;
 UNLOCK TABLES;
 
@@ -141,7 +141,7 @@ CREATE TABLE `providers` (
   `roadtax_file` varchar(255) NOT NULL,
   `qr_code_image` varchar(255) DEFAULT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
-  `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `status` enum('pending','approved','rejected') DEFAULT 'approved',
   `profile_picture` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -177,6 +177,8 @@ CREATE TABLE `students` (
   `driving_license_file` varchar(255) NOT NULL,
   `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
   `status` enum('pending','approved','rejected') DEFAULT 'pending',
+  `email_verified` tinyint(1) DEFAULT 0,
+  `verification_token` varchar(255) DEFAULT NULL,
   `profile_picture` varchar(255) DEFAULT NULL,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=12 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
@@ -188,7 +190,7 @@ CREATE TABLE `students` (
 
 LOCK TABLES `students` WRITE;
 /*!40000 ALTER TABLE `students` DISABLE KEYS */;
-INSERT INTO `students` VALUES (1,'FeeqGanteng67','contoh@gmail.com','Ali bin Abu','1234567890','0123456-78-1234','20dit24f1008','$2y$10$rdcTZX6R601HEPTLRH2/Eu5HXhn8lpGPyNmpnD7w6UU.Wk8Uk4XZS','uploads/20dit24f1008_ID_1784473043_1.png','uploads/20dit24f1008_License_1784473043_2.png','2026-07-19 14:57:23','rejected',NULL),(2,'FeeqGanteng67','contoh@gmail.com','Ali bin Abu','1234567890','0123456-78-1234','20dit24f1008','$2y$10$qkvmj1OJuqsPNA4X7Cdt/O19njMYUf7n0.qhCUoB7PgzEzifUZrUa','uploads/20dit24f1008_ID_1784473447_1.png','uploads/20dit24f1008_License_1784473447_2.png','2026-07-19 15:04:07','rejected',NULL),(3,'admin1','admin1@gmail.com','Admin1','1234567890','0123456-78-1234','20dit24f1008','$2y$10$.6X0rjWS55LzNsBSjT.g1.19gKs9wtFNwYr./nG8ygQOdxB7m2832','uploads/20dit24f1008_ID_1784473557_1.png','uploads/20dit24f1008_License_1784473557_2.png','2026-07-19 15:05:57','rejected',NULL),(4,'test','contoh@gmail.com','test','0123456789','0123456-78-1234','20dit24f1008','$2y$10$mHGt252rX.8xxste11f8CedOQ5wY0/SiS99rcSA160D6ZyGYwTaH2','uploads/20dit24f1008_ID_1784473699_5.png','uploads/20dit24f1008_License_1784473699_3.png','2026-07-19 15:08:19','rejected',NULL),(5,'student','student@gmail.com','student','0123456789','0123456-78-1234','20dit24f1008','$2y$10$PiXNfyc6cBj12BjKbyHjseYpc6KFna7K7iRFwzHs6QMDePOeDYiQG','uploads/20dit24f1008_ID_1784821901_ADD CAR.png','uploads/20dit24f1008_License_1784821901_APPROVE BOOKING.png','2026-07-23 15:51:41','approved',NULL),(6,'student2','student2@gmail.com','student2','0123456789','0123456-78-1234','20dit24f1008','$2y$10$qbFvrMOAwHp7l6BviUhdmOpKxhvxZXjj48SGNUGVOZ4ganjrTSXZ6','uploads/20dit24f1008_ID_1784822743_LOGIN (DONE).png','uploads/20dit24f1008_License_1784822743_CHOOSE ROLE (DONE).png','2026-07-23 16:05:43','approved',NULL),(7,'stud3','stud3@gmail.com','stud3','0123456789','0123456-78-1234','20dit24f1008','$2y$10$TwwoNUeioRpxEJyJ5K5LSOKwQw09ifTb7PzDgRWNMcuRhHgyR.IRS','uploads/20dit24f1008_ID_1784822855_ADD CAR.png','uploads/20dit24f1008_License_1784822855_APPROVE BOOKING.png','2026-07-23 16:07:35','rejected',NULL),(8,'stud4','stud4@gmail.com','stud4','0123456789','0123456-78-1234','20dit24f1008','$2y$10$iguTRu/NSWTNuIyRfrVMNe4v91RTNoPHrjjWNlArtE.6qhWCv9Cmy','uploads/20dit24f1008_ID_1784823080_CREATE ACCOUNT (DONE).png','uploads/20dit24f1008_License_1784823080_MAIN.png','2026-07-23 16:11:20','approved',NULL),(9,'pelajar','pelajar@gmail.com','pelajar','0123456789','0123456-78-1234','20dit24f1000','$2y$10$amy6e9GP36I3LCcIb0ZAQeCaLGY1Row/zjA0HROLWtciB5neDtlT2','uploads/20dit24f1000_ID_1785236305_ADD CAR.png','uploads/20dit24f1000_License_1785236305_APPROVE BOOKING.png','2026-07-28 10:58:25','approved','uploads/profiles/student_9_pic_1786271894_Myvi.jpg'),(10,'pelajar1','pelajar1@gmail.com','pelajar','0123456789','0123456-78-1234','20dit24f1000','$2y$10$AIsp.GYsOtXsDznlYjo74eT.oLtQlpIerCKfzszDGtKM.bCxFwTTK','uploads/20dit24f1000_ID_1785236654_ADD CAR.png','uploads/20dit24f1000_License_1785236654_APPROVE BOOKING.png','2026-07-28 11:04:14','approved',NULL),(11,'Week6','wawanabdullah1704@gmail.com','Week6','0123456789','0123456-78-1234','20dit24f1000','$2y$10$NrhSTDZCcG8fn3eCrUgFtuXljNtMABMsxUBXsLDQOX6Rty1Dce9xW','uploads/20dit24f1000_ID_1786156873_1314532.jpeg','uploads/20dit24f1000_License_1786156873_20250906_000624.jpg','2026-08-08 02:41:13','approved',NULL);
+INSERT INTO `students` VALUES (1,'FeeqGanteng67','contoh@gmail.com','Ali bin Abu','1234567890','0123456-78-1234','20dit24f1008','$2y$10$rdcTZX6R601HEPTLRH2/Eu5HXhn8lpGPyNmpnD7w6UU.Wk8Uk4XZS','uploads/20dit24f1008_ID_1784473043_1.png','uploads/20dit24f1008_License_1784473043_2.png','2026-07-19 14:57:23','rejected',0,NULL,NULL),(2,'FeeqGanteng67','contoh@gmail.com','Ali bin Abu','1234567890','0123456-78-1234','20dit24f1008','$2y$10$qkvmj1OJuqsPNA4X7Cdt/O19njMYUf7n0.qhCUoB7PgzEzifUZrUa','uploads/20dit24f1008_ID_1784473447_1.png','uploads/20dit24f1008_License_1784473447_2.png','2026-07-19 15:04:07','rejected',0,NULL,NULL),(3,'admin1','admin1@gmail.com','Admin1','1234567890','0123456-78-1234','20dit24f1008','$2y$10$.6X0rjWS55LzNsBSjT.g1.19gKs9wtFNwYr./nG8ygQOdxB7m2832','uploads/20dit24f1008_ID_1784473557_1.png','uploads/20dit24f1008_License_1784473557_2.png','2026-07-19 15:05:57','rejected',0,NULL,NULL),(4,'test','contoh@gmail.com','test','0123456789','0123456-78-1234','20dit24f1008','$2y$10$mHGt252rX.8xxste11f8CedOQ5wY0/SiS99rcSA160D6ZyGYwTaH2','uploads/20dit24f1008_ID_1784473699_5.png','uploads/20dit24f1008_License_1784473699_3.png','2026-07-19 15:08:19','rejected',0,NULL,NULL),(5,'student','student@gmail.com','student','0123456789','0123456-78-1234','20dit24f1008','$2y$10$PiXNfyc6cBj12BjKbyHjseYpc6KFna7K7iRFwzHs6QMDePOeDYiQG','uploads/20dit24f1008_ID_1784821901_ADD CAR.png','uploads/20dit24f1008_License_1784821901_APPROVE BOOKING.png','2026-07-23 15:51:41','approved',1,NULL,NULL),(6,'student2','student2@gmail.com','student2','0123456789','0123456-78-1234','20dit24f1008','$2y$10$qbFvrMOAwHp7l6BviUhdmOpKxhvxZXjj48SGNUGVOZ4ganjrTSXZ6','uploads/20dit24f1008_ID_1784822743_LOGIN (DONE).png','uploads/20dit24f1008_License_1784822743_CHOOSE ROLE (DONE).png','2026-07-23 16:05:43','approved',1,NULL,NULL),(7,'stud3','stud3@gmail.com','stud3','0123456789','0123456-78-1234','20dit24f1008','$2y$10$TwwoNUeioRpxEJyJ5K5LSOKwQw09ifTb7PzDgRWNMcuRhHgyR.IRS','uploads/20dit24f1008_ID_1784822855_ADD CAR.png','uploads/20dit24f1008_License_1784822855_APPROVE BOOKING.png','2026-07-23 16:07:35','rejected',0,NULL,NULL),(8,'stud4','stud4@gmail.com','stud4','0123456789','0123456-78-1234','20dit24f1008','$2y$10$iguTRu/NSWTNuIyRfrVMNe4v91RTNoPHrjjWNlArtE.6qhWCv9Cmy','uploads/20dit24f1008_ID_1784823080_CREATE ACCOUNT (DONE).png','uploads/20dit24f1008_License_1784823080_MAIN.png','2026-07-23 16:11:20','approved',1,NULL,NULL),(9,'pelajar','pelajar@gmail.com','pelajar','0123456789','0123456-78-1234','20dit24f1000','$2y$10$amy6e9GP36I3LCcIb0ZAQeCaLGY1Row/zjA0HROLWtciB5neDtlT2','uploads/20dit24f1000_ID_1785236305_ADD CAR.png','uploads/20dit24f1000_License_1785236305_APPROVE BOOKING.png','2026-07-28 10:58:25','approved',1,NULL,'uploads/profiles/student_9_pic_1786271894_Myvi.jpg'),(10,'pelajar1','pelajar1@gmail.com','pelajar','0123456789','0123456-78-1234','20dit24f1000','$2y$10$AIsp.GYsOtXsDznlYjo74eT.oLtQlpIerCKfzszDGtKM.bCxFwTTK','uploads/20dit24f1000_ID_1785236654_ADD CAR.png','uploads/20dit24f1000_License_1785236654_APPROVE BOOKING.png','2026-07-28 11:04:14','approved',1,NULL,NULL),(11,'Week6','wawanabdullah1704@gmail.com','Week6','0123456789','0123456-78-1234','20dit24f1000','$2y$10$NrhSTDZCcG8fn3eCrUgFtuXljNtMABMsxUBXsLDQOX6Rty1Dce9xW','uploads/20dit24f1000_ID_1786156873_1314532.jpeg','uploads/20dit24f1000_License_1786156873_20250906_000624.jpg','2026-08-08 02:41:13','approved',1,NULL,NULL);
 /*!40000 ALTER TABLE `students` ENABLE KEYS */;
 UNLOCK TABLES;
 /*!40103 SET TIME_ZONE=@OLD_TIME_ZONE */;
@@ -201,4 +203,4 @@ UNLOCK TABLES;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-08-09 19:44:53
+-- Dump completed on 2026-08-20  1:54:02

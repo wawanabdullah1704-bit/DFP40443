@@ -188,15 +188,44 @@
     <!-- MAIN CONTENT -->
     <main class="main-content">
         <div class="pending-card">
-            <div class="hourglass-icon">
-                <i class="bi bi-hourglass-split"></i>
-            </div>
-            <h2 class="pending-title">
-                Sila tunggu pihak JHEPP membuat pengesahan akaun anda...
-            </h2>
-            <p class="pending-desc">
-                Proses semakan dokumen pendaftaran anda sedang dilakukan. Anda boleh cuba log masuk semula selepas akaun disahkan.
-            </p>
+            <?php 
+            $type = isset($_GET['type']) ? $_GET['type'] : 'default';
+            $email = isset($_GET['email']) ? htmlspecialchars($_GET['email']) : '';
+            ?>
+
+            <?php if ($type === 'verify_email'): ?>
+                <div class="hourglass-icon" style="background-color: var(--blue);">
+                    <i class="bi bi-envelope-check-fill"></i>
+                </div>
+                <h1 class="pending-title"><i class="bi bi-send-check-fill me-1"></i> Sila Sahkan E-mel Anda</h1>
+                
+                <p class="pending-desc">
+                    <strong>Pendaftaran Berjaya Dihantar!</strong><br>
+                    Kami telah menghantar satu pautan pengesahan ke alamat e-mel anda <?php echo $email ? "<strong>($email)</strong>" : ""; ?>. 
+                    <br><br>
+                    <span style="display: block; background: #fafaf5; border: 2px solid var(--black); padding: 10px; text-align: left; font-size: 0.85rem;">
+                        <i class="bi bi-info-circle-fill text-primary me-1"></i> <strong>Langkah Seterusnya:</strong>
+                        <ol style="margin-left: 18px; margin-top: 5px;">
+                            <li>Buka peti masuk e-mel anda (atau semak folder <em>Spam / Junk</em>).</li>
+                            <li>Tekan butang <strong>"Sahkan E-mel Saya Sekarang"</strong>.</li>
+                            <li>Selepas e-mel disahkan, permohonan anda akan dihantar kepada <strong>JHEPP PMU</strong> untuk kelulusan dokumen.</li>
+                        </ol>
+                    </span>
+                </p>
+            <?php else: ?>
+                <div class="hourglass-icon">
+                    <i class="bi bi-hourglass-split"></i>
+                </div>
+                <h1 class="pending-title"><i class="bi bi-clock-history me-1"></i> Menunggu Kelulusan JHEPP</h1>
+                
+                <p class="pending-desc">
+                    <strong>Status: E-mel Telah Disahkan.</strong><br>
+                    Permohonan pendaftaran akaun dan dokumen anda kini sedang dalam semakan oleh pihak <strong>Pentadbir JHEPP PMU</strong>. Kami akan menyemak dokumen yang anda muat naik.
+                    <br><br>
+                    Notifikasi kelulusan rasmi akan dihantar ke e-mel anda sebaik sahaja akaun anda diluluskan.
+                </p>
+            <?php endif; ?>
+
             <a href="index.php" class="neo-btn">
                 <i class="bi bi-arrow-left-circle-fill me-1"></i> Kembali ke Log Masuk
             </a>

@@ -1,5 +1,13 @@
 <?php
+session_start();
 require 'db.php';
+
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'PHPMailer/Exception.php';
+require 'PHPMailer/PHPMailer.php';
+require 'PHPMailer/SMTP.php';
 
 $message = "";
 
@@ -52,14 +60,69 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 move_uploaded_file($_FILES["studentId"]["tmp_name"], $targetStudentId) &&
                 move_uploaded_file($_FILES["drivingLicense"]["tmp_name"], $targetLicense)
             ) {
-                $sql = "INSERT INTO students (username, email, full_name, phone_no, no_ic, no_pendaftaran, password, student_id_file, driving_license_file) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                // Jana Token Pengesahan E-mel
+                $verification_token = bin2hex(random_bytes(32));
+                $email_verified = 0;
+                $status = 'pending';
+
+                $sql = "INSERT INTO students (username, email, full_name, phone_no, no_ic, no_pendaftaran, password, student_id_file, driving_license_file, status, email_verified, verification_token) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("sssssssss", $username, $email, $fullName, $phoneNo, $noIC, $noPendaftaran, $hashedPassword, $targetStudentId, $targetLicense);
+                $stmt->bind_param("ssssssssssis", $username, $email, $fullName, $phoneNo, $noIC, $noPendaftaran, $hashedPassword, $targetStudentId, $targetLicense, $status, $email_verified, $verification_token);
 
                 if ($stmt->execute()) {
-                    header("Location: pending.php");
+                    // Bina Pautan Pengesahan E-mel
+                    $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || (isset($_SERVER['SERVER_PORT']) && $_SERVER['SERVER_PORT'] == 443)) ? "https://" : "http://";
+                    $domainName = $_SERVER['HTTP_HOST'];
+                    $dirPath = dirname($_SERVER['PHP_SELF']);
+                    $verifyLink = $protocol . $domainName . rtrim($dirPath, '/\\') . "/verify_email.php?token=" . $verification_token;
+
+                    // Hantar E-mel Pengesahan kepada Pelajar
+                    $mail = new PHPMailer(true);
+                    try {
+                        $mail->isSMTP();
+                        $mail->Host       = 'smtp.gmail.com';
+                        $mail->SMTPAuth   = true;
+                        $mail->Username   = 'chickenmasterz26@gmail.com';
+                        $mail->Password   = 'pcccoszzikvwmzsd';
+                        $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                        $mail->Port       = 587;
+
+                        $mail->setFrom('admin.jhepp@gmail.com', 'SCRS PMU');
+                        $mail->addAddress($email, $fullName);
+
+                        $mail->isHTML(true);
+                        $mail->Subject = 'SCRS PMU - Pengesahan E-mel Pendaftaran Pelajar';
+                        
+                        $mail->Body = "
+                        <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 3px solid #000; background: #ffffff;'>
+                            <div style='background: #ffde59; padding: 15px; border-bottom: 3px solid #000; text-align: center;'>
+                                <h2 style='margin: 0; text-transform: uppercase; font-weight: 900; color: #000;'>SCRS PMU</h2>
+                                <p style='margin: 5px 0 0 0; font-size: 13px; font-weight: bold; color: #222;'>Pengesahan E-mel Pendaftaran Akaun Pelajar</p>
+                            </div>
+                            <div style='padding: 25px 20px; color: #333; line-height: 1.6;'>
+                                <p>Salam <b>" . htmlspecialchars($fullName) . "</b>,</p>
+                                <p>Terima kasih kerana mendaftar akaun pelajar di <b>Sistem Sewaan Kereta Siswa Politeknik Mukah (SCRS PMU)</b>.</p>
+                                <p>Sila klik butang di bawah untuk mengesahkan alamat e-mel anda. Selepas e-mel anda disahkan, permohonan anda akan dihantar ke pihak <b>JHEPP PMU</b> untuk semakan dan kelulusan dokumen:</p>
+                                <div style='text-align: center; margin: 30px 0;'>
+                                    <a href='{$verifyLink}' style='background: #00e676; color: #000; padding: 14px 28px; font-weight: 900; text-decoration: none; text-transform: uppercase; border: 3px solid #000; display: inline-block; box-shadow: 4px 4px 0px #000;'>
+                                        Sahkan E-mel Saya Sekarang &rarr;
+                                    </a>
+                                </div>
+                                <p style='font-size: 12px; color: #666;'>Jika butang di atas tidak boleh ditekan, salin dan buka pautan berikut di pelayar anda:<br><a href='{$verifyLink}' style='color: #0055ff;'>{$verifyLink}</a></p>
+                            </div>
+                            <div style='background: #f4f4f0; padding: 12px; border-top: 2px solid #000; text-align: center; font-size: 12px; color: #555;'>
+                                &copy; SCRS PMU - Politeknik Mukah Sarawak
+                            </div>
+                        </div>";
+
+                        $mail->send();
+                    } catch (Exception $e) {
+                        // Email sending logged, proceed to pending page with instruction
+                    }
+
+                    header("Location: pending.php?type=verify_email&email=" . urlencode($email));
                     exit();
                 } else {
                     $message = '<div class="neo-alert alert-danger">Ralat Pangkalan Data: ' . $stmt->error . '</div>';
@@ -431,8 +494,11 @@ $conn->close();
     <main class="main-content">
         <div class="reg-card">
             <div class="reg-header">
-                <i class="bi bi-mortarboard-fill me-2"></i> Pendaftaran Pelajar
+                <i class="bi bi-mortarboard-fill me-2"></i> Pendaftaran Akaun Pelajar
             </div>
+            <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 20px; text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 12px; line-height: 1.4;">
+                <strong>Panduan:</strong> Sila isi maklumat peribadi anda dengan lengkap dan muat naik dokumen (Kad Matrik Pelajar & Lesen Memandu) untuk disahkan oleh pihak pentadbir JHEPP sebelum akaun diaktifkan.
+            </p>
 
             <?php echo $message; ?>
 

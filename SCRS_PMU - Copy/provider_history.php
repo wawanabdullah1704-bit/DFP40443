@@ -2,47 +2,48 @@
 session_start();
 require 'db.php';
 
-// Semak jika pengguna telah log masuk dan merupakan seorang pelajar
-if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
+// Semak jika pengguna telah log masuk dan merupakan Penyedia Kereta (Provider)
+if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'provider') {
     header("Location: index.php");
     exit();
 }
 
-$student_id = $_SESSION['student_id'];
-$student_name = $_SESSION['username'];
+$provider_id = $_SESSION['provider_id'];
+$provider_name = $_SESSION['username'];
 
-// STATISTIK SEJARAH PELAJAR
+// STATISTIK SEJARAH
 $sql_stats = "SELECT 
-                COUNT(*) as total_count,
-                COUNT(CASE WHEN status = 'Completed' THEN 1 END) as completed_count,
-                SUM(CASE WHEN status = 'Completed' THEN total_price ELSE 0 END) as total_spent
-              FROM bookings 
-              WHERE student_id = ?";
+                COUNT(CASE WHEN b.status = 'Completed' THEN 1 END) as completed_count,
+                COUNT(CASE WHEN b.status = 'Rejected' THEN 1 END) as rejected_count,
+                SUM(CASE WHEN b.status = 'Completed' THEN b.total_price ELSE 0 END) as total_earnings
+              FROM bookings b
+              JOIN cars c ON b.car_id = c.id
+              WHERE c.provider_id = ?";
 $stmt_s = $conn->prepare($sql_stats);
-$stmt_s->bind_param("i", $student_id);
+$stmt_s->bind_param("i", $provider_id);
 $stmt_s->execute();
 $stats = $stmt_s->get_result()->fetch_assoc();
-$total_count = $stats['total_count'] ?? 0;
 $completed_count = $stats['completed_count'] ?? 0;
-$total_spent = $stats['total_spent'] ?? 0;
+$rejected_count = $stats['rejected_count'] ?? 0;
+$total_earnings = $stats['total_earnings'] ?? 0;
 $stmt_s->close();
 
-// Ambil SEMUA rekod tempahan pelajar beserta maklumat kereta & penyedia
-$sql_history = "SELECT b.*, c.car_model, c.car_plate, c.car_image, 
-                       p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, 
-                       p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance, 
-                       p.profile_picture AS provider_profile_picture, p.qr_code_image AS provider_qr_code,
-                       p.full_name AS provider_name 
+// AMBIL SENARAI SEJARAH TEMPAHAN
+$sql_history = "SELECT b.*, c.car_model, c.car_plate, c.car_image,
+                       s.username as student_username, s.full_name as student_name, s.email as student_email,
+                       s.phone_no as student_phone, s.no_pendaftaran as student_matrix,
+                       s.student_id_file as student_id_file, s.driving_license_file as student_license_file,
+                       s.profile_picture as student_profile_pic
                 FROM bookings b
                 JOIN cars c ON b.car_id = c.id
-                JOIN providers p ON c.provider_id = p.id
-                WHERE b.student_id = ?
+                JOIN students s ON b.student_id = s.id
+                WHERE c.provider_id = ? AND b.status IN ('Completed', 'Rejected')
                 ORDER BY b.created_at DESC";
 
-$stmt = $conn->prepare($sql_history);
-$stmt->bind_param("i", $student_id);
-$stmt->execute();
-$result_history = $stmt->get_result();
+$stmt_h = $conn->prepare($sql_history);
+$stmt_h->bind_param("i", $provider_id);
+$stmt_h->execute();
+$result_history = $stmt_h->get_result();
 ?>
 
 <!DOCTYPE html>
@@ -52,12 +53,9 @@ $result_history = $stmt->get_result();
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sejarah Rekod Tempahan - SCRS PMU</title>
     
-    <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
         :root {
             --black: #000000;
@@ -88,9 +86,9 @@ $result_history = $stmt->get_result();
 
         a { text-decoration: none; color: inherit; }
         ul { list-style: none; }
-        button { border: none; background: none; cursor: pointer; font-family: inherit; }
+        button, input, select { font-family: inherit; }
 
-        /* --- NAVBAR --- */
+        /* NAVBAR */
         .neo-navbar {
             background-color: var(--white);
             border-bottom: var(--border-thick);
@@ -103,9 +101,8 @@ $result_history = $stmt->get_result();
             z-index: 1000;
         }
         .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); transition: var(--transition); }
+        .menu-toggle-btn { font-size: 2rem; color: var(--black); transition: var(--transition); border: none; background: none; cursor: pointer; }
         .menu-toggle-btn:hover { transform: scale(1.1); }
-
         .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
 
         /* Dropdown Profil */
@@ -119,6 +116,7 @@ $result_history = $stmt->get_result();
             display: flex;
             align-items: center;
             gap: 8px;
+            cursor: pointer;
             transition: var(--transition);
         }
         .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
@@ -140,7 +138,6 @@ $result_history = $stmt->get_result();
         }
         .dropdown-menu.show { display: flex; }
         .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
-        
         .dropdown-item {
             display: flex;
             align-items: center;
@@ -149,14 +146,13 @@ $result_history = $stmt->get_result();
             font-weight: 800;
             color: var(--black);
             border-bottom: 2px solid var(--black);
-            transition: background 0.1s;
             text-decoration: none;
         }
         .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
         .dropdown-item:hover { background-color: var(--yellow); }
         .dropdown-item:last-child:hover { background-color: #ff33aa; }
 
-        /* --- SIDEBAR --- */
+        /* SIDEBAR */
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
@@ -175,7 +171,7 @@ $result_history = $stmt->get_result();
             display: flex; justify-content: space-between; align-items: center;
         }
         .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); }
+        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
 
         .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .sidebar-link {
@@ -184,24 +180,13 @@ $result_history = $stmt->get_result();
         }
         .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
 
-        /* --- KANDUNGAN UTAMA --- */
+        /* KANDUNGAN UTAMA */
         .main-content { flex: 1; padding: 2rem 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
 
         .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 10px 18px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            text-decoration: none;
-            color: var(--black);
+            background-color: var(--yellow); border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black);
+            font-weight: 900; text-transform: uppercase; padding: 10px 18px; cursor: pointer; transition: var(--transition);
+            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
         }
         .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
         .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
@@ -230,6 +215,7 @@ $result_history = $stmt->get_result();
         .stat-card h3 { font-size: 2.2rem; font-weight: 900; margin-bottom: 4px; line-height: 1; }
         .stat-card p { font-weight: 800; font-size: 0.85rem; text-transform: uppercase; margin: 0; color: #222; }
 
+        /* JADUAL NEO-BRUTALISM */
         .neo-table-card {
             background: var(--white);
             border: var(--border-thick);
@@ -246,18 +232,21 @@ $result_history = $stmt->get_result();
             min-width: 700px;
         }
 
-        table.neo-table th, table.neo-table td {
-            padding: 12px 14px;
+        table.neo-table th {
+            background-color: var(--yellow);
             border: 2px solid var(--black);
+            padding: 12px 14px;
+            font-weight: 900;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+        }
+
+        table.neo-table td {
+            border: 2px solid var(--black);
+            padding: 12px 14px;
             font-weight: 700;
             font-size: 0.85rem;
             vertical-align: middle;
-        }
-
-        table.neo-table th {
-            background-color: var(--yellow);
-            font-weight: 900;
-            text-transform: uppercase;
         }
 
         table.neo-table tr:nth-child(even) {
@@ -270,14 +259,21 @@ $result_history = $stmt->get_result();
             font-weight: 900;
             text-transform: uppercase;
             font-size: 0.75rem;
-            display: inline-block;
             border-radius: 4px;
+            display: inline-block;
             box-shadow: none;
         }
-        .badge-approved { background-color: var(--green); }
-        .badge-pending { background-color: var(--yellow); }
-        .badge-rejected { background-color: var(--pink); }
         .badge-completed { background-color: var(--blue); }
+        .badge-rejected { background-color: var(--pink); }
+
+        .empty-box {
+            background: var(--white);
+            border: var(--border-thick);
+            box-shadow: var(--shadow-solid);
+            padding: 50px 20px;
+            text-align: center;
+        }
+        .empty-box i { font-size: 4rem; display: block; margin-bottom: 15px; }
 
         /* Modal Popup */
         .neo-modal-overlay {
@@ -302,6 +298,7 @@ $result_history = $stmt->get_result();
             margin-top: auto;
         }
 
+        /* RESPONSIVE MOBILE */
         @media (max-width: 768px) {
             .stats-grid { grid-template-columns: 1fr; }
             .main-content { padding: 1rem 10px; }
@@ -320,13 +317,13 @@ $result_history = $stmt->get_result();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <div class="neo-brand">SCRS PMU (PROVIDER)</div>
         </div>
 
         <div class="profile-container">
             <button class="profile-btn" id="profile-toggle">
                 <i class="bi bi-person-fill fs-5"></i>
-                <span><?php echo htmlspecialchars($student_name); ?></span>
+                <span><?php echo htmlspecialchars($provider_name); ?></span>
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
@@ -339,14 +336,14 @@ $result_history = $stmt->get_result();
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Menu Utama</h2>
+            <h2>Menu Penyedia</h2>
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="dashboard.php" class="sidebar-link"><i class="bi bi-house-door-fill"></i> Papan Pemuka</a>
-            <a href="booking.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Cari & Tempah</a>
-            <a href="my_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Status Tempahan</a>
-            <a href="booking_history.php" class="sidebar-link active"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
+            <a href="provider_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
+            <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Senarai Kereta</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Tempahan Semasa</a>
+            <a href="provider_history.php" class="sidebar-link active"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
         </nav>
     </aside>
 
@@ -359,39 +356,40 @@ $result_history = $stmt->get_result();
                 <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
                     <i class="bi bi-clock-history text-dark"></i> Sejarah Rekod Tempahan
                 </h1>
-                <a href="booking.php" class="neo-btn btn-green mobile-btn-full" style="padding: 10px 20px; font-size: 0.9rem; border-width: 3px;">
-                    <i class="bi bi-plus-circle-fill me-1"></i> Tempah Kereta Baharu
+                <a href="provider_bookings.php" class="neo-btn mobile-btn-full" style="background: var(--green); padding: 8px 16px; font-size: 0.85rem;">
+                    <i class="bi bi-clipboard-check-fill me-1"></i> Tempahan Semasa
                 </a>
             </div>
             <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
-                Senarai arkib keseluruhan rekod tempahan dan transaksi kenderaan anda (Selesai, Diluluskan, Menunggu, atau Ditolak).
+                Senarai arkib keseluruhan transaksi tempahan yang telah selesai atau ditolak bagi kenderaan milik anda.
             </p>
         </div>
 
-        <!-- STATISTIK RINGKASAN PELAJAR -->
+        <!-- STATISTIK RINGKAS -->
         <div class="stats-grid">
             <div class="stat-card" style="background: var(--blue);">
-                <h3><?php echo $total_count; ?></h3>
-                <p>Jumlah Rekod Tempahan</p>
-            </div>
-            <div class="stat-card" style="background: var(--green);">
                 <h3><?php echo $completed_count; ?></h3>
                 <p>Tempahan Selesai</p>
             </div>
-            <div class="stat-card" style="background: var(--yellow);">
-                <h3>RM <?php echo number_format($total_spent, 2); ?></h3>
-                <p>Jumlah Perbelanjaan</p>
+            <div class="stat-card" style="background: var(--green);">
+                <h3>RM <?php echo number_format($total_earnings, 2); ?></h3>
+                <p>Jumlah Pendapatan</p>
+            </div>
+            <div class="stat-card" style="background: var(--pink);">
+                <h3><?php echo $rejected_count; ?></h3>
+                <p>Permohonan Ditolak</p>
             </div>
         </div>
 
+        <!-- JADUAL SEJARAH -->
         <div class="neo-table-card">
             <?php if ($result_history->num_rows > 0): ?>
                 <table class="neo-table">
                     <thead>
                         <tr>
                             <th>#</th>
+                            <th>Pelajar (Penyewa)</th>
                             <th>Kereta</th>
-                            <th>Penyedia</th>
                             <th>Tarikh Ambil</th>
                             <th>Tarikh Pulang</th>
                             <th>Jenis</th>
@@ -402,32 +400,30 @@ $result_history = $stmt->get_result();
                     </thead>
                     <tbody>
                         <?php 
-                        $no = 1;
+                        $counter = 1;
                         while ($row = $result_history->fetch_assoc()): 
-                            $status = $row['status'];
-                            $badge_class = 'badge-pending';
-                            if ($status == 'Approved') $badge_class = 'badge-approved';
-                            else if ($status == 'Completed') $badge_class = 'badge-completed';
-                            else if ($status == 'Rejected') $badge_class = 'badge-rejected';
+                            $is_comp = ($row['status'] === 'Completed');
+                            $badge_style = $is_comp ? 'badge-completed' : 'badge-rejected';
+                            $status_label = $is_comp ? 'Selesai' : 'Ditolak';
                         ?>
                             <tr>
-                                <td style="text-align: center;"><?php echo $no++; ?></td>
+                                <td style="text-align: center;"><?php echo $counter++; ?></td>
+                                <td>
+                                    <a href="javascript:void(0)" onclick="showStudentModal('<?php echo htmlspecialchars($row['student_name'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_matrix'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_id_file'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_license_file'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['student_profile_pic'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 800; text-decoration: underline;">
+                                        <?php echo htmlspecialchars($row['student_name']); ?> <i class="bi bi-info-circle ms-1"></i>
+                                    </a>
+                                </td>
                                 <td>
                                     <strong><?php echo htmlspecialchars($row['car_model']); ?></strong><br>
                                     <small style="color: #666; font-weight: 700;"><?php echo htmlspecialchars($row['car_plate']); ?></small>
-                                </td>
-                                <td>
-                                    <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($row['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['provider_roadtax'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['provider_insurance'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($row['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 800; text-decoration: underline; cursor: pointer;">
-                                        <?php echo htmlspecialchars($row['provider_name']); ?> <i class="bi bi-info-circle ms-1"></i>
-                                    </a>
                                 </td>
                                 <td><?php echo date('d M Y, h:i A', strtotime($row['start_date'])); ?></td>
                                 <td><?php echo date('d M Y, h:i A', strtotime($row['end_date'])); ?></td>
                                 <td><?php echo ($row['rent_type'] === 'Daily') ? 'Harian' : 'Jam'; ?></td>
                                 <td style="color: #008800; font-weight: 900;">RM <?php echo number_format($row['total_price'], 2); ?></td>
                                 <td>
-                                    <span class="neo-badge <?php echo $badge_class; ?>">
-                                        <?php echo htmlspecialchars($status); ?>
+                                    <span class="neo-badge <?php echo $badge_style; ?>">
+                                        <?php echo $status_label; ?>
                                     </span>
                                 </td>
                                 <td>
@@ -452,64 +448,59 @@ $result_history = $stmt->get_result();
                     </tbody>
                 </table>
             <?php else: ?>
-                <div style="text-align: center; padding: 3rem 1rem;">
-                    <i class="bi bi-folder-x" style="font-size: 3.5rem; display: block; margin-bottom: 12px; color: #666;"></i>
-                    <h3 style="font-weight: 900; text-transform: uppercase;">Tiada Sejarah Rekod</h3>
-                    <p style="font-weight: 700; color: #666; margin-bottom: 20px;">Anda belum membuat sebarang tempahan lagi.</p>
-                    <a href="booking.php" class="neo-btn btn-green">
-                        <i class="bi bi-key-fill me-1"></i> Tempah Kereta Pertama Anda
-                    </a>
+                <div class="empty-box" style="box-shadow: none; border: none; padding: 40px 10px;">
+                    <i class="bi bi-clock-history"></i>
+                    <h2 style="font-weight: 900; text-transform: uppercase;">Tiada Sejarah Rekod</h2>
+                    <p style="font-weight: 700; color: #666; margin: 10px 0 0 0;">Belum ada rekod tempahan yang telah selesai atau ditolak.</p>
                 </div>
             <?php endif; ?>
         </div>
+
     </main>
 
-    <!-- MODAL MAKLUMAT PROVIDER (POPUP) -->
-    <div class="neo-modal-overlay" id="providerModalOverlay" onclick="closeProviderModalOutside(event)" style="z-index: 3000;">
-        <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;">
-                <h3 class="modal-title" style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem;">Maklumat Penyedia Kereta</h3>
-                <button class="modal-close-btn" onclick="closeProviderModal()" style="border: 2px solid var(--black); background: var(--pink); padding: 2px 8px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px var(--black);">X</button>
+    <!-- MODAL MAKLUMAT PELAJAR (POPUP) -->
+    <div class="neo-modal-overlay" id="studentModalOverlay" onclick="closeStudentModalOutside(event)">
+        <div class="neo-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-mortarboard-fill me-1"></i> Maklumat Pelajar (Penyewa)</h3>
+                <button class="modal-close-btn" onclick="closeStudentModal()" style="border: 2px solid var(--black); background: var(--pink); padding: 2px 8px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px var(--black);">X</button>
             </div>
             <div class="modal-body" style="font-weight: 700; font-size: 0.95rem;">
                 <div style="text-align: center; margin-bottom: 20px;">
-                    <img id="modalProviderImg" src="" alt="Gambar Profil" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); object-fit: cover;">
+                    <img id="modalStudentImg" src="" alt="Gambar Pelajar" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); object-fit: cover;">
                 </div>
-                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
-                    <span style="color: #666;">Username:</span>
-                    <span id="modalProviderUsername" style="color: var(--black); font-weight: 800;"></span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Nama Penuh:</span>
+                    <span id="modalStudentName" style="color: var(--black); font-weight: 800;"></span>
                 </div>
-                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">No. Matrik:</span>
+                    <span id="modalStudentMatrix" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
                     <span style="color: #666;">Email:</span>
-                    <span id="modalProviderEmail" style="color: var(--black); font-weight: 800;"></span>
+                    <span id="modalStudentEmail" style="color: var(--black); font-weight: 800;"></span>
                 </div>
-                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
                     <span style="color: #666;">No. Telefon:</span>
-                    <span id="modalProviderPhone" style="color: var(--black); font-weight: 800;"></span>
+                    <span id="modalStudentPhone" style="color: var(--black); font-weight: 800;"></span>
                 </div>
-                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
-                    <span style="color: #666;">Roadtax (Cukai Jalan):</span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0; align-items: center;">
+                    <span style="color: #666;">Kad Pelajar:</span>
                     <span>
-                        <a id="modalProviderRoadtax" href="" target="_blank" class="neo-badge" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--yellow); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Fail</a>
-                        <span id="modalProviderNoRoadtax" style="color: #999; display: none;">Tiada Fail</span>
+                        <a id="modalStudentIdDoc" href="" target="_blank" class="neo-badge" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--yellow); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Dokumen</a>
+                        <span id="modalStudentNoIdDoc" style="color: #999; display: none;">Tiada Fail</span>
                     </span>
                 </div>
-                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
-                    <span style="color: #666;">Insurans (Insurance):</span>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0; align-items: center;">
+                    <span style="color: #666;">Lesen Memandu:</span>
                     <span>
-                        <a id="modalProviderInsurance" href="" target="_blank" class="neo-badge" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--green); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Fail</a>
-                        <span id="modalProviderNoInsurance" style="color: #999; display: none;">Tiada Fail</span>
-                    </span>
-                </div>
-                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
-                    <span style="color: #666;">Kod QR DuitNow:</span>
-                    <span>
-                        <a id="modalProviderQr" href="" target="_blank" class="neo-badge" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--yellow); font-weight: 800;"><i class="bi bi-qr-code me-1"></i>Lihat QR</a>
-                        <span id="modalProviderNoQr" style="color: #999; display: none;">Tiada QR</span>
+                        <a id="modalStudentLicenseDoc" href="" target="_blank" class="neo-badge" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--green); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Lesen</a>
+                        <span id="modalStudentNoLicenseDoc" style="color: #999; display: none;">Tiada Fail</span>
                     </span>
                 </div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <button class="neo-btn" style="width: 100%; justify-content: center; background: var(--pink);" onclick="closeProviderModal()"><i class="bi bi-arrow-left-short me-1"></i>Tutup</button>
+                    <button class="neo-btn bg-p" style="width: 100%; justify-content: center;" onclick="closeStudentModal()"><i class="bi bi-arrow-left-short me-1"></i>Tutup</button>
                 </div>
             </div>
         </div>
@@ -520,7 +511,7 @@ $result_history = $stmt->get_result();
         &copy; <?php echo date("Y"); ?> SCRS PMU. SISTEM SEWAAN KERETA.
     </footer>
 
-    <!-- SKRIP ASLI (VANILLA JS) -->
+    <!-- SKRIP ASLI -->
     <script>
         // Dropdown Profil
         const profileToggle = document.getElementById('profile-toggle');
@@ -539,84 +530,67 @@ $result_history = $stmt->get_result();
             });
         }
 
-        // Sidebar Offcanvas
+        // Sidebar
         const openSidebarBtn = document.getElementById('open-sidebar');
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-        function openSidebar() {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('show');
-        }
-
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('show');
-        }
+        function openSidebar() { sidebar.classList.add('open'); sidebarOverlay.classList.add('show'); }
+        function closeSidebar() { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('show'); }
 
         if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
         if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
         if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
 
-        // POPUP PROVIDER MODAL CONTROL
-        window.showProviderModal = function(username, email, phone, roadtax, insurance, profilePic, qrCode) {
-            document.getElementById('modalProviderUsername').textContent = username;
-            document.getElementById('modalProviderEmail').textContent = email;
-            document.getElementById('modalProviderPhone').textContent = phone;
+        // POPUP STUDENT MODAL CONTROL
+        function showStudentModal(name, username, email, phone, matrix, idDoc, licenseDoc, profilePic) {
+            document.getElementById('modalStudentName').textContent = name;
+            document.getElementById('modalStudentMatrix').textContent = matrix;
+            document.getElementById('modalStudentEmail').textContent = email;
+            document.getElementById('modalStudentPhone').textContent = phone;
             
-            const imgElem = document.getElementById('modalProviderImg');
+            const imgElem = document.getElementById('modalStudentImg');
             if (profilePic && profilePic.trim() !== '') {
                 imgElem.src = profilePic;
             } else {
                 imgElem.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
             }
             
-            const rtElem = document.getElementById('modalProviderRoadtax');
-            const noRtElem = document.getElementById('modalProviderNoRoadtax');
-            if (roadtax && roadtax.trim() !== '') {
-                rtElem.href = roadtax;
-                rtElem.style.display = 'inline-block';
-                noRtElem.style.display = 'none';
+            const idElem = document.getElementById('modalStudentIdDoc');
+            const noIdElem = document.getElementById('modalStudentNoIdDoc');
+            if (idDoc && idDoc.trim() !== '') {
+                idElem.href = idDoc;
+                idElem.style.display = 'inline-block';
+                noIdElem.style.display = 'none';
             } else {
-                rtElem.style.display = 'none';
-                noRtElem.style.display = 'inline-block';
+                idElem.style.display = 'none';
+                noIdElem.style.display = 'inline-block';
             }
             
-            const insElem = document.getElementById('modalProviderInsurance');
-            const noInsElem = document.getElementById('modalProviderNoInsurance');
-            if (insurance && insurance.trim() !== '') {
-                insElem.href = insurance;
-                insElem.style.display = 'inline-block';
-                noInsElem.style.display = 'none';
+            const licElem = document.getElementById('modalStudentLicenseDoc');
+            const noLicElem = document.getElementById('modalStudentNoLicenseDoc');
+            if (licenseDoc && licenseDoc.trim() !== '') {
+                licElem.href = licenseDoc;
+                licElem.style.display = 'inline-block';
+                noLicElem.style.display = 'none';
             } else {
-                insElem.style.display = 'none';
-                noInsElem.style.display = 'inline-block';
+                licElem.style.display = 'none';
+                noLicElem.style.display = 'inline-block';
             }
 
-            const qrElem = document.getElementById('modalProviderQr');
-            const noQrElem = document.getElementById('modalProviderNoQr');
-            if (qrCode && qrCode.trim() !== '') {
-                qrElem.href = qrCode;
-                qrElem.style.display = 'inline-block';
-                noQrElem.style.display = 'none';
-            } else {
-                qrElem.style.display = 'none';
-                noQrElem.style.display = 'inline-block';
+            document.getElementById('studentModalOverlay').classList.add('show');
+        }
+
+        function closeStudentModal() {
+            document.getElementById('studentModalOverlay').classList.remove('show');
+        }
+
+        function closeStudentModalOutside(e) {
+            if (e.target.id === 'studentModalOverlay') {
+                closeStudentModal();
             }
-
-            document.getElementById('providerModalOverlay').classList.add('show');
-        };
-
-        window.closeProviderModal = function() {
-            document.getElementById('providerModalOverlay').classList.remove('show');
-        };
-
-        window.closeProviderModalOutside = function(e) {
-            if (e.target.id === 'providerModalOverlay') {
-                closeProviderModal();
-            }
-        };
+        }
     </script>
 </body>
 </html>

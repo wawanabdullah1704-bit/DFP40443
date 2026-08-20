@@ -12,145 +12,7 @@ $provider_id = $_SESSION['provider_id'];
 $provider_name = $_SESSION['username'];
 $message = "";
 
-// 1. PROSES TAMBAH KERETA
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_car'])) {
-    
-    $car_brand = htmlspecialchars($_POST['car_brand']);
-    $car_model = htmlspecialchars($_POST['car_model']);
-    $car_plate = htmlspecialchars($_POST['car_plate']);
-    $transmission = htmlspecialchars($_POST['transmission']);
-    $seat_capacity = (int)$_POST['seat_capacity'];
-    $price_per_day = (float)$_POST['price_per_day'];
-    $price_per_hour = (float)$_POST['price_per_hour'];
-
-    // Pengurusan Muat Naik Gambar
-    $targetDir = "uploads/cars/";
-    if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0777, true);
-    }
-
-    $imageName = basename($_FILES["car_image"]["name"]);
-    $newImageName = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
-    $targetPath = $targetDir . $newImageName;
-
-    if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-        $sql = "INSERT INTO cars (provider_id, car_brand, car_model, car_plate, transmission, seat_capacity, price_per_day, price_per_hour, car_image, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Available')";
-        
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("issssidds", $provider_id, $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath);
-
-        if ($stmt->execute()) {
-            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: <strong>{$car_brand} {$car_model}</strong> telah ditambah ke dalam senarai kereta anda!</div>";
-        } else {
-            $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt->error . "</div>";
-        }
-        $stmt->close();
-    } else {
-        $message = "<div class='neo-alert alert-danger'>Ralat: Gagal memuat naik gambar kereta.</div>";
-    }
-}
-
-// 2. PROSES KEMASKINI KERETA (EDIT)
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
-    
-    $car_id = (int)$_POST['car_id'];
-    $car_brand = htmlspecialchars($_POST['car_brand']);
-    $car_model = htmlspecialchars($_POST['car_model']);
-    $car_plate = htmlspecialchars($_POST['car_plate']);
-    $transmission = htmlspecialchars($_POST['transmission']);
-    $seat_capacity = (int)$_POST['seat_capacity'];
-    $price_per_day = (float)$_POST['price_per_day'];
-    $price_per_hour = (float)$_POST['price_per_hour'];
-
-    if (!empty($_FILES["car_image"]["name"])) {
-        $targetDir = "uploads/cars/";
-        $imageName = basename($_FILES["car_image"]["name"]);
-        $newImageName = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
-        $targetPath = $targetDir . $newImageName;
-
-        // Ambil gambar lama untuk dipadam
-        $sql_old_img = "SELECT car_image FROM cars WHERE id = ? AND provider_id = ?";
-        $stmt_old = $conn->prepare($sql_old_img);
-        $stmt_old->bind_param("ii", $car_id, $provider_id);
-        $stmt_old->execute();
-        $res_old = $stmt_old->get_result();
-        if ($old_row = $res_old->fetch_assoc()) {
-            if (file_exists($old_row['car_image'])) {
-                unlink($old_row['car_image']);
-            }
-        }
-        $stmt_old->close();
-
-        if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-            $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=?, car_image=? WHERE id=? AND provider_id=?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssiddssii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath, $car_id, $provider_id);
-        }
-    } else {
-        $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=? WHERE id=? AND provider_id=?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssiddii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $car_id, $provider_id);
-    }
-
-    if (isset($stmt) && $stmt->execute()) {
-        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Maklumat <strong>{$car_brand} {$car_model}</strong> telah dikemaskini!</div>";
-    } else {
-        $message = "<div class='neo-alert alert-danger'>Ralat: Gagal mengemaskini maklumat kereta.</div>";
-    }
-    if (isset($stmt)) $stmt->close();
-}
-
-// 3. PROSES PADAM KERETA (DELETE)
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['delete_car'])) {
-    $car_id = (int)$_POST['car_id'];
-
-    $sql_img = "SELECT car_image, car_model FROM cars WHERE id = ? AND provider_id = ?";
-    $stmt_img = $conn->prepare($sql_img);
-    $stmt_img->bind_param("ii", $car_id, $provider_id);
-    $stmt_img->execute();
-    $res_img = $stmt_img->get_result();
-
-    if ($row = $res_img->fetch_assoc()) {
-        $image_path = $row['car_image'];
-        $car_model_name = $row['car_model'];
-
-        $sql_del = "DELETE FROM cars WHERE id = ? AND provider_id = ?";
-        $stmt_del = $conn->prepare($sql_del);
-        $stmt_del->bind_param("ii", $car_id, $provider_id);
-        
-        if ($stmt_del->execute()) {
-            if (file_exists($image_path)) {
-                unlink($image_path);
-            }
-            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Kereta <strong>{$car_model_name}</strong> telah dipadam.</div>";
-        } else {
-            $message = "<div class='neo-alert alert-danger'>Ralat: Gagal memadam kereta. Kereta mungkin sedang ditempah.</div>";
-        }
-        $stmt_del->close();
-    }
-    $stmt_img->close();
-}
-
-// 4. PROSES TUKAR STATUS (AVAILABLE / UNAVAILABLE)
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['toggle_status'])) {
-    $car_id = (int)$_POST['car_id'];
-    $new_status = htmlspecialchars($_POST['new_status']);
-
-    $sql = "UPDATE cars SET status = ? WHERE id = ? AND provider_id = ?";
-    $stmt = $conn->prepare($sql);
-    $stmt->bind_param("sii", $new_status, $car_id, $provider_id);
-    
-    if ($stmt->execute()) {
-        $status_text = ($new_status == 'Available') ? 'Tersedia' : 'Tidak Tersedia';
-        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Status kereta ditukar kepada <strong>{$status_text}</strong>.</div>";
-    } else {
-        $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt->error . "</div>";
-    }
-    $stmt->close();
-}
-
-// 5. PROSES MUAT NAIK QR CODE PEMBAYARAN
+// --- 1. PROSES MUAT NAIK QR CODE PEMBAYARAN CEPAT ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['upload_qr'])) {
     if (!empty($_FILES["qr_image"]["name"])) {
         $targetDir = "uploads/qr_codes/";
@@ -179,7 +41,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['upload_qr'])) {
             $stmt = $conn->prepare($sql);
             $stmt->bind_param("si", $targetPath, $provider_id);
             if ($stmt->execute()) {
-                $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Kod QR Pembayaran anda telah dikemaskini!</div>";
+                $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Kod QR Pembayaran DuitNow anda telah dikemaskini!</div>";
             }
             $stmt->close();
         } else {
@@ -188,22 +50,62 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['upload_qr'])) {
     }
 }
 
-// AMBIL SENARAI KERETA MILIK PROVIDER
-$sql_cars = "SELECT * FROM cars WHERE provider_id = ? ORDER BY created_at DESC";
-$stmt_cars = $conn->prepare($sql_cars);
-$stmt_cars->bind_param("i", $provider_id);
-$stmt_cars->execute();
-$result_cars = $stmt_cars->get_result();
+// --- 2. KIRAAN STATISTIK PAPAN PEMUKA PENYEDIA ---
+// Total Cars
+$sql_cars = "SELECT COUNT(*) as total FROM cars WHERE provider_id = ?";
+$stmt_c = $conn->prepare($sql_cars);
+$stmt_c->bind_param("i", $provider_id);
+$stmt_c->execute();
+$total_cars = $stmt_c->get_result()->fetch_assoc()['total'] ?? 0;
+$stmt_c->close();
 
-// AMBIL MAKLUMAT PROVIDER UNTUK CHECK STATUS QR
+// Total Pending Bookings
+$sql_pending = "SELECT COUNT(*) as total FROM bookings b JOIN cars c ON b.car_id = c.id WHERE c.provider_id = ? AND b.status = 'Pending'";
+$stmt_p = $conn->prepare($sql_pending);
+$stmt_p->bind_param("i", $provider_id);
+$stmt_p->execute();
+$total_pending = $stmt_p->get_result()->fetch_assoc()['total'] ?? 0;
+$stmt_p->close();
+
+// Total Active (Approved) Bookings
+$sql_active = "SELECT COUNT(*) as total FROM bookings b JOIN cars c ON b.car_id = c.id WHERE c.provider_id = ? AND b.status = 'Approved'";
+$stmt_a = $conn->prepare($sql_active);
+$stmt_a->bind_param("i", $provider_id);
+$stmt_a->execute();
+$total_active = $stmt_a->get_result()->fetch_assoc()['total'] ?? 0;
+$stmt_a->close();
+
+// Total Completed Bookings & Earnings
+$sql_completed = "SELECT COUNT(*) as total, SUM(b.total_price) as earnings FROM bookings b JOIN cars c ON b.car_id = c.id WHERE c.provider_id = ? AND b.status = 'Completed'";
+$stmt_comp = $conn->prepare($sql_completed);
+$stmt_comp->bind_param("i", $provider_id);
+$stmt_comp->execute();
+$comp_data = $stmt_comp->get_result()->fetch_assoc();
+$total_completed = $comp_data['total'] ?? 0;
+$total_earnings = $comp_data['earnings'] ?? 0;
+$stmt_comp->close();
+
+// Check Provider QR Code Status
 $sql_prov = "SELECT qr_code_image FROM providers WHERE id = ?";
 $stmt_prov = $conn->prepare($sql_prov);
 $stmt_prov->bind_param("i", $provider_id);
 $stmt_prov->execute();
-$res_prov = $stmt_prov->get_result();
-$provider_data = $res_prov->fetch_assoc();
-$has_qr = !empty($provider_data['qr_code_image']);
+$provider_info = $stmt_prov->get_result()->fetch_assoc();
+$has_qr = (!empty($provider_info['qr_code_image']) && file_exists($provider_info['qr_code_image']));
 $stmt_prov->close();
+
+// Latest Booking for Provider's Cars
+$sql_latest = "SELECT b.*, c.car_model, c.car_plate, s.full_name as student_name, s.phone_no as student_phone 
+               FROM bookings b 
+               JOIN cars c ON b.car_id = c.id 
+               JOIN students s ON b.student_id = s.id 
+               WHERE c.provider_id = ? 
+               ORDER BY b.created_at DESC LIMIT 1";
+$stmt_lat = $conn->prepare($sql_latest);
+$stmt_lat->bind_param("i", $provider_id);
+$stmt_lat->execute();
+$latest_booking = $stmt_lat->get_result()->fetch_assoc();
+$stmt_lat->close();
 ?>
 
 <!DOCTYPE html>
@@ -211,14 +113,15 @@ $stmt_prov->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Papan Pemuka Penyedia Kereta - SCRS PMU</title>
+    <title>Papan Pemuka Penyedia - SCRS PMU</title>
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
 
-    <!-- CSS NEO-BRUTALISM -->
+    <!-- CSS NEO BRUTALISM -->
     <style>
         :root {
             --black: #000000;
@@ -235,7 +138,12 @@ $stmt_prov->close();
             --transition: all 0.15s ease-in-out;
         }
 
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Space Grotesk', sans-serif;
+        }
 
         body {
             background-color: var(--bg-color);
@@ -249,9 +157,9 @@ $stmt_prov->close();
 
         a { text-decoration: none; color: inherit; }
         ul { list-style: none; }
-        button, input, select { font-family: inherit; }
+        button { border: none; background: none; cursor: pointer; font-family: inherit; }
 
-        /* NAVBAR */
+        /* --- NAVBAR --- */
         .neo-navbar {
             background-color: var(--white);
             border-bottom: var(--border-thick);
@@ -263,13 +171,26 @@ $stmt_prov->close();
             top: 0;
             z-index: 1000;
         }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); transition: var(--transition); border: none; background: none; cursor: pointer; }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
 
-        /* Dropdown Profil */
+        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
+        
+        .menu-toggle-btn {
+            font-size: 2rem;
+            color: var(--black);
+            transition: var(--transition);
+        }
+        .menu-toggle-btn:hover { transform: scale(1.1); }
+
+        .neo-brand {
+            font-size: 1.5rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        /* --- DROPDOWN PROFIL --- */
         .profile-container { position: relative; }
+        
         .profile-btn {
             background-color: var(--yellow);
             border: 3px solid var(--black);
@@ -279,10 +200,10 @@ $stmt_prov->close();
             display: flex;
             align-items: center;
             gap: 8px;
-            cursor: pointer;
             transition: var(--transition);
         }
         .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
+        .profile-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
 
         .dropdown-menu {
             position: absolute;
@@ -317,91 +238,283 @@ $stmt_prov->close();
         .dropdown-item:hover { background-color: var(--yellow); }
         .dropdown-item:last-child:hover { background-color: #ff33aa; }
 
-        /* SIDEBAR */
+        /* --- SIDEBAR (OFFCANVAS) --- */
         .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1005;
+            display: none;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
         .sidebar-overlay.show { display: block; opacity: 1; }
 
         .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
+            position: fixed;
+            top: 0; left: -300px;
+            width: 280px; height: 100%;
+            background-color: var(--bg-color);
+            border-right: var(--border-thick);
+            z-index: 1010;
+            transition: left 0.3s ease;
+            display: flex;
+            flex-direction: column;
         }
         .sidebar.open { left: 0; }
         
         .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
+            padding: 20px;
+            background-color: var(--yellow);
+            border-bottom: var(--border-thick);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
+        .close-btn {
+            border: 3px solid var(--black);
+            background: var(--white);
+            padding: 5px 10px;
+            font-weight: 900;
+            box-shadow: 2px 2px 0px var(--black);
+        }
+        .close-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px var(--black); }
 
         .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
         .sidebar-link {
-            padding: 12px 15px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition);
+            padding: 12px 15px;
+            border: 3px solid transparent;
+            font-weight: 800;
+            text-transform: uppercase;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            transition: var(--transition);
         }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
+        .sidebar-link.active { border: 3px solid var(--black); background: var(--white); box-shadow: 4px 4px 0px var(--black); }
+        .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
 
-        /* KANDUNGAN UTAMA */
-        .main-content { flex: 1; padding: 2rem 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
+        /* --- KANDUNGAN UTAMA --- */
+        .main-content { flex: 1; }
 
-        .page-header {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
+        /* --- CAROUSEL (SLEEK HERO BANNER) --- */
+        .carousel-container {
+            width: 100%;
+            height: 360px;
+            position: relative;
+            overflow: hidden;
+            border-bottom: var(--border-thick);
+            background-color: var(--black);
         }
+        .carousel-track {
+            display: flex;
+            height: 100%;
+            transition: transform 0.5s ease-in-out;
+        }
+        .carousel-slide {
+            min-width: 100%;
+            height: 100%;
+            position: relative;
+        }
+        .carousel-slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            filter: contrast(105%) brightness(0.65);
+        }
+        
+        /* Modern Hero Caption Overlay (Left-Aligned & Mobile Friendly) */
+        .carousel-caption-wrapper {
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px 40px;
+            text-align: left;
+        }
+        .carousel-badge {
+            background: var(--yellow);
+            color: var(--black);
+            font-weight: 900;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border: 2px solid var(--black);
+            display: inline-block;
+            margin-bottom: 8px;
+            width: fit-content;
+            box-shadow: 3px 3px 0px var(--black);
+        }
+        .carousel-caption-wrapper h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--white);
+            margin-bottom: 6px;
+            text-shadow: 2px 2px 0px var(--black);
+            line-height: 1.2;
+        }
+        .carousel-caption-wrapper p {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #f0f0f0;
+            margin: 0;
+            max-width: 600px;
+        }
+        
+        .carousel-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--white);
+            border: var(--border-thick);
+            box-shadow: 3px 3px 0px var(--black);
+            padding: 8px 14px;
+            font-size: 1.3rem;
+            font-weight: 900;
+            cursor: pointer;
+            transition: var(--transition);
+            z-index: 10;
+        }
+        .carousel-btn:hover { background-color: var(--yellow); }
+        .carousel-btn:active { transform: translateY(-50%) translate(2px, 2px); box-shadow: var(--shadow-active); }
+        .btn-prev { left: 15px; }
+        .btn-next { right: 15px; }
 
+        /* --- SEKSYEN KANDUNGAN --- */
+        .section-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem 20px;
+            text-align: left;
+        }
+        
         .section-title {
-            display: inline-block; background: var(--black); color: var(--white);
-            font-weight: 900; text-transform: uppercase; padding: 10px 20px;
-            box-shadow: 4px 4px 0px var(--yellow);
+            font-size: 1.2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--black);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 3px solid var(--black);
+            padding-bottom: 6px;
+            text-align: left;
         }
+
+        .neo-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .neo-grid-4 {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        /* STATISTIK IMBASAN PENYEDIA (PAPAN METRIK MAKLUMAT - BUKAN BUTTON) */
+        .stat-widget {
+            background-color: var(--white);
+            border: 2px solid #ccc;
+            border-top: 4px solid var(--black);
+            box-shadow: none !important;
+            padding: 16px 18px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            cursor: default;
+            user-select: none;
+            border-radius: 4px;
+        }
+        .stat-widget.border-b { border-top: 4px solid #00b0ff; }
+        .stat-widget.border-y { border-top: 4px solid #ffb300; }
+        .stat-widget.border-g { border-top: 4px solid #00c853; }
+        .stat-widget.border-p { border-top: 4px solid #e91e63; }
+        
+        .stat-widget .stat-info { display: flex; flex-direction: column; }
+        .stat-widget h2 { font-size: 2rem; font-weight: 900; line-height: 1; margin-bottom: 4px; color: var(--black); }
+        .stat-widget p { font-weight: 800; font-size: 0.8rem; text-transform: uppercase; color: #666; margin: 0; }
+        .stat-widget .stat-icon { font-size: 2.2rem; }
+        .icon-b { color: #00b0ff; }
+        .icon-y { color: #ffb300; }
+        .icon-g { color: #00c853; }
+        .icon-p { color: #e91e63; }
+
+        /* KAD MENU TINDAKAN PENYEDIA (AKSES PINTAS - BOLEH DITEKAN) */
+        .action-card {
+            border: var(--border-thick);
+            box-shadow: var(--shadow-solid);
+            padding: 16px 14px;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: var(--transition);
+            position: relative;
+        }
+        .action-card:hover { 
+            transform: translate(-3px, -3px); 
+            box-shadow: 8px 8px 0px var(--black); 
+        }
+        .action-card:active { 
+            transform: translate(3px, 3px); 
+            box-shadow: 0px 0px 0px var(--black); 
+        }
+        .action-card h4 { font-size: 1rem; font-weight: 900; text-transform: uppercase; margin: 8px 0 0 0; line-height: 1.2; }
+        .action-card .action-icon { font-size: 2.2rem; }
+
+        /* Warna Latar */
+        .bg-y { background-color: var(--yellow); }
+        .bg-g { background-color: var(--green); }
+        .bg-b { background-color: var(--blue); }
+        .bg-p { background-color: var(--pink); }
+        .bg-w { background-color: var(--white); }
 
         .neo-btn {
-            background-color: var(--yellow); border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900; text-transform: uppercase; padding: 10px 18px; cursor: pointer; transition: var(--transition);
-            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+            background-color: var(--yellow);
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--black);
         }
         .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
+        .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
         .btn-green { background-color: var(--green); }
         .btn-blue { background-color: var(--blue); }
         .btn-pink { background-color: var(--pink); }
 
         .neo-alert {
-            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 15px 20px; font-weight: 800; margin-bottom: 25px; text-transform: uppercase;
+            border: var(--border-thick);
+            box-shadow: 4px 4px 0px var(--black);
+            padding: 15px 20px;
+            font-weight: 800;
+            margin-bottom: 25px;
+            text-transform: uppercase;
+            text-align: left;
         }
         .alert-success { background-color: var(--green); }
         .alert-danger { background-color: var(--pink); }
         .alert-warning { background-color: var(--yellow); }
-
-        /* CARDS GRID */
-        .cars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
-        
-        .car-card {
-            background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid);
-            display: flex; flex-direction: column; position: relative; overflow: hidden;
-        }
-        .car-img { height: 200px; width: 100%; object-fit: cover; border-bottom: var(--border-thick); }
-        .car-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-        
-        .car-title { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 4px; }
-        .car-plate { font-weight: 700; color: #555; margin-bottom: 12px; }
-
-        .neo-badge {
-            border: 2px solid var(--black); padding: 4px 8px; font-weight: 900;
-            font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase;
-        }
-        .badge-available { background-color: var(--green); }
-        .badge-unavailable { background-color: var(--pink); }
-
-        .price-box {
-            background: var(--bg-color); border: 3px solid var(--black); padding: 12px; margin-top: auto; margin-bottom: 15px;
-        }
-        .price-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; }
 
         /* MODAL */
         .neo-modal-overlay {
@@ -409,38 +522,70 @@ $stmt_prov->close();
             background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
         }
         .neo-modal-overlay.show { display: flex; }
-        
         .neo-modal {
             background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black);
-            width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
+            width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
+            text-align: left;
         }
         .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 12px; margin-bottom: 20px; }
         .modal-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
 
-        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
-        .form-label { font-weight: 800; text-transform: uppercase; font-size: 0.85rem; }
-        .form-control, .form-select {
-            border: 3px solid var(--black); padding: 10px; font-weight: 700;
-            background: var(--bg-color); outline: none; border-radius: 0; width: 100%;
-        }
-        .form-control:focus, .form-select:focus { background: var(--white); box-shadow: 3px 3px 0px var(--black); }
-
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
+        /* --- FOOTER --- */
         footer {
-            background-color: var(--yellow); border-top: var(--border-thick);
-            padding: 20px; text-align: center; font-weight: 900; text-transform: uppercase; margin-top: auto;
+            background-color: var(--yellow);
+            border-top: var(--border-thick);
+            padding: 20px;
+            text-align: center;
+            font-weight: 900;
+            text-transform: uppercase;
+            margin-top: auto;
         }
 
-        @media (max-width: 900px) {
-            .cars-grid { grid-template-columns: repeat(2, 1fr); }
-        }
-        @media (max-width: 600px) {
-            .cars-grid { grid-template-columns: 1fr; }
-            .form-row { grid-template-columns: 1fr; }
-            .main-content { padding: 1rem 10px; }
+        /* --- RESPONSIVE MOBILE (TIADA SCROLL, COMPACT HORIZONTAL GRID) --- */
+        @media (max-width: 768px) {
             .neo-brand { font-size: 1.2rem; }
             .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
+            
+            .carousel-container { height: 210px; }
+            .carousel-caption-wrapper { padding: 12px 16px; }
+            .carousel-caption-wrapper h1 { font-size: 1.1rem; margin-bottom: 3px; }
+            .carousel-caption-wrapper p { font-size: 0.8rem; }
+            .carousel-btn { padding: 3px 6px; font-size: 1rem; }
+
+            .section-container { padding: 1rem 10px; }
+            
+            .neo-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
+            
+            /* SUSUNAN 3 RUANGAN MENDATAR (TIADA SCROLL) */
+            .neo-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                margin-bottom: 18px;
+            }
+            
+            .stat-widget {
+                padding: 10px 4px;
+                box-shadow: none !important;
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+                gap: 2px;
+                border-radius: 4px;
+                background: #ffffff;
+            }
+            .stat-widget h2 { font-size: 1.3rem; margin-bottom: 2px; }
+            .stat-widget p { font-size: 0.62rem; font-weight: 700; color: #666; }
+            .stat-widget .stat-icon { font-size: 1.2rem; order: -1; margin-bottom: 2px; }
+
+            /* KAD AKSES PINTAS COMPACT PADA MOBILE (3-COLUMNS) */
+            .action-card {
+                padding: 12px 4px;
+                box-shadow: 3px 3px 0px var(--black);
+            }
+            .action-card:hover { transform: none; box-shadow: 3px 3px 0px var(--black); }
+            .action-card:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
+            .action-card .action-icon { font-size: 1.6rem; }
+            .action-card h4 { font-size: 0.72rem; margin-top: 4px; }
         }
     </style>
 </head>
@@ -449,9 +594,12 @@ $stmt_prov->close();
     <!-- NAVBAR -->
     <header class="neo-navbar">
         <div class="neo-nav-left">
-            <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <button class="menu-toggle-btn" id="open-sidebar">
+                <i class="bi bi-list"></i>
+            </button>
+            <div class="neo-brand">SCRS PMU (PROVIDER)</div>
         </div>
+
         <div class="profile-container">
             <button class="profile-btn" id="profile-toggle">
                 <i class="bi bi-person-fill fs-5"></i>
@@ -459,7 +607,7 @@ $stmt_prov->close();
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
-                <li><a href="index.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
             </ul>
         </div>
     </header>
@@ -473,266 +621,194 @@ $stmt_prov->close();
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link active"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
-            <a href="#" class="sidebar-link" onclick="openModal('qrCodeModal')"><i class="bi bi-qr-code"></i> Kemaskini QR Bayaran</a>
-            <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-left"></i> Log Keluar</a>
+            <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Senarai Kereta</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Tempahan Semasa</a>
+            <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
         </nav>
     </aside>
 
     <!-- KANDUNGAN UTAMA -->
     <main class="main-content">
         
-        <?php echo $message; ?>
-
-        <?php if (!$has_qr): ?>
-            <div class="neo-alert alert-warning" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i> Sila muat naik Kod QR DuitNow anda untuk membolehkan pelajar membuat pembayaran.
+        <!-- CAROUSEL (MODERN SLEEK HERO) -->
+        <div class="carousel-container">
+            <div class="carousel-track" id="carousel-track">
+                <div class="carousel-slide">
+                    <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1000&q=80" alt="Kereta 1">
+                    <div class="carousel-caption-wrapper">
+                        <span class="carousel-badge">Portal Penyedia Kereta PMU</span>
+                        <h1>Papan Pemuka Kenderaan</h1>
+                        <p>Pantau kenderaan sewaan dan semak tempahan masuk pelajar.</p>
+                    </div>
                 </div>
-                <button type="button" class="neo-btn btn-green" onclick="openModal('qrCodeModal')">Klik Muat Naik</button>
+                <div class="carousel-item carousel-slide">
+                    <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1000&q=80" alt="Kereta 2">
+                    <div class="carousel-caption-wrapper">
+                        <span class="carousel-badge" style="background: var(--green);">Kelulusan Pantas</span>
+                        <h1>Urus Pembayaran DuitNow</h1>
+                        <p>Sahkan tempahan dan kongsi Kod QR pembayaran DuitNow.</p>
+                    </div>
+                </div>
+                <div class="carousel-item carousel-slide">
+                    <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=80" alt="Kereta 3">
+                    <div class="carousel-caption-wrapper">
+                        <span class="carousel-badge" style="background: var(--blue);">Rekod Sistematik</span>
+                        <h1>Pantau Resit & Pulangan</h1>
+                        <p>Semua bukti bayaran dan gambar pemulangan tersimpan rapi.</p>
+                    </div>
+                </div>
             </div>
-        <?php endif; ?>
-
-        <div class="page-header">
-            <div>
-                <div class="section-title"><i class="bi bi-car-front-fill me-2"></i> Senarai Kereta Saya</div>
-                <p style="font-weight: 700; color: #555; margin-top: 8px;">Urus maklumat kenderaan sewaan dan status ketersediaan.</p>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button type="button" class="neo-btn btn-blue" onclick="openModal('qrCodeModal')">
-                    <i class="bi bi-qr-code"></i> QR Bayaran
-                </button>
-                <button type="button" class="neo-btn btn-green" onclick="openModal('addCarModal')">
-                    <i class="bi bi-plus-circle-fill"></i> Tambah Kereta
-                </button>
-            </div>
+            <button class="carousel-btn btn-prev" id="btn-prev"><i class="bi bi-chevron-left"></i></button>
+            <button class="carousel-btn btn-next" id="btn-next"><i class="bi bi-chevron-right"></i></button>
         </div>
 
-        <!-- GRID KERETA -->
-        <div class="cars-grid">
-            <?php if ($result_cars->num_rows > 0): ?>
-                <?php while ($car = $result_cars->fetch_assoc()): 
-                    $is_available = ($car['status'] == 'Available');
-                    $badge_class = $is_available ? 'badge-available' : 'badge-unavailable';
-                    $status_text = $is_available ? 'Tersedia' : 'Tidak Tersedia';
-                ?>
-                    <div class="car-card">
-                        <!-- Butang Padam Merah di Penjuru Kanan Gambar -->
-                        <form action="" method="POST" style="position: absolute; top: 10px; right: 10px; z-index: 5;">
-                            <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
-                            <button type="submit" name="delete_car" class="close-btn" style="background: var(--pink); color: #fff; border-color: #000;" onclick="return confirm('Adakah anda pasti ingin memadam kereta ini secara kekal?');">
-                                <i class="bi bi-trash-fill"></i>
-                            </button>
-                        </form>
+        <div class="section-container">
+            
+            <?php echo $message; ?>
 
-                        <img src="<?php echo htmlspecialchars($car['car_image']); ?>" class="car-img" alt="Kereta">
-                        <div class="car-body">
-                            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 5px;">
-                                <div>
-                                    <div style="font-size:0.75rem; font-weight:900; text-transform:uppercase; color:#555; letter-spacing:1px;"><?php echo htmlspecialchars($car['car_brand'] ?? ''); ?></div>
-                                    <h3 class="car-title"><?php echo htmlspecialchars($car['car_model']); ?></h3>
-                                </div>
-                                <span class="neo-badge <?php echo $badge_class; ?>"><?php echo $status_text; ?></span>
-                            </div>
-                            <p class="car-plate"><i class="bi bi-123 me-1"></i><?php echo htmlspecialchars($car['car_plate']); ?></p>
-
-                            <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
-                                <span class="neo-badge"><i class="bi bi-gear-fill me-1"></i><?php echo htmlspecialchars($car['transmission']); ?></span>
-                                <span class="neo-badge"><i class="bi bi-people-fill me-1"></i><?php echo htmlspecialchars($car['seat_capacity']); ?> Tempat Duduk</span>
-                            </div>
-
-                            <div class="price-box">
-                                <div class="price-row">
-                                    <span>Harian: <strong>RM <?php echo number_format($car['price_per_day'], 2); ?></strong></span>
-                                    <span>Jam: <strong>RM <?php echo number_format($car['price_per_hour'], 2); ?></strong></span>
-                                </div>
-                            </div>
-
-                            <div style="display: flex; gap: 10px; margin-top: 10px;">
-                                <button type="button" class="neo-btn btn-yellow" style="flex: 1;" onclick="openModal('editCarModal<?php echo $car['id']; ?>')">
-                                    <i class="bi bi-pencil-square"></i> Edit
-                                </button>
-                                
-                                <form action="" method="POST" style="flex: 1;">
-                                    <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
-                                    <?php if ($is_available): ?>
-                                        <input type="hidden" name="new_status" value="Unavailable">
-                                        <button type="submit" name="toggle_status" class="neo-btn btn-pink" style="width: 100%;" onclick="return confirm('Tandakan kereta ini sebagai Tidak Tersedia?');">
-                                            <i class="bi bi-x-circle"></i> Tutup
-                                        </button>
-                                    <?php else: ?>
-                                        <input type="hidden" name="new_status" value="Available">
-                                        <button type="submit" name="toggle_status" class="neo-btn btn-green" style="width: 100%;" onclick="return confirm('Tandakan kereta ini sebagai Tersedia?');">
-                                            <i class="bi bi-check-circle"></i> Buka
-                                        </button>
-                                    <?php endif; ?>
-                                </form>
-                            </div>
-                        </div>
+            <?php if (!$has_qr): ?>
+                <div class="neo-alert alert-warning" style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px;">
+                    <div>
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i> <strong>Perhatian:</strong> Sila muat naik Kod QR DuitNow anda untuk menerima bayaran pelajar.
                     </div>
-
-                    <!-- MODAL EDIT KERETA -->
-                    <div class="neo-modal-overlay" id="editCarModal<?php echo $car['id']; ?>">
-                        <div class="neo-modal">
-                            <div class="modal-header">
-                                <h3 class="modal-title">Kemaskini Maklumat Kereta</h3>
-                                <button class="close-btn" onclick="closeModal('editCarModal<?php echo $car['id']; ?>')"><i class="bi bi-x-lg"></i></button>
-                            </div>
-                            <form action="" method="POST" enctype="multipart/form-data">
-                                <input type="hidden" name="car_id" value="<?php echo $car['id']; ?>">
-                                
-                                <div class="form-group">
-                                    <label class="form-label">Jenama Kereta (Brand)</label>
-                                    <input type="text" class="form-control" name="car_brand" value="<?php echo htmlspecialchars($car['car_brand'] ?? ''); ?>" placeholder="Cth: Perodua, Honda, Toyota" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Model Kereta</label>
-                                    <input type="text" class="form-control" name="car_model" value="<?php echo htmlspecialchars($car['car_model']); ?>" required>
-                                </div>
-                                <div class="form-group">
-                                    <label class="form-label">Nombor Plat</label>
-                                    <input type="text" class="form-control" name="car_plate" value="<?php echo htmlspecialchars($car['car_plate']); ?>" required>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Transmisi</label>
-                                        <select class="form-select" name="transmission" required>
-                                            <option value="Auto" <?php if($car['transmission'] == 'Auto') echo 'selected'; ?>>Auto</option>
-                                            <option value="Manual" <?php if($car['transmission'] == 'Manual') echo 'selected'; ?>>Manual</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Tempat Duduk</label>
-                                        <input type="number" class="form-control" name="seat_capacity" min="2" max="12" value="<?php echo $car['seat_capacity']; ?>" required>
-                                    </div>
-                                </div>
-
-                                <div class="form-row">
-                                    <div class="form-group">
-                                        <label class="form-label">Harga / Hari (RM)</label>
-                                        <input type="number" step="0.01" class="form-control" name="price_per_day" value="<?php echo $car['price_per_day']; ?>" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label class="form-label">Harga / Jam (RM)</label>
-                                        <input type="number" step="0.01" class="form-control" name="price_per_hour" value="<?php echo $car['price_per_hour']; ?>" required>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label class="form-label">Gambar Kereta (Opsyenal)</label>
-                                    <input type="file" class="form-control" name="car_image" accept=".jpg, .jpeg, .png" style="border-style: dashed;">
-                                </div>
-
-                                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 3px solid var(--black); padding-top: 15px;">
-                                    <button type="button" class="neo-btn" style="background: #ccc;" onclick="closeModal('editCarModal<?php echo $car['id']; ?>')">Batal</button>
-                                    <button type="submit" name="edit_car" class="neo-btn btn-green">Simpan Perubahan</button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                <?php endwhile; ?>
-            <?php else: ?>
-                <div style="grid-column: 1 / -1; text-align: center; padding: 4rem 1rem; border: var(--border-thick); background: var(--white); box-shadow: var(--shadow-solid);">
-                    <i class="bi bi-car-front" style="font-size: 3.5rem;"></i>
-                    <h3 style="font-weight: 900; text-transform: uppercase; margin-top: 10px;">Anda Belum Memuat Naik Kereta</h3>
-                    <p style="font-weight: 700; color: #666; margin-bottom: 20px;">Sila tekan butang "Tambah Kereta" untuk memulakan perkhidmatan sewaan anda.</p>
-                    <button type="button" class="neo-btn btn-green" onclick="openModal('addCarModal')">
-                        <i class="bi bi-plus-circle-fill me-1"></i> Tambah Kereta Baharu
+                    <button type="button" class="neo-btn btn-green" onclick="openModal('qrCodeModal')">
+                        <i class="bi bi-qr-code me-1"></i> Muat Naik QR
                     </button>
                 </div>
             <?php endif; ?>
-        </div>
 
+            <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+            <div style="margin-bottom: 20px;">
+                <h1 style="font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-speedometer2 text-dark"></i> Papan Pemuka Penyedia
+                </h1>
+                <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin: 0; line-height: 1.4;">
+                    Selamat Datang, <strong><?php echo htmlspecialchars($provider_name); ?></strong>!
+                </p>
+            </div>
+
+            <!-- STATISTIK RINGKASAN (PAPAN METRIK MAKLUMAT - BUKAN BUTTON) -->
+            <div class="section-title"><i class="bi bi-bar-chart-fill me-1"></i> Imbasan Sistem</div>
+            <div class="neo-grid-4">
+                <div class="stat-widget border-b">
+                    <i class="bi bi-car-front-fill stat-icon icon-b"></i>
+                    <div class="stat-info">
+                        <h2><?php echo $total_cars; ?></h2>
+                        <p>Jumlah Kereta</p>
+                    </div>
+                </div>
+                <div class="stat-widget border-y">
+                    <i class="bi bi-hourglass-split stat-icon icon-y"></i>
+                    <div class="stat-info">
+                        <h2><?php echo $total_pending; ?></h2>
+                        <p>Menunggu</p>
+                    </div>
+                </div>
+                <div class="stat-widget border-g">
+                    <i class="bi bi-clipboard-check-fill stat-icon icon-g"></i>
+                    <div class="stat-info">
+                        <h2><?php echo $total_active; ?></h2>
+                        <p>Aktif</p>
+                    </div>
+                </div>
+                <div class="stat-widget border-p">
+                    <i class="bi bi-cash-stack stat-icon icon-p"></i>
+                    <div class="stat-info">
+                        <h2>RM <?php echo number_format($total_earnings, 0); ?></h2>
+                        <p>Pendapatan</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- MENU UTAMA PINTAS PENYEDIA (3 RUANGAN MENDATAR PADA MOBILE - TIADA SCROLL) -->
+            <div class="section-title"><i class="bi bi-grid-fill me-1"></i> Akses Pintas</div>
+            <div class="neo-grid" style="margin-bottom: 20px;">
+                <div class="action-card bg-y" onclick="window.location.href='provider_cars.php'">
+                    <i class="bi bi-car-front-fill action-icon"></i>
+                    <h4>Senarai Kereta</h4>
+                </div>
+                <div class="action-card bg-g" onclick="window.location.href='provider_bookings.php'">
+                    <i class="bi bi-clipboard-check-fill action-icon"></i>
+                    <h4>Tempahan Semasa</h4>
+                    <?php if ($total_pending > 0): ?>
+                        <div style="margin-top: 4px; font-weight: 900; font-size: 0.65rem; background: var(--pink); color: #000; border: 1.5px solid #000; padding: 1px 4px; text-transform: uppercase;">
+                            <?php echo $total_pending; ?> Menunggu
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div class="action-card bg-w" onclick="window.location.href='provider_history.php'">
+                    <i class="bi bi-clock-history action-icon"></i>
+                    <h4>Sejarah Rekod</h4>
+                </div>
+            </div>
+
+            <!-- BUTANG CEPAT QR BAYARAN -->
+            <div style="background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px;">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <i class="bi bi-qr-code fs-1 text-primary"></i>
+                    <div>
+                        <h4 style="font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">Kod QR DuitNow Pembayaran</h4>
+                        <p style="font-weight: 700; color: #555; font-size: 0.85rem; margin: 0;">
+                            <?php echo $has_qr ? 'Kod QR anda sedia digunakan untuk menerima bayaran daripada pelajar.' : 'Anda belum memuat naik Kod QR DuitNow.'; ?>
+                        </p>
+                    </div>
+                </div>
+                <button type="button" class="neo-btn btn-blue" onclick="openModal('qrCodeModal')">
+                    <i class="bi bi-cloud-arrow-up-fill me-1"></i> <?php echo $has_qr ? 'Kemaskini QR' : 'Muat Naik QR'; ?>
+                </button>
+            </div>
+
+            <?php if ($latest_booking): ?>
+                <!-- STATUS TEMPAHAN TERKINI (INLINE) -->
+                <div class="section-title"><i class="bi bi-activity me-1"></i> Permohonan / Tempahan Terkini</div>
+                <div class="neo-card bg-w clickable-card" onclick="window.location.href='provider_bookings.php'" style="text-align: left; align-items: stretch; padding: 20px; margin-bottom: 30px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 1rem; border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+                        <span><i class="bi bi-car-front-fill me-1 text-primary"></i> <?php echo htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</span>
+                        <span style="border: 2px solid var(--black); padding: 2px 8px; font-size: 0.75rem; text-transform: uppercase; font-weight: 900; background: <?php echo ($latest_booking['status'] === 'Approved') ? 'var(--blue)' : (($latest_booking['status'] === 'Completed') ? 'var(--green)' : 'var(--yellow)'); ?>;">
+                            <?php echo htmlspecialchars($latest_booking['status']); ?>
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
+                        <span><i class="bi bi-person-fill me-1"></i> Pelajar: <strong><?php echo htmlspecialchars($latest_booking['student_name']); ?></strong></span>
+                        <span><i class="bi bi-cash me-1"></i> Jumlah: <strong>RM <?php echo number_format($latest_booking['total_price'], 2); ?></strong></span>
+                    </div>
+                    <div style="font-size: 0.8rem; font-weight: 800; color: #555; text-align: right; text-transform: uppercase;">
+                        Tekan untuk lihat dan urus di Tempahan Semasa <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+        </div>
     </main>
 
-    <!-- MODAL TAMBAH KERETA -->
-    <div class="neo-modal-overlay" id="addCarModal">
-        <div class="neo-modal">
-            <div class="modal-header">
-                <h3 class="modal-title">Tambah Kereta Baharu</h3>
-                <button class="close-btn" onclick="closeModal('addCarModal')"><i class="bi bi-x-lg"></i></button>
-            </div>
-            <form action="" method="POST" enctype="multipart/form-data">
-                <div class="form-group">
-                    <label class="form-label">Jenama Kereta (Brand)</label>
-                    <input type="text" class="form-control" name="car_brand" placeholder="Cth: Perodua, Honda, Toyota" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Model Kereta</label>
-                    <input type="text" class="form-control" name="car_model" placeholder="Cth: Myvi 1.5, Civic, Vios" required>
-                </div>
-                <div class="form-group">
-                    <label class="form-label">Nombor Plat</label>
-                    <input type="text" class="form-control" name="car_plate" placeholder="Cth: VAA 1234" required>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Transmisi</label>
-                        <select class="form-select" name="transmission" required>
-                            <option value="" disabled selected>Pilih...</option>
-                            <option value="Auto">Auto</option>
-                            <option value="Manual">Manual</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Tempat Duduk</label>
-                        <input type="number" class="form-control" name="seat_capacity" min="2" max="12" placeholder="Cth: 5" required>
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group">
-                        <label class="form-label">Harga / Hari (RM)</label>
-                        <input type="number" step="0.01" class="form-control" name="price_per_day" placeholder="Cth: 100.00" required>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label">Harga / Jam (RM)</label>
-                        <input type="number" step="0.01" class="form-control" name="price_per_hour" placeholder="Cth: 15.00" required>
-                    </div>
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Muat Naik Gambar Kereta</label>
-                    <input type="file" class="form-control" name="car_image" accept=".jpg, .jpeg, .png" required style="border-style: dashed;">
-                </div>
-
-                <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 3px solid var(--black); padding-top: 15px;">
-                    <button type="button" class="neo-btn" style="background: #ccc;" onclick="closeModal('addCarModal')">Batal</button>
-                    <button type="submit" name="add_car" class="neo-btn btn-green">Hantar Maklumat</button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- MODAL QR CODE -->
+    <!-- MODAL QR CODE PEMBAYARAN -->
     <div class="neo-modal-overlay" id="qrCodeModal">
         <div class="neo-modal">
             <div class="modal-header">
-                <h3 class="modal-title">Kemaskini Kod QR DuitNow</h3>
-                <button class="close-btn" onclick="closeModal('qrCodeModal')"><i class="bi bi-x-lg"></i></button>
+                <h3 class="modal-title"><i class="bi bi-qr-code me-1"></i> Kod QR DuitNow</h3>
+                <button type="button" class="close-btn" onclick="closeModal('qrCodeModal')"><i class="bi bi-x-lg"></i></button>
             </div>
-            <div style="text-align: center;">
-                <?php if ($has_qr): ?>
-                    <p style="font-weight: 800; font-size: 0.85rem; margin-bottom: 8px;">Kod QR Semasa Anda:</p>
-                    <img src="<?php echo htmlspecialchars($provider_data['qr_code_image']); ?>" alt="QR Code" style="max-height: 180px; border: 3px solid var(--black); margin-bottom: 15px;">
-                <?php else: ?>
-                    <div style="background: var(--pink); border: 3px solid var(--black); padding: 15px; font-weight: 800; margin-bottom: 15px;">
-                        <i class="bi bi-qr-code-scan fs-3"></i><br>Tiada Kod QR dimuat naik lagi.
-                    </div>
-                <?php endif; ?>
-
-                <form action="" method="POST" enctype="multipart/form-data" style="text-align: left;">
-                    <div class="form-group">
-                        <label class="form-label">Muat Naik Imej QR DuitNow Baharu</label>
-                        <input type="file" class="form-control" name="qr_image" accept=".jpg, .jpeg, .png" required style="border-style: dashed;">
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 3px solid var(--black); padding-top: 15px;">
-                        <button type="button" class="neo-btn" style="background: #ccc;" onclick="closeModal('qrCodeModal')">Batal</button>
-                        <button type="submit" name="upload_qr" class="neo-btn btn-green"><i class="bi bi-cloud-arrow-up me-1"></i> Simpan Kod QR</button>
-                    </div>
-                </form>
-            </div>
+            <form action="" method="POST" enctype="multipart/form-data">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <?php if ($has_qr): ?>
+                        <img src="<?php echo htmlspecialchars($provider_info['qr_code_image']); ?>" alt="QR Code" style="max-height: 180px; max-width: 100%; border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); padding: 5px; background: #fff;">
+                        <p style="font-weight: 800; font-size: 0.85rem; margin-top: 10px; color: #2e7d32;"><i class="bi bi-check-circle-fill me-1"></i> Kod QR Aktif</p>
+                    <?php else: ?>
+                        <div style="border: 2px dashed var(--black); padding: 30px 10px; background: var(--bg-color);">
+                            <i class="bi bi-qr-code-scan" style="font-size: 3rem; color: #666;"></i>
+                            <p style="font-weight: 800; font-size: 0.85rem; margin-top: 10px; color: #666;">Belum ada Kod QR dimuat naik</p>
+                        </div>
+                    <?php endif; ?>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 6px; margin-bottom: 20px;">
+                    <label style="font-weight: 800; text-transform: uppercase; font-size: 0.85rem;">Pilih Gambar Kod QR DuitNow Baharu</label>
+                    <input type="file" name="qr_image" accept=".jpg,.jpeg,.png" required style="border: 3px solid var(--black); padding: 8px; font-weight: 700; background: var(--bg-color);">
+                </div>
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" class="neo-btn" style="background: #ccc;" onclick="closeModal('qrCodeModal')">Tutup</button>
+                    <button type="submit" name="upload_qr" class="neo-btn btn-green"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Kod QR</button>
+                </div>
+            </form>
         </div>
     </div>
 
@@ -741,9 +817,9 @@ $stmt_prov->close();
         &copy; <?php echo date("Y"); ?> SCRS PMU. SISTEM SEWAAN KERETA.
     </footer>
 
-    <!-- SKRIP ASLI (VANILLA JS) -->
+    <!-- JAVASCRIPT ASLI -->
     <script>
-        // Dropdown Profil
+        // 1. DROPDOWN PROFIL
         const profileToggle = document.getElementById('profile-toggle');
         const profileMenu = document.getElementById('profile-menu');
         
@@ -760,33 +836,56 @@ $stmt_prov->close();
             });
         }
 
-        // Sidebar Offcanvas
+        // 2. SIDEBAR
         const openSidebarBtn = document.getElementById('open-sidebar');
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
 
-        function openSidebar() {
-            sidebar.classList.add('open');
-            sidebarOverlay.classList.add('show');
+        function openSidebar() { sidebar.classList.add('open'); sidebarOverlay.classList.add('show'); }
+        function closeSidebar() { sidebar.classList.remove('open'); sidebarOverlay.classList.remove('show'); }
+
+        if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
+        if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+        if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+        // 3. CAROUSEL ASLI
+        const track = document.getElementById('carousel-track');
+        if (track) {
+            const slides = track.getElementsByClassName('carousel-slide');
+            const totalSlides = slides.length;
+            let currentSlide = 0;
+
+            function updateSlide() {
+                track.style.transform = `translateX(-${currentSlide * 100}%)`;
+            }
+
+            document.getElementById('btn-next').addEventListener('click', () => {
+                currentSlide = (currentSlide + 1) % totalSlides;
+                updateSlide();
+            });
+
+            document.getElementById('btn-prev').addEventListener('click', () => {
+                currentSlide = (currentSlide - 1 + totalSlides) % totalSlides;
+                updateSlide();
+            });
+
+            setInterval(() => {
+                currentSlide = (currentSlide + 1) % totalSlides;
+                updateSlide();
+            }, 6000);
         }
 
-        function closeSidebar() {
-            sidebar.classList.remove('open');
-            sidebarOverlay.classList.remove('show');
-        }
+        // 4. MODAL
+        window.openModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.add('show');
+        };
 
-        openSidebarBtn.addEventListener('click', openSidebar);
-        closeSidebarBtn.addEventListener('click', closeSidebar);
-        sidebarOverlay.addEventListener('click', closeSidebar);
-
-        // Modals
-        function openModal(id) {
-            document.getElementById(id).classList.add('show');
-        }
-        function closeModal(id) {
-            document.getElementById(id).classList.remove('show');
-        }
+        window.closeModal = function(modalId) {
+            const modal = document.getElementById(modalId);
+            if (modal) modal.classList.remove('show');
+        };
     </script>
 </body>
 </html>

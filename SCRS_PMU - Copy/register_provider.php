@@ -64,14 +64,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 move_uploaded_file($_FILES["greencard_file"]["tmp_name"], $targetGreencard) &&
                 move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $targetRoadtax)
             ) {
-                $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, insurance_file, greencard_file, roadtax_file) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $status = 'approved';
+                $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, insurance_file, greencard_file, roadtax_file, status) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("sssssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $targetInsurance, $targetGreencard, $targetRoadtax);
+                $stmt->bind_param("ssssssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $targetInsurance, $targetGreencard, $targetRoadtax, $status);
 
                 if ($stmt->execute()) {
-                    header("Location: pending.php");
+                    header("Location: index.php?registered=provider");
                     exit();
                 } else {
                     $message = '<div class="neo-alert alert-danger">Ralat Pangkalan Data: ' . $stmt->error . '</div>';
@@ -445,6 +446,9 @@ $conn->close();
             <div class="reg-header">
                 <i class="bi bi-car-front-fill me-2"></i> Pendaftaran Penyedia Kereta
             </div>
+            <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 20px; text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 12px; line-height: 1.4;">
+                <strong>Panduan:</strong> Sila lengkapkan maklumat peribadi dan muat naik 5 dokumen wajib (Kad Pengenalan, Lesen Memandu, Geran Kenderaan, Cukai Jalan & Insurans) untuk pengesahan akaun oleh pihak JHEPP.
+            </p>
 
             <?php echo $message; ?>
 

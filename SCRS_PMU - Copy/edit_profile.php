@@ -316,8 +316,11 @@ $current_pic = $user_data['profile_picture'] ?? '';
 
         <div class="neo-card">
             <div class="card-header-title">
-                <i class="bi bi-gear-fill text-primary"></i> Kemaskini Profil
+                <i class="bi bi-person-gear text-primary"></i> Kemaskini Profil Pengguna
             </div>
+            <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 20px; text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 12px; line-height: 1.4;">
+                <strong>Panduan:</strong> Kemaskini maklumat peribadi anda di bawah. Anda boleh menukar gambar profil, nama penuh, nombor telefon, dan menukar kata laluan baharu jika perlu.
+            </p>
 
             <form action="" method="POST" enctype="multipart/form-data">
 

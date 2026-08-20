@@ -11,7 +11,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $password = $_POST['password'];
     $user_found = false;
 
-    // 1. SEMAKAN JADUAL ADMINS (JHEPP)
+    // 1. SEMAKAN JADUAL ADMINS (PENTADBIR SISTEM)
     $sql_admin = "SELECT id, username, password, full_name FROM admins WHERE username = ?";
     $stmt = $conn->prepare($sql_admin);
     $stmt->bind_param("s", $username);
@@ -25,9 +25,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         if (password_verify($password, $row['password'])) {
             $_SESSION['admin_id'] = $row['id'];
             $_SESSION['username'] = $row['username'];
+            $_SESSION['full_name'] = $row['full_name'];
             $_SESSION['role'] = 'admin';
             
-            header("Location: verify_account.php"); 
+            header("Location: admin_dashboard.php"); 
             exit();
         } else {
             $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan salah!</div>';
@@ -35,9 +36,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     }
     $stmt->close();
 
+    // 2. SEMAKAN JADUAL JHEPP (PEGAWAI JHEPP - PENGESAHAN SAHAJA)
+    if (!$user_found) {
+        $sql_jhepp = "SELECT id, username, password, full_name FROM jhepp WHERE username = ?";
+        $stmt_j = $conn->prepare($sql_jhepp);
+        $stmt_j->bind_param("s", $username);
+        $stmt_j->execute();
+        $res_jhepp = $stmt_j->get_result();
+
+        if ($res_jhepp->num_rows > 0) {
+            $user_found = true;
+            $row = $res_jhepp->fetch_assoc();
+            
+            if (password_verify($password, $row['password'])) {
+                $_SESSION['jhepp_id'] = $row['id'];
+                $_SESSION['username'] = $row['username'];
+                $_SESSION['full_name'] = $row['full_name'];
+                $_SESSION['role'] = 'jhepp';
+                
+                header("Location: verify_account.php"); 
+                exit();
+            } else {
+                $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan salah!</div>';
+            }
+        }
+        $stmt_j->close();
+    }
+
     // 2. SEMAKAN JADUAL STUDENTS
     if (!$user_found) {
-        $sql_student = "SELECT id, username, password, full_name, status FROM students WHERE username = ?";
+        $sql_student = "SELECT id, username, password, full_name, status, email_verified FROM students WHERE username = ?";
         $stmt = $conn->prepare($sql_student);
         $stmt->bind_param("s", $username);
         $stmt->execute();
@@ -49,8 +77,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if (password_verify($password, $row['password'])) {
                 
-                if ($row['status'] === 'pending') {
-                    header("Location: pending.php");
+                if (isset($row['email_verified']) && (int)$row['email_verified'] === 0) {
+                    $error_message = '<div class="neo-alert alert-warning"><i class="bi bi-envelope-exclamation-fill me-2"></i><strong>Pengesahan E-mel Diperlukan:</strong> Sila semak peti masuk e-mel anda dan klik pautan pengesahan terlebih dahulu sebelum akaun anda disemak oleh pihak JHEPP.</div>';
+                } else if ($row['status'] === 'pending') {
+                    header("Location: pending.php?type=jhepp_review");
                     exit();
                 } else if ($row['status'] === 'rejected') {
                     $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>Maaf, pendaftaran akaun anda telah ditolak oleh JHEPP.</div>';
@@ -70,7 +100,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->close();
     }
 
-    // 3. SEMAKAN JADUAL PROVIDERS
+    // 3. SEMAKAN JADUAL PROVIDERS (TERUS DAPAT LOGIN TANPA PENGESAHAN JHEPP)
     if (!$user_found) {
         $sql_provider = "SELECT id, username, password, full_name, status FROM providers WHERE username = ?";
         $stmt = $conn->prepare($sql_provider);
@@ -84,12 +114,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             
             if (password_verify($password, $row['password'])) {
                 
-                if ($row['status'] === 'pending') {
-                    header("Location: pending.php");
-                    exit();
-                } else if ($row['status'] === 'rejected') {
-                    $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>Maaf, pendaftaran akaun Penyedia Kereta anda telah ditolak.</div>';
-                } else if ($row['status'] === 'approved') {
+                if ($row['status'] === 'rejected') {
+                    $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-x-circle-fill me-2"></i>Maaf, akaun Penyedia Kereta anda telah disekat.</div>';
+                } else {
                     $_SESSION['provider_id'] = $row['id'];
                     $_SESSION['username'] = $row['username'];
                     $_SESSION['role'] = 'provider';
@@ -346,9 +373,15 @@ $conn->close();
                 <i class="bi bi-shield-lock-fill me-1"></i> Log Masuk
             </div>
 
-            <div class="welcome-banner" style="background: var(--yellow); border: 2px solid var(--black); padding: 10px; font-weight: 700; margin-bottom: 20px; text-align: center; box-shadow: 3px 3px 0px var(--black);">
-                <i class="bi bi-emoji-smile-fill me-1"></i> Selamat Datang ke SCRS PMU! Sila log masuk ke akaun anda.
+            <div class="welcome-banner" style="background: var(--yellow); border: 2px solid var(--black); padding: 10px 12px; font-weight: 700; margin-bottom: 20px; text-align: center; box-shadow: 3px 3px 0px var(--black); font-size: 0.85rem; line-height: 1.4;">
+                <i class="bi bi-shield-check me-1"></i> Sila masukkan Nama Pengguna (Username) dan Kata Laluan anda untuk mengakses sistem.
             </div>
+
+            <?php if (isset($_GET['registered']) && $_GET['registered'] === 'provider'): ?>
+                <div class="neo-alert" style="background-color: var(--green); border: var(--border-thick); box-shadow: 4px 4px 0px var(--black); padding: 12px 15px; font-weight: 800; margin-bottom: 20px; font-size: 0.85rem;">
+                    <i class="bi bi-check-circle-fill me-2"></i><strong>Pendaftaran Berjaya!</strong> Akaun Penyedia Kereta anda telah aktif. Anda boleh terus log masuk di bawah.
+                </div>
+            <?php endif; ?>
 
             <?php echo $error_message; ?>
 

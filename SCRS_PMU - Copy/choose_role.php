@@ -187,18 +187,23 @@
     <!-- KANDUNGAN UTAMA -->
     <main class="main-content">
         <div class="role-container">
-            <h1 class="role-title">Pilih Peranan<br>Pendaftaran Anda</h1>
+            <h1 class="role-title" style="margin-bottom: 12px;"><i class="bi bi-person-check-fill me-1"></i> Pilih Peranan Anda</h1>
+            <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 25px; line-height: 1.4;">
+                Sila pilih jenis akaun pendaftaran anda di bawah. Pilih <strong>"Pelajar"</strong> untuk membuat sewaan kenderaan, atau <strong>"Penyedia Kereta"</strong> jika anda ingin menyewakan kenderaan kepada pelajar PMU.
+            </p>
 
             <a href="register_student.php" class="role-card student-card">
                 <i class="bi bi-mortarboard-fill"></i>
                 <span class="label">Daftar Sebagai</span>
                 <span class="title">Pelajar</span>
+                <span style="font-size: 0.75rem; font-weight: 900; background: var(--black); color: var(--white); padding: 3px 10px; border-radius: 3px; margin-top: 6px; text-transform: uppercase;">Tekan Untuk Pilih <i class="bi bi-arrow-right-short"></i></span>
             </a>
 
             <a href="register_provider.php" class="role-card provider-card">
                 <i class="bi bi-car-front-fill"></i>
                 <span class="label">Daftar Sebagai</span>
                 <span class="title">Penyedia Kereta</span>
+                <span style="font-size: 0.75rem; font-weight: 900; background: var(--black); color: var(--white); padding: 3px 10px; border-radius: 3px; margin-top: 6px; text-transform: uppercase;">Tekan Untuk Pilih <i class="bi bi-arrow-right-short"></i></span>
             </a>
 
             <div class="login-prompt">

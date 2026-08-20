@@ -11,15 +11,29 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
 $student_id = $_SESSION['student_id'];
 $student_name = $_SESSION['username'];
 
-// --- KIRAAN STATISTIK PAPAN PEMUKA ---
+// --- KIRAAN STATISTIK KHUSUS PELAJAR ---
+// 1. Kereta Tersedia
 $sql_cars = "SELECT COUNT(*) as total FROM cars WHERE status = 'Available'";
 $res_cars = $conn->query($sql_cars);
 $total_cars = $res_cars->fetch_assoc()['total'] ?? 0;
 
-$sql_users = "SELECT COUNT(*) as total FROM students WHERE status = 'approved'";
-$res_users = $conn->query($sql_users);
-$total_users = $res_users->fetch_assoc()['total'] ?? 0;
+// 2. Tempahan Aktif / Semasa Pelajar (Pending & Approved)
+$sql_active = "SELECT COUNT(*) as total FROM bookings WHERE student_id = ? AND status IN ('Pending', 'Approved')";
+$stmt_act = $conn->prepare($sql_active);
+$stmt_act->bind_param("i", $student_id);
+$stmt_act->execute();
+$total_active_bookings = $stmt_act->get_result()->fetch_assoc()['total'] ?? 0;
+$stmt_act->close();
 
+// 3. Jumlah Tempahan Selesai
+$sql_comp = "SELECT COUNT(*) as total FROM bookings WHERE student_id = ? AND status = 'Completed'";
+$stmt_cp = $conn->prepare($sql_comp);
+$stmt_cp->bind_param("i", $student_id);
+$stmt_cp->execute();
+$total_completed = $stmt_cp->get_result()->fetch_assoc()['total'] ?? 0;
+$stmt_cp->close();
+
+// 4. Jumlah Keseluruhan Rekod Tempahan
 $sql_my_books = "SELECT COUNT(*) as total FROM bookings WHERE student_id = ?";
 $stmt_my = $conn->prepare($sql_my_books);
 $stmt_my->bind_param("i", $student_id);
@@ -28,7 +42,7 @@ $total_my_bookings = $stmt_my->get_result()->fetch_assoc()['total'] ?? 0;
 $stmt_my->close();
 
 // --- DAPATKAN TEMPAHAN TERBAHARU PELAJAR & MAKLUMAT PENYEDIA ---
-$sql_latest_booking = "SELECT b.*, c.car_model, c.car_plate, p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance 
+$sql_latest_booking = "SELECT b.*, c.car_model, c.car_plate, c.car_image, p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance 
                        FROM bookings b 
                        JOIN cars c ON b.car_id = c.id
                        JOIN providers p ON c.provider_id = p.id
@@ -47,9 +61,9 @@ $stmt_latest->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Papan Pemuka Utama - SCRS PMU</title>
+    <title>Papan Pemuka Pelajar - SCRS PMU</title>
     
-    <!-- Ikon Bootstrap (Hanya ikon, bukan framework CSS Bootstrap) -->
+    <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     
     <!-- Google Fonts -->
@@ -232,10 +246,10 @@ $stmt_latest->close();
         /* --- KANDUNGAN UTAMA --- */
         .main-content { flex: 1; }
 
-        /* --- CAROUSEL (ASLI/VANILLA) --- */
+        /* --- CAROUSEL (SLEEK HERO BANNER) --- */
         .carousel-container {
             width: 100%;
-            height: 400px;
+            height: 360px;
             position: relative;
             overflow: hidden;
             border-bottom: var(--border-thick);
@@ -253,23 +267,49 @@ $stmt_latest->close();
         }
         .carousel-slide img {
             width: 100%; height: 100%; object-fit: cover;
-            filter: grayscale(10%) contrast(110%) brightness(0.65);
+            filter: contrast(105%) brightness(0.65);
         }
-        .carousel-caption {
+        
+        /* Modern Hero Caption Overlay (Left-Aligned & Mobile Friendly) */
+        .carousel-caption-wrapper {
             position: absolute;
-            bottom: 15%;
-            left: 50%;
-            transform: translateX(-50%);
-            background-color: var(--white);
-            border: var(--border-thick);
-            padding: 1.5rem;
-            box-shadow: 8px 8px 0px var(--yellow);
-            text-align: center;
-            width: 90%;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            padding: 30px 40px;
+            text-align: left;
+        }
+        .carousel-badge {
+            background: var(--yellow);
+            color: var(--black);
+            font-weight: 900;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            padding: 4px 10px;
+            border: 2px solid var(--black);
+            display: inline-block;
+            margin-bottom: 8px;
+            width: fit-content;
+            box-shadow: 3px 3px 0px var(--black);
+        }
+        .carousel-caption-wrapper h1 {
+            font-size: 2rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--white);
+            margin-bottom: 6px;
+            text-shadow: 2px 2px 0px var(--black);
+            line-height: 1.2;
+        }
+        .carousel-caption-wrapper p {
+            font-weight: 700;
+            font-size: 1rem;
+            color: #f0f0f0;
+            margin: 0;
             max-width: 600px;
         }
-        .carousel-caption h1 { font-size: 2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 5px; }
-        .carousel-caption p { font-weight: 700; font-size: 1rem; color: var(--black); }
 
         .carousel-btn {
             position: absolute;
@@ -277,62 +317,102 @@ $stmt_latest->close();
             transform: translateY(-50%);
             background: var(--white);
             border: 3px solid var(--black);
-            padding: 10px 15px;
-            font-size: 1.5rem;
-            box-shadow: 4px 4px 0px var(--black);
+            padding: 8px 14px;
+            font-size: 1.3rem;
+            box-shadow: 3px 3px 0px var(--black);
             z-index: 10;
+            cursor: pointer;
+            transition: var(--transition);
         }
+        .carousel-btn:hover { background: var(--yellow); }
         .carousel-btn:active { transform: translateY(-50%) translate(2px, 2px); box-shadow: 0px 0px 0px var(--black); }
-        .btn-prev { left: 20px; }
-        .btn-next { right: 20px; }
+        .btn-prev { left: 15px; }
+        .btn-next { right: 15px; }
 
         /* --- SEKSYEN GRID (STATISTIK & MENU) --- */
         .section-container {
             max-width: 1200px;
             margin: 0 auto;
             padding: 2rem 20px;
+            text-align: left;
         }
         
+        /* --- TYPOGRAPHY & SECTION HEADINGS --- */
         .section-title {
-            display: inline-block;
-            background: var(--black);
-            color: var(--white);
+            font-size: 1.2rem;
             font-weight: 900;
             text-transform: uppercase;
-            padding: 10px 20px;
-            box-shadow: 4px 4px 0px var(--yellow);
-            margin-bottom: 20px;
+            color: var(--black);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 16px;
+            border-bottom: 3px solid var(--black);
+            padding-bottom: 6px;
+            text-align: left;
         }
 
-        .neo-grid {
+        .neo-grid-3 {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 20px;
             margin-bottom: 30px;
         }
 
-        /* Kad Neo Brutalism */
-        .neo-card {
+        /* STATISTIK IMBASAN (PAPAN METRIK MAKLUMAT - BUKAN BUTTON) */
+        .stat-widget {
+            background-color: var(--white);
+            border: 2px solid #ccc;
+            border-top: 4px solid var(--black);
+            box-shadow: none !important;
+            padding: 16px 18px;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: relative;
+            cursor: default;
+            user-select: none;
+            border-radius: 4px;
+        }
+        .stat-widget.border-g { border-top: 4px solid #00c853; }
+        .stat-widget.border-y { border-top: 4px solid #ffb300; }
+        .stat-widget.border-b { border-top: 4px solid #00b0ff; }
+        .stat-widget.border-p { border-top: 4px solid #e91e63; }
+        
+        .stat-widget .stat-info { display: flex; flex-direction: column; }
+        .stat-widget h2 { font-size: 2.2rem; font-weight: 900; line-height: 1; margin-bottom: 4px; color: var(--black); }
+        .stat-widget p { font-weight: 800; font-size: 0.8rem; text-transform: uppercase; color: #666; margin: 0; }
+        .stat-widget .stat-icon { font-size: 2.2rem; }
+        .icon-g { color: #00c853; }
+        .icon-y { color: #ffb300; }
+        .icon-b { color: #00b0ff; }
+        .icon-p { color: #e91e63; }
+
+        /* KAD MENU TINDAKAN (AKSES PINTAS - BOLEH DITEKAN) */
+        .action-card {
             border: var(--border-thick);
             box-shadow: var(--shadow-solid);
-            padding: 20px;
+            padding: 16px 14px;
             text-align: center;
             display: flex;
             flex-direction: column;
-            justify-content: center;
             align-items: center;
+            justify-content: center;
+            cursor: pointer;
             transition: var(--transition);
             position: relative;
         }
-        .clickable-card { cursor: pointer; }
-        .clickable-card:hover { transform: translate(-4px, -4px); box-shadow: var(--shadow-hover); }
-        .clickable-card:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-
-        .neo-card h2 { font-size: 3rem; font-weight: 900; line-height: 1; margin-bottom: 5px; }
-        .neo-card h4 { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin: 10px 0 5px 0; }
-        .neo-card p { font-weight: 700; font-size: 0.9rem; text-transform: uppercase; }
-        .neo-card .desc { text-transform: none; font-size: 0.95rem; font-weight: 600; margin-top: 5px; }
-        .neo-icon { font-size: 3rem; margin-top: 10px; }
+        .action-card:hover { 
+            transform: translate(-3px, -3px); 
+            box-shadow: 8px 8px 0px var(--black); 
+        }
+        .action-card:active { 
+            transform: translate(3px, 3px); 
+            box-shadow: 0px 0px 0px var(--black); 
+        }
+        .action-card h4 { font-size: 1rem; font-weight: 900; text-transform: uppercase; margin: 8px 0 0 0; line-height: 1.2; }
+        .action-card .action-icon { font-size: 2.2rem; }
 
         /* Warna Latar */
         .bg-y { background-color: var(--yellow); }
@@ -340,6 +420,66 @@ $stmt_latest->close();
         .bg-b { background-color: var(--blue); }
         .bg-p { background-color: var(--pink); }
         .bg-w { background-color: var(--white); }
+
+        .neo-btn {
+            background-color: var(--yellow);
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 10px 18px;
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            justify-content: center;
+            text-decoration: none;
+            color: var(--black);
+        }
+        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
+        .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
+        .btn-green { background-color: var(--green); }
+        .btn-blue { background-color: var(--blue); }
+        .btn-pink { background-color: var(--pink); }
+
+        /* Guide Step Cards */
+        .guide-steps-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 12px;
+        }
+        .guide-step-card {
+            background: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            padding: 16px;
+            text-align: left;
+        }
+        .step-num {
+            background: var(--black);
+            color: var(--white);
+            font-weight: 900;
+            font-size: 0.75rem;
+            padding: 2px 8px;
+            display: inline-block;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+        }
+
+        /* Modal Panduan */
+        .neo-modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
+        }
+        .neo-modal-overlay.show { display: flex; }
+        .neo-modal {
+            background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black);
+            width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
+            text-align: left;
+        }
+        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 12px; margin-bottom: 15px; }
+        .modal-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; margin: 0; }
 
         /* --- FOOTER --- */
         footer {
@@ -352,40 +492,55 @@ $stmt_latest->close();
             margin-top: auto;
         }
 
-        /* --- RESPONSIVE MOBILE --- */
+        /* --- RESPONSIVE MOBILE (TIADA SCROLL, COMPACT HORIZONTAL 3-COLUMNS) --- */
         @media (max-width: 768px) {
             .neo-brand { font-size: 1.2rem; }
             .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
             
-            .carousel-container { height: 280px; }
-            .carousel-caption { bottom: 8%; padding: 10px 15px; box-shadow: 4px 4px 0px var(--yellow); }
-            .carousel-caption h1 { font-size: 1.2rem; }
-            .carousel-caption p { font-size: 0.85rem; }
-            .carousel-btn { padding: 5px 10px; font-size: 1.2rem; }
+            .carousel-container { height: 210px; }
+            .carousel-caption-wrapper { padding: 12px 16px; }
+            .carousel-caption-wrapper h1 { font-size: 1.1rem; margin-bottom: 3px; }
+            .carousel-caption-wrapper p { font-size: 0.8rem; }
+            .carousel-btn { padding: 3px 6px; font-size: 1rem; }
 
-            .section-container { padding: 1.5rem 10px; }
+            .section-container { padding: 1rem 10px; }
             
-            .neo-grid { gap: 12px; grid-template-columns: repeat(3, 1fr); }
-            @media (max-width: 480px) {
-                .neo-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+            /* SUSUNAN 3 RUANGAN MENDATAR (TIADA SCROLL) */
+            .neo-grid-3 {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 8px;
+                margin-bottom: 18px;
             }
-            .neo-card { padding: 12px 8px; box-shadow: 4px 4px 0px var(--black); }
-            .clickable-card:hover { transform: none; box-shadow: 4px 4px 0px var(--black); }
-            .clickable-card:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
-
-            .neo-card h2 { font-size: 1.6rem; }
-            .neo-card p { font-size: 0.75rem; margin-top: 3px; font-weight: 800; }
-            .neo-icon { font-size: 1.5rem; margin-top: 5px; }
-
-            .neo-card h4 { font-size: 0.9rem; margin-top: 5px; }
-            .neo-card .desc { font-size: 0.75rem; margin-top: 4px; display: block; }
             
-            .section-title { font-size: 1rem; padding: 8px 15px; }
+            .stat-widget {
+                padding: 10px 4px;
+                box-shadow: none !important;
+                flex-direction: column;
+                text-align: center;
+                align-items: center;
+                gap: 2px;
+                border-radius: 4px;
+                background: #ffffff;
+            }
+            .stat-widget h2 { font-size: 1.5rem; margin-bottom: 2px; }
+            .stat-widget p { font-size: 0.65rem; font-weight: 700; color: #666; }
+            .stat-widget .stat-icon { font-size: 1.3rem; order: -1; margin-bottom: 2px; }
+
+            /* KAD AKSES PINTAS COMPACT PADA MOBILE (3-COLUMNS) */
+            .action-card {
+                padding: 12px 4px;
+                box-shadow: 3px 3px 0px var(--black);
+            }
+            .action-card:hover { transform: none; box-shadow: 3px 3px 0px var(--black); }
+            .action-card:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
+            .action-card .action-icon { font-size: 1.6rem; }
+            .action-card h4 { font-size: 0.72rem; margin-top: 4px; }
         }
 
         /* --- BOOKING STATUS CARD --- */
         .booking-status-card {
             transition: var(--transition);
+            text-align: left;
         }
         .booking-status-card:hover {
             transform: translate(-3px, -3px);
@@ -393,10 +548,11 @@ $stmt_latest->close();
         }
         .status-badge {
             border: 2px solid var(--black);
-            padding: 2px 6px;
-            font-size: 0.7rem;
+            padding: 3px 8px;
+            font-size: 0.75rem;
             text-transform: uppercase;
             font-weight: 900;
+            border-radius: 3px;
         }
         .status-badge.pending { background-color: var(--yellow); }
         .status-badge.approved { background-color: var(--blue); }
@@ -423,7 +579,7 @@ $stmt_latest->close();
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
-                <li><a href="index.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
             </ul>
         </div>
     </header>
@@ -446,28 +602,31 @@ $stmt_latest->close();
     <!-- KANDUNGAN UTAMA -->
     <main class="main-content">
         
-        <!-- CAROUSEL -->
+        <!-- CAROUSEL (MODERN SLEEK HERO) -->
         <div class="carousel-container">
             <div class="carousel-track" id="carousel-track">
                 <div class="carousel-slide">
                     <img src="https://images.unsplash.com/photo-1549317661-bd32c8ce0db2?auto=format&fit=crop&w=1000&q=80" alt="Kereta 1">
-                    <div class="carousel-caption">
-                        <h1>Eksplorasi Bermula</h1>
-                        <p>Apa rancangan perjalanan anda hari ini?</p>
+                    <div class="carousel-caption-wrapper">
+                        <span class="carousel-badge">Sistem Sewaan PMU</span>
+                        <h1>Sewa Kereta Mudah & Pantas</h1>
+                        <p>Khas untuk kemudahan pelajar Politeknik Mukah bergerak.</p>
                     </div>
                 </div>
                 <div class="carousel-item carousel-slide">
                     <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?auto=format&fit=crop&w=1000&q=80" alt="Kereta 2">
-                    <div class="carousel-caption" style="box-shadow: 8px 8px 0px var(--green);">
-                        <h1>Urusan Dipermudah</h1>
-                        <p>Sewa ikut jam atau harian mengikut bajet anda.</p>
+                    <div class="carousel-caption-wrapper">
+                        <span class="carousel-badge" style="background: var(--green);">Kadar Berpatutan</span>
+                        <h1>Pilihan Harian & Mengikut Jam</h1>
+                        <p>Kadar sewaan fleksibel yang mesra bajet pelajar.</p>
                     </div>
                 </div>
                 <div class="carousel-item carousel-slide">
                     <img src="https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?auto=format&fit=crop&w=1000&q=80" alt="Kereta 3">
-                    <div class="carousel-caption" style="box-shadow: 8px 8px 0px var(--blue);">
-                        <h1>Kekal Selamat</h1>
-                        <p>Setiap kenderaan dan penyedia telah disahkan.</p>
+                    <div class="carousel-caption-wrapper">
+                        <span class="carousel-badge" style="background: var(--blue);">Terjamin Selamat</span>
+                        <h1>Penyedia & Kenderaan Sah</h1>
+                        <p>Semua penyedia dan kenderaan berdaftar telah disahkan.</p>
                     </div>
                 </div>
             </div>
@@ -477,53 +636,84 @@ $stmt_latest->close();
 
         <div class="section-container">
             
-            <!-- STATISTIK -->
-            <div class="section-title">Imbasan Sistem</div>
-            <div class="neo-grid">
-                <div class="neo-card bg-p">
-                    <h2><?php echo $total_cars; ?></h2>
-                    <p>Kereta</p>
-                    <i class="bi bi-car-front-fill neo-icon"></i>
+            <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+            <div style="margin-bottom: 20px;">
+                <h1 style="font-size: 1.4rem; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-speedometer2 text-dark"></i> Papan Pemuka Pelajar
+                </h1>
+                <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin: 0; line-height: 1.4;">
+                    Selamat Datang, <strong><?php echo htmlspecialchars($student_name); ?></strong>!
+                </p>
+            </div>
+
+            <!-- STATISTIK KHUSUS PELAJAR (3 RUANGAN METRIK MAKLUMAT - BUKAN BUTTON) -->
+            <div class="section-title"><i class="bi bi-bar-chart-fill me-1"></i> Imbasan Status</div>
+            <div class="neo-grid-3">
+                <div class="stat-widget border-g">
+                    <i class="bi bi-car-front-fill stat-icon icon-g"></i>
+                    <div class="stat-info">
+                        <h2><?php echo $total_cars; ?></h2>
+                        <p>Kereta Tersedia</p>
+                    </div>
                 </div>
-                <div class="neo-card bg-b">
-                    <h2><?php echo $total_users; ?></h2>
-                    <p>Pelajar</p>
-                    <i class="bi bi-people-fill neo-icon"></i>
+                <div class="stat-widget border-y">
+                    <i class="bi bi-hourglass-split stat-icon icon-y"></i>
+                    <div class="stat-info">
+                        <h2><?php echo $total_active_bookings; ?></h2>
+                        <p>Tempahan Aktif</p>
+                    </div>
                 </div>
-                <div class="neo-card bg-w">
-                    <h2><?php echo $total_my_bookings; ?></h2>
-                    <p>Tempahan</p>
-                    <i class="bi bi-journal-check neo-icon"></i>
+                <div class="stat-widget border-b">
+                    <i class="bi bi-journal-check stat-icon icon-b"></i>
+                    <div class="stat-info">
+                        <h2><?php echo $total_my_bookings; ?></h2>
+                        <p>Jumlah Rekod</p>
+                    </div>
                 </div>
             </div>
 
-            <!-- MENU UTAMA PINTAS -->
-            <div class="section-title" style="margin-top: 10px;">Akses Pintas</div>
-            <div class="neo-grid">
-                <div class="neo-card clickable-card bg-y" onclick="window.location.href='booking.php'">
-                    <i class="bi bi-key-fill neo-icon"></i>
-                    <h4>Tempah</h4>
-                    <p class="desc">Cari kenderaan mengikut kesesuaian waktu anda.</p>
+            <!-- MENU UTAMA PINTAS (3 RUANGAN MENDATAR PADA MOBILE - TIADA SCROLL) -->
+            <div class="section-title"><i class="bi bi-grid-fill me-1"></i> Akses Pintas</div>
+            <div class="neo-grid-3" style="margin-bottom: 20px;">
+                <div class="action-card bg-y" onclick="window.location.href='booking.php'">
+                    <i class="bi bi-key-fill action-icon"></i>
+                    <h4>Cari & Tempah</h4>
                 </div>
-                <div class="neo-card clickable-card bg-g" onclick="window.location.href='my_bookings.php'">
-                    <i class="bi bi-clipboard-check-fill neo-icon"></i>
-                    <h4>Status</h4>
-                    <p class="desc">Semak kelulusan tempahan & hubungi penyedia.</p>
+                <div class="action-card bg-g" onclick="window.location.href='my_bookings.php'">
+                    <i class="bi bi-clipboard-check-fill action-icon"></i>
+                    <h4>Status Tempahan</h4>
+                    <?php if ($total_active_bookings > 0): ?>
+                        <div style="margin-top: 4px; font-weight: 900; font-size: 0.65rem; background: var(--pink); color: #000; border: 1.5px solid #000; padding: 1px 4px; text-transform: uppercase;">
+                            <?php echo $total_active_bookings; ?> Aktif
+                        </div>
+                    <?php endif; ?>
                 </div>
-                <div class="neo-card clickable-card bg-w" onclick="window.location.href='booking_history.php'">
-                    <i class="bi bi-clock-history neo-icon"></i>
-                    <h4>Sejarah</h4>
-                    <p class="desc">Lihat rekod penggunaan dan tempahan lepas.</p>
+                <div class="action-card bg-w" onclick="window.location.href='booking_history.php'">
+                    <i class="bi bi-clock-history action-icon"></i>
+                    <h4>Sejarah Rekod</h4>
                 </div>
+            </div>
+
+            <!-- BUTANG PANDUAN RINGKAS MENYEWA (BUKA MODAL AGAR TIDAK MEMENUHI DASHBOARD) -->
+            <div style="margin-bottom: 25px;">
+                <button type="button" class="neo-btn" onclick="openGuideModal()" style="background: var(--white); width: 100%; justify-content: space-between; padding: 12px 16px; border: var(--border-thick); box-shadow: var(--shadow-solid); color: var(--black);">
+                    <span style="display: flex; align-items: center; gap: 8px; font-size: 0.9rem;">
+                        <i class="bi bi-info-circle-fill text-primary"></i>
+                        <span>Cara Menyewa (3 Langkah)</span>
+                    </span>
+                    <span style="font-size: 0.75rem; background: var(--yellow); border: 2px solid var(--black); padding: 3px 8px; border-radius: 3px; display: inline-flex; align-items: center; gap: 2px; box-shadow: 2px 2px 0px var(--black);">
+                        Panduan <i class="bi bi-arrow-right-short"></i>
+                    </span>
+                </button>
             </div>
 
             <?php if ($latest_booking): ?>
-                <!-- PROGRESS BAR TERKINI (INLINE, TIDAK BERTINDIH) -->
-                <div class="section-title" style="margin-top: 25px;"><i class="bi bi-activity me-1"></i> Status Tempahan Terkini</div>
-                <div class="booking-status-card" onclick="window.location.href='my_bookings.php'" style="background-color: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 20px; cursor: pointer; transition: var(--transition); margin-top: 15px;">
+                <!-- LIVE TRACKING KAD TEMPAHAN TERKINI -->
+                <div class="section-title"><i class="bi bi-activity me-1"></i> Status Tempahan Terkini Anda</div>
+                <div class="booking-status-card" onclick="window.location.href='my_bookings.php'" style="background-color: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 20px; cursor: pointer; transition: var(--transition); margin-bottom: 30px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.95rem; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                        <span><i class="bi bi-car-front-fill me-1"></i> <strong><?php echo htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</strong></span>
-                        <span class="status-badge <?php echo strtolower($latest_booking['status']); ?>" style="border: 2px solid var(--black); padding: 3px 10px; font-size: 0.75rem; text-transform: uppercase; font-weight: 900;">
+                        <span><i class="bi bi-car-front-fill me-1 text-primary"></i> <strong><?php echo htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</strong></span>
+                        <span class="status-badge <?php echo strtolower($latest_booking['status']); ?>">
                             <?php echo htmlspecialchars($latest_booking['status']); ?>
                         </span>
                     </div>
@@ -548,14 +738,61 @@ $stmt_latest->close();
                     <div class="progress-bar-container" style="width: 100%; height: 14px; background-color: var(--bg-color); border: 3px solid var(--black); overflow: hidden; margin-bottom: 10px;">
                         <div class="progress-bar-fill" style="width: <?php echo $progress; ?>%; height: 100%; background-color: <?php echo $bar_color; ?>; transition: width 0.3s ease-in-out;"></div>
                     </div>
-                    <div style="font-size: 0.8rem; font-weight: 800; color: #555; text-align: right; text-transform: uppercase;">
-                        Tekan untuk lihat status penuh di Status Tempahan <i class="bi bi-arrow-right-circle-fill ms-1"></i>
+                    <div style="display: flex; justify-content: space-between; font-size: 0.8rem; font-weight: 800; color: #555; text-transform: uppercase; flex-wrap: wrap; gap: 5px;">
+                        <span>Tempoh: <?php echo date('d M, h:i A', strtotime($latest_booking['start_date'])); ?> ➔ <?php echo date('d M, h:i A', strtotime($latest_booking['end_date'])); ?></span>
+                        <span style="color: #0055ff;">Tekan untuk buka Status Tempahan <i class="bi bi-arrow-right-circle-fill ms-1"></i></span>
                     </div>
+                </div>
+            <?php else: ?>
+                <!-- JIKA BELUM ADA TEMPAHAN -->
+                <div style="background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 30px; text-align: left;">
+                    <div>
+                        <h4 style="font-weight: 900; text-transform: uppercase; margin-bottom: 4px;"><i class="bi bi-car-front-fill text-primary me-1"></i> Sedia Untuk Memulakan Perjalanan?</h4>
+                        <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin: 0;">Cari kenderaan yang sesuai mengikut bajet anda sekarang!</p>
+                    </div>
+                    <a href="booking.php" class="neo-btn btn-green">
+                        <i class="bi bi-key-fill me-1"></i> Tempah Kereta Sekarang
+                    </a>
                 </div>
             <?php endif; ?>
 
         </div>
     </main>
+
+    <!-- MODAL PANDUAN MENYEWA -->
+    <div class="neo-modal-overlay" id="guideModalOverlay" onclick="closeGuideModalOutside(event)">
+        <div class="neo-modal" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="bi bi-info-circle-fill text-primary me-2"></i>Panduan Mudah Menyewa</h3>
+                <button type="button" class="neo-btn" style="padding: 4px 10px; font-size: 0.85rem; background: var(--pink);" onclick="closeGuideModal()">X</button>
+            </div>
+            <div class="modal-body">
+                <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 15px;">Ikuti 3 langkah mudah berikut untuk menyewa kenderaan di SCRS PMU:</p>
+                <div class="guide-steps-grid">
+                    <div class="guide-step-card">
+                        <span class="step-num">Langkah 1</span>
+                        <h5 style="font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin-bottom: 5px;"><i class="bi bi-search text-primary me-1"></i> Cari & Pilih Kereta</h5>
+                        <p style="font-size: 0.85rem; font-weight: 600; color: #444; margin: 0; line-height: 1.4;">Pilih tarikh, masa sewaan mengikut jam atau harian dan hantar permohonan kepada penyedia kenderaan.</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <span class="step-num">Langkah 2</span>
+                        <h5 style="font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin-bottom: 5px;"><i class="bi bi-qr-code text-success me-1"></i> Kelulusan & Bayaran QR</h5>
+                        <p style="font-size: 0.85rem; font-weight: 600; color: #444; margin: 0; line-height: 1.4;">Setelah penyedia meluluskan tempahan, imbas Kod QR DuitNow penyedia dan muat naik bukti resit transaksi.</p>
+                    </div>
+                    <div class="guide-step-card">
+                        <span class="step-num">Langkah 3</span>
+                        <h5 style="font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin-bottom: 5px;"><i class="bi bi-car-front-fill text-danger me-1"></i> Ambil Kunci & Pulangkan</h5>
+                        <p style="font-size: 0.85rem; font-weight: 600; color: #444; margin: 0; line-height: 1.4;">Hubungi penyedia melalui WhatsApp untuk serahan kunci dan muat naik gambar kenderaan selepas selesai dipulangkan.</p>
+                    </div>
+                </div>
+                <div style="margin-top: 20px; text-align: right;">
+                    <button type="button" class="neo-btn btn-green" onclick="closeGuideModal()" style="width: 100%;">
+                        Faham & Tutup Panduan
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <!-- FOOTER -->
     <footer>
@@ -634,6 +871,21 @@ $stmt_latest->close();
         }
 
         startInterval(); // Mulakan auto-slide
+
+        // 4. MODAL PANDUAN
+        function openGuideModal() {
+            document.getElementById('guideModalOverlay').classList.add('show');
+        }
+
+        function closeGuideModal() {
+            document.getElementById('guideModalOverlay').classList.remove('show');
+        }
+
+        function closeGuideModalOutside(e) {
+            if (e.target.id === 'guideModalOverlay') {
+                closeGuideModal();
+            }
+        }
     </script>
 </body>
 </html>

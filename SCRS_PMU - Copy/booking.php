@@ -8,11 +8,18 @@ if (!isset($_SESSION['role']) || $_SESSION['role'] !== 'student') {
     exit();
 }
 
+use PHPMailer\PHPMailer\PHPMailer;
+use PHPMailer\PHPMailer\Exception;
+
+require 'PHPMailer/Exception.php';
+require 'PHPMailer/PHPMailer.php';
+require 'PHPMailer/SMTP.php';
+
 $student_id = $_SESSION['student_id'];
 $student_name = $_SESSION['username'];
 $message = "";
 
-// 1. PROSES PENGHANTARAN TEMPAHAN & RESIT (POST)
+// 1. PROSES PENGHANTARAN TEMPAHAN (POST)
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_booking'])) {
     $car_id = (int)$_POST['car_id'];
     $rent_type = htmlspecialchars($_POST['rent_type']);
@@ -35,35 +42,121 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['submit_booking'])) {
         $stmt_check->close();
     } else {
         $stmt_check->close();
-        // Pengurusan muat naik resit
-    $targetDir = "uploads/receipts/";
-    if (!is_dir($targetDir)) {
-        mkdir($targetDir, 0777, true);
-    }
-
-    $receiptName = basename($_FILES["payment_receipt"]["name"]);
-    $newReceiptName = "Resit_" . $student_id . "_" . time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $receiptName);
-    $targetPath = $targetDir . $newReceiptName;
-
-    if (move_uploaded_file($_FILES["payment_receipt"]["tmp_name"], $targetPath)) {
         
-        $sql_book = "INSERT INTO bookings (student_id, car_id, rent_type, start_date, end_date, total_price, payment_receipt, status) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        $sql_book = "INSERT INTO bookings (student_id, car_id, rent_type, start_date, end_date, total_price, status) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?)";
         $stmt_book = $conn->prepare($sql_book);
-        
-        // Bind 8 parameter
-        $stmt_book->bind_param("iisssdss", $student_id, $car_id, $rent_type, $start_date, $end_date, $total_price, $targetPath, $status);
+        $stmt_book->bind_param("iisssds", $student_id, $car_id, $rent_type, $start_date, $end_date, $total_price, $status);
 
         if ($stmt_book->execute()) {
-            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Tempahan dan resit berjaya dihantar! Sila tunggu pengesahan daripada Penyedia Kereta.</div>";
+            $new_booking_id = $stmt_book->insert_id;
+            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Permohonan tempahan berjaya dihantar! Sila tunggu kelulusan daripada Penyedia Kereta. Selepas diluluskan, anda boleh membuat bayaran menggunakan Kod QR di halaman <a href='my_bookings.php' style='text-decoration: underline; font-weight: 900;'>Status Tempahan</a>.</div>";
+
+            // ========================================================
+            // HANTAR E-MEL NOTIFIKASI KEPADA PENYEDIA KERETA (PROVIDER)
+            // ========================================================
+            $sql_prov = "SELECT p.full_name AS provider_name, p.email AS provider_email, 
+                                c.car_brand, c.car_model, c.car_plate,
+                                s.full_name AS student_full_name, s.no_pendaftaran, s.phone_no AS student_phone
+                         FROM cars c 
+                         JOIN providers p ON c.provider_id = p.id 
+                         JOIN students s ON s.id = ?
+                         WHERE c.id = ?";
+            $stmt_p = $conn->prepare($sql_prov);
+            $stmt_p->bind_param("ii", $student_id, $car_id);
+            $stmt_p->execute();
+            $prov_data = $stmt_p->get_result()->fetch_assoc();
+            $stmt_p->close();
+
+            if ($prov_data && !empty($prov_data['provider_email'])) {
+                // Bina URL pautan ke halaman penyedia
+                $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off' || $_SERVER['SERVER_PORT'] == 443) ? "https://" : "http://";
+                $host = $_SERVER['HTTP_HOST'];
+                $uri = rtrim(dirname($_SERVER['PHP_SELF']), '/\\');
+                $provider_page_link = $protocol . $host . $uri . "/provider_bookings.php";
+
+                $mail = new PHPMailer(true);
+                try {
+                    $mail->isSMTP();
+                    $mail->Host       = 'smtp.gmail.com';
+                    $mail->SMTPAuth   = true;
+                    $mail->Username   = 'chickenmasterz26@gmail.com';
+                    $mail->Password   = 'pcccoszzikvwmzsd';
+                    $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
+                    $mail->Port       = 587;
+
+                    $mail->setFrom('chickenmasterz26@gmail.com', 'SCRS PMU');
+                    $mail->addAddress($prov_data['provider_email'], $prov_data['provider_name']);
+
+                    $mail->isHTML(true);
+                    $mail->Subject = "SCRS PMU - Permohonan Tempahan Kereta Baharu (#" . $new_booking_id . ")";
+                    
+                    $start_fmt = date("d/m/Y, h:i A", strtotime($start_date));
+                    $end_fmt = date("d/m/Y, h:i A", strtotime($end_date));
+                    $price_fmt = number_format($total_price, 2);
+
+                    $mail->Body = "
+                    <div style='font-family: Arial, sans-serif; background-color: #f4f4f0; padding: 25px;'>
+                        <div style='max-width: 600px; margin: 0 auto; background: #ffffff; border: 4px solid #000000; box-shadow: 6px 6px 0px #000000; padding: 25px;'>
+                            <div style='background-color: #ffde59; border: 3px solid #000; padding: 12px; margin-bottom: 20px; text-align: center;'>
+                                <h2 style='margin: 0; text-transform: uppercase; font-weight: 900; color: #000;'>SCRS PMU - TEMPAHAN BAHARU</h2>
+                            </div>
+                            <p style='font-size: 1rem; color: #333;'>Salam <strong>" . htmlspecialchars($prov_data['provider_name']) . "</strong>,</p>
+                            <p style='color: #333;'>Seorang pelajar telah menghantar permohonan sewaan kenderaan anda. Butiran tempahan adalah seperti berikut:</p>
+                            
+                            <table style='width: 100%; border-collapse: collapse; margin: 15px 0; font-size: 0.95rem;'>
+                                <tr style='background: #f9f9f9; border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold; width: 40%;'>ID Tempahan:</td>
+                                    <td style='padding: 8px;'>#" . $new_booking_id . "</td>
+                                </tr>
+                                <tr style='border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold;'>Kenderaan:</td>
+                                    <td style='padding: 8px;'>" . htmlspecialchars($prov_data['car_brand']) . " " . htmlspecialchars($prov_data['car_model']) . " (" . htmlspecialchars($prov_data['car_plate']) . ")</td>
+                                </tr>
+                                <tr style='background: #f9f9f9; border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold;'>Nama Pelajar:</td>
+                                    <td style='padding: 8px;'>" . htmlspecialchars($prov_data['student_full_name']) . " (" . htmlspecialchars($prov_data['no_pendaftaran']) . ")</td>
+                                </tr>
+                                <tr style='border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold;'>No Telefon Pelajar:</td>
+                                    <td style='padding: 8px;'>" . htmlspecialchars($prov_data['student_phone']) . "</td>
+                                </tr>
+                                <tr style='background: #f9f9f9; border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold;'>Tarikh Ambil:</td>
+                                    <td style='padding: 8px;'>" . $start_fmt . "</td>
+                                </tr>
+                                <tr style='border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold;'>Tarikh Pulang:</td>
+                                    <td style='padding: 8px;'>" . $end_fmt . "</td>
+                                </tr>
+                                <tr style='background: #f9f9f9; border-bottom: 2px solid #eee;'>
+                                    <td style='padding: 8px; font-weight: bold;'>Jenis Sewaan & Jumlah:</td>
+                                    <td style='padding: 8px; color: #007700; font-weight: bold;'>" . $rent_type . " - RM " . $price_fmt . "</td>
+                                </tr>
+                            </table>
+
+                            <div style='text-align: center; margin: 25px 0;'>
+                                <a href='" . $provider_page_link . "' style='background-color: #00e676; border: 3px solid #000; box-shadow: 4px 4px 0px #000; padding: 12px 24px; color: #000; font-weight: 900; text-decoration: none; text-transform: uppercase; display: inline-block;'>
+                                    Urus & Luluskan Tempahan Di Sini &rarr;
+                                </a>
+                            </div>
+
+                            <p style='font-size: 0.85rem; color: #777; border-top: 2px dashed #ccc; padding-top: 10px;'>
+                                E-mel ini dijana secara automatik oleh Sistem Sewaan Kereta PMU (SCRS PMU).
+                            </p>
+                        </div>
+                    </div>";
+
+                    $mail->send();
+                    $message .= "<div class='neo-alert alert-success mt-2'><i class='bi bi-envelope-check-fill me-2'></i>Notifikasi e-mel telah dihantar kepada Penyedia Kereta.</div>";
+                } catch (Exception $e) {
+                    // E-mel gagal dihantar tapi rekod tempahan tetap berjaya
+                }
+            }
         } else {
             $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt_book->error . "</div>";
         }
         $stmt_book->close();
-
-    } else {
-        $message = "<div class='neo-alert alert-danger'>Ralat: Gagal memuat naik resit pembayaran.</div>";
-    }
     }
 }
 
@@ -110,8 +203,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         if ($duration < 1) $duration = 1;
     }
 
-    // Cari kereta tersedia dan gabung maklumat QR Provider
-    $sql_cars = "SELECT c.*, p.qr_code_image, p.full_name AS provider_name 
+    // Cari kereta tersedia beserta maklumat penuh penyedia
+    $sql_cars = "SELECT c.*, 
+                        p.username AS provider_username, 
+                        p.email AS provider_email, 
+                        p.phone_no AS provider_phone, 
+                        p.roadtax_file AS provider_roadtax, 
+                        p.insurance_file AS provider_insurance, 
+                        p.profile_picture AS provider_profile_picture, 
+                        p.qr_code_image AS provider_qr_code,
+                        p.full_name AS provider_name 
                  FROM cars c 
                  JOIN providers p ON c.provider_id = p.id
                  WHERE c.status = 'Available' 
@@ -128,14 +229,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     $result_cars = $stmt_cars->get_result();
 
     if ($result_cars->num_rows > 0) {
-        echo '<h3 class="section-heading"><i class="bi bi-car-front-fill text-dark"></i> Langkah 2: Pilih Kereta & Pembayaran</h3>';
+        echo '<h3 class="section-heading"><i class="bi bi-car-front-fill text-dark"></i> Langkah 2: Pilih Kereta</h3>';
         echo '<p class="section-desc">Menampilkan kereta yang tersedia untuk tempoh <strong>' . $duration . ' ' . ($rent_type === 'Daily' ? 'Hari' : 'Jam') . '</strong>.</p>';
         echo '<div class="cars-grid">';
         
         while ($car = $result_cars->fetch_assoc()) { 
             $price_rate = ($rent_type === 'Daily') ? $car['price_per_day'] : $car['price_per_hour'];
             $total_calc_price = $duration * $price_rate;
-            $qr_image = !empty($car['qr_code_image']) ? $car['qr_code_image'] : '';
             ?>
             <div class="car-card">
                 <img src="<?php echo htmlspecialchars($car['car_image']); ?>" class="car-img" alt="Kereta">
@@ -147,6 +247,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <span class="neo-badge"><i class="bi bi-gear-fill"></i> <?php echo htmlspecialchars($car['transmission']); ?></span>
                         <span class="neo-badge"><i class="bi bi-people-fill"></i> <?php echo htmlspecialchars($car['seat_capacity']); ?> Tempat Duduk</span>
                     </div>
+
+                    <!-- MAKLUMAT PENYEDIA KERETA -->
+                    <div style="margin-bottom: 12px; font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; justify-content: space-between; background: #f0f4f8; border: 2px solid var(--black); padding: 6px 10px;">
+                        <span style="color: #444;"><i class="bi bi-person-badge text-primary me-1"></i> Penyedia:</span>
+                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($car['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_roadtax'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_insurance'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
+                            <?php echo htmlspecialchars($car['provider_name']); ?> <i class="bi bi-info-circle-fill ms-1"></i>
+                        </a>
+                    </div>
                     
                     <div class="price-box">
                         <div class="price-row">
@@ -154,67 +262,62 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                             <span>RM <?php echo number_format($price_rate, 2); ?></span>
                         </div>
                         <div class="price-total">
-                            <span>Jumlah:</span>
+                            <span>Jumlah Anggaran:</span>
                             <span style="color: #007700;">RM <?php echo number_format($total_calc_price, 2); ?></span>
                         </div>
                     </div>
 
-                    <button type="button" class="neo-btn btn-green" onclick="openModal('modal<?php echo $car['id']; ?>')">
-                        Tempah Kereta Ini
+                    <button type="button" class="neo-btn btn-green" style="width: 100%; justify-content: center;" onclick="openModal('modal<?php echo $car['id']; ?>')">
+                        <i class="bi bi-key-fill me-1"></i> Tempah Kereta Ini
                     </button>
                 </div>
             </div>
 
-            <!-- MODAL POPUP PAYMENT (Vanilla JS Modal) -->
+            <!-- MODAL POPUP PENGESAHAN TEMPAHAN (Vanilla JS Modal) -->
             <div class="neo-modal-overlay" id="modal<?php echo $car['id']; ?>">
-                <div class="neo-modal">
+                <div class="neo-modal" style="max-width: 550px;">
                     <div class="modal-header">
-                        <h3 class="modal-title">Pengesahan & Pembayaran</h3>
+                        <h3 class="modal-title"><i class="bi bi-file-earmark-check-fill me-1"></i> Pengesahan Tempahan</h3>
                         <button type="button" class="close-btn" onclick="closeModal('modal<?php echo $car['id']; ?>')"><i class="bi bi-x-lg"></i></button>
                     </div>
                     
-                    <form action="booking.php" method="POST" enctype="multipart/form-data">
-                        <div class="modal-grid">
-                            <div class="modal-divider">
-                                <h4 style="font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: #0055ff;"><?php echo htmlspecialchars($car['car_model']); ?></h4>
-                                <ul style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; font-weight: 700;">
-                                    <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
-                                        <span style="color: #666;">Ambil:</span> 
-                                        <span><?php echo date('d M Y, h:i A', strtotime($search_start)); ?></span>
-                                    </li>
-                                    <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
-                                        <span style="color: #666;">Pulang:</span> 
-                                        <span><?php echo date('d M Y, h:i A', strtotime($search_end)); ?></span>
-                                    </li>
-                                    <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
-                                        <span style="color: #666;">Tempoh:</span> 
-                                        <span><?php echo $duration; ?> <?php echo ($rent_type === 'Daily') ? 'Hari' : 'Jam'; ?></span>
-                                    </li>
-                                </ul>
-                                <div style="background: var(--bg-color); border: 3px solid var(--black); padding: 15px;">
-                                    <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 1.2rem;">
-                                        <span>Jumlah Bayaran:</span>
-                                        <span style="color: #008800;">RM <?php echo number_format($total_calc_price, 2); ?></span>
-                                    </div>
+                    <form action="booking.php" method="POST">
+                        <div>
+                            <h4 style="font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: #0055ff;">
+                                <?php echo !empty($car['car_brand']) ? htmlspecialchars($car['car_brand']) . ' ' : ''; ?><?php echo htmlspecialchars($car['car_model']); ?>
+                                <span style="font-size: 0.9rem; color: #555;">(<?php echo htmlspecialchars($car['car_plate']); ?>)</span>
+                            </h4>
+                            <ul style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; font-weight: 700;">
+                                <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px; align-items: center;">
+                                    <span style="color: #666;">Penyedia Kereta:</span> 
+                                    <span>
+                                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($car['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_roadtax'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_insurance'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
+                                            <?php echo htmlspecialchars($car['provider_name']); ?> <i class="bi bi-info-circle-fill ms-1"></i>
+                                        </a>
+                                    </span>
+                                </li>
+                                <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
+                                    <span style="color: #666;">Tarikh & Masa Ambil:</span> 
+                                    <span><?php echo date('d M Y, h:i A', strtotime($search_start)); ?></span>
+                                </li>
+                                <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
+                                    <span style="color: #666;">Tarikh & Masa Pulang:</span> 
+                                    <span><?php echo date('d M Y, h:i A', strtotime($search_end)); ?></span>
+                                </li>
+                                <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
+                                    <span style="color: #666;">Tempoh:</span> 
+                                    <span><?php echo $duration; ?> <?php echo ($rent_type === 'Daily') ? 'Hari' : 'Jam'; ?></span>
+                                </li>
+                            </ul>
+                            <div style="background: var(--bg-color); border: 3px solid var(--black); padding: 15px; margin-bottom: 15px;">
+                                <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 1.2rem;">
+                                    <span>Jumlah Bayaran:</span>
+                                    <span style="color: #008800;">RM <?php echo number_format($total_calc_price, 2); ?></span>
                                 </div>
                             </div>
 
-                            <div style="display: flex; flex-direction: column; align-items: center; text-align: center;">
-                                <p style="font-weight: 900; text-transform: uppercase; margin-bottom: 2px;">Imbas QR DuitNow</p>
-                                <p style="font-size: 0.85rem; font-weight: 700; color: #666; margin-bottom: 10px;">Penyedia: <?php echo htmlspecialchars($car['provider_name']); ?></p>
-                                
-                                <?php if (!empty($qr_image) && file_exists($qr_image)): ?>
-                                    <img src="<?php echo htmlspecialchars($qr_image); ?>" alt="QR DuitNow" class="qr-img">
-                                <?php else: ?>
-                                    <div style="background: var(--pink); border: 3px solid var(--black); padding: 15px; font-weight: 800; font-size: 0.85rem; margin-bottom: 10px; width: 100%;">
-                                        <i class="bi bi-exclamation-octagon fs-4"></i> Tiada QR Kod disediakan. Sila hubungi penyedia.
-                                    </div>
-                                <?php endif; ?>
-
-                                <div class="form-group" style="width: 100%; text-align: left; margin-top: 10px;">
-                                    <label class="form-label" style="color: #0055ff;">Muat Naik Resit (Wajib)</label>
-                                    <input class="form-control" type="file" name="payment_receipt" accept=".jpg, .jpeg, .png, .pdf" required style="border-style: dashed;">
-                                </div>
+                            <div class="neo-alert" style="background: var(--yellow); font-size: 0.85rem; padding: 12px; margin-bottom: 0;">
+                                <i class="bi bi-info-circle-fill me-1"></i> <strong>Nota Pembayaran:</strong> Kod QR DuitNow untuk pembayaran akan disediakan di menu <strong>Status Tempahan</strong> sebaik sahaja tempahan ini diluluskan oleh Penyedia Kereta.
                             </div>
                         </div>
 
@@ -224,9 +327,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <input type="hidden" name="end_date" value="<?php echo htmlspecialchars($search_end); ?>">
                         <input type="hidden" name="total_price" value="<?php echo $total_calc_price; ?>">
 
-                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; border-top: 3px solid var(--black); padding-top: 20px;">
-                            <button type="button" class="neo-btn" style="background: #ccc;" onclick="closeModal('modal<?php echo $car['id']; ?>')">Batal</button>
-                            <button type="submit" name="submit_booking" class="neo-btn btn-green"><i class="bi bi-cloud-arrow-up me-1"></i> Hantar Tempahan</button>
+                        <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; border-top: 3px solid var(--black); padding-top: 20px; flex-wrap: wrap;">
+                            <button type="button" class="neo-btn" style="background: #ccc; flex: 1;" onclick="closeModal('modal<?php echo $car['id']; ?>')">Batal</button>
+                            <button type="submit" name="submit_booking" class="neo-btn btn-green" style="flex: 2;"><i class="bi bi-send-fill me-1"></i> Hantar Permohonan Tempahan</button>
                         </div>
                     </form>
                 </div>
@@ -296,14 +399,19 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         .btn-green { background-color: var(--green); } .btn-red { background-color: var(--pink); }
 
         /* Senarai Kereta & Modal */
-        .section-heading { font-weight: 900; text-transform: uppercase; margin-bottom: 5px; display: flex; align-items: center; gap: 10px; }
-        .section-desc { font-weight: 700; color: #555; margin-bottom: 25px; }
+        .section-heading { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--black); padding-bottom: 6px; }
+        .section-desc { font-weight: 700; color: #555; margin-bottom: 20px; font-size: 0.9rem; }
         .cars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
         .car-card { background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); display: flex; flex-direction: column; overflow: hidden; }
-        .car-img { height: 200px; width: 100%; object-fit: cover; border-bottom: var(--border-thick); } .car-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-        .car-title { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 5px; } .car-plate { font-weight: 700; color: #666; margin-bottom: 15px; }
-        .badges-box { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; } .neo-badge { border: 2px solid var(--black); padding: 4px 8px; font-weight: 700; font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase; }
-        .price-box { background: var(--bg-color); border: 3px solid var(--black); padding: 12px; margin-top: auto; margin-bottom: 15px; } .price-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; } .price-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 1.1rem; border-top: 2px dashed var(--black); margin-top: 8px; padding-top: 8px; }
+        .car-img { height: 200px; width: 100%; object-fit: cover; border-bottom: var(--border-thick); } 
+        .car-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+        .car-title { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 5px; } 
+        .car-plate { font-weight: 700; color: #666; margin-bottom: 15px; }
+        .badges-box { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; } 
+        .neo-badge { border: 2px solid var(--black); padding: 3px 8px; font-weight: 800; font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; box-shadow: none; cursor: default; }
+        .price-box { background: var(--bg-color); border: 3px solid var(--black); padding: 12px; margin-top: auto; margin-bottom: 15px; } 
+        .price-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; } 
+        .price-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 1.1rem; border-top: 2px dashed var(--black); margin-top: 8px; padding-top: 8px; }
 
         .neo-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; } .neo-modal-overlay.show { display: flex; }
         .neo-modal { background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black); width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative; }
@@ -339,7 +447,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
-                <li><a href="index.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
             </ul>
         </div>
     </header>
@@ -361,6 +469,16 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <main class="main-content">
         
         <?php echo $message; ?>
+
+        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+        <div style="margin-bottom: 25px;">
+            <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                <i class="bi bi-car-front-fill text-dark"></i> Cari & Tempah Kenderaan
+            </h1>
+            <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
+                Pilih jenis sewaan (Harian atau Jam), tetapkan tarikh & masa sewaan, kemudian tekan butang <strong>"Cari Kereta"</strong> untuk melihat kenderaan yang tersedia.
+            </p>
+        </div>
 
         <!-- LANGKAH 1: BORANG CARIAN AJAX -->
         <div class="search-card">
@@ -545,6 +663,65 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         closeSidebarBtn.addEventListener('click', closeSidebar);
         sidebarOverlay.addEventListener('click', closeSidebar);
 
+        // POPUP PROVIDER MODAL CONTROL
+        window.showProviderModal = function(username, email, phone, roadtax, insurance, profilePic, qrCode) {
+            document.getElementById('modalProviderUsername').textContent = username;
+            document.getElementById('modalProviderEmail').textContent = email;
+            document.getElementById('modalProviderPhone').textContent = phone;
+            
+            const imgElem = document.getElementById('modalProviderImg');
+            if (profilePic && profilePic.trim() !== '') {
+                imgElem.src = profilePic;
+            } else {
+                imgElem.src = 'https://cdn-icons-png.flaticon.com/512/149/149071.png';
+            }
+            
+            const rtElem = document.getElementById('modalProviderRoadtax');
+            const noRtElem = document.getElementById('modalProviderNoRoadtax');
+            if (roadtax && roadtax.trim() !== '') {
+                rtElem.href = roadtax;
+                rtElem.style.display = 'inline-block';
+                noRtElem.style.display = 'none';
+            } else {
+                rtElem.style.display = 'none';
+                noRtElem.style.display = 'inline-block';
+            }
+            
+            const insElem = document.getElementById('modalProviderInsurance');
+            const noInsElem = document.getElementById('modalProviderNoInsurance');
+            if (insurance && insurance.trim() !== '') {
+                insElem.href = insurance;
+                insElem.style.display = 'inline-block';
+                noInsElem.style.display = 'none';
+            } else {
+                insElem.style.display = 'none';
+                noInsElem.style.display = 'inline-block';
+            }
+
+            const qrElem = document.getElementById('modalProviderQr');
+            const noQrElem = document.getElementById('modalProviderNoQr');
+            if (qrCode && qrCode.trim() !== '') {
+                qrElem.href = qrCode;
+                qrElem.style.display = 'inline-block';
+                noQrElem.style.display = 'none';
+            } else {
+                qrElem.style.display = 'none';
+                noQrElem.style.display = 'inline-block';
+            }
+
+            document.getElementById('providerModalOverlay').classList.add('show');
+        };
+
+        window.closeProviderModal = function() {
+            document.getElementById('providerModalOverlay').classList.remove('show');
+        };
+
+        window.closeProviderModalOutside = function(e) {
+            if (e.target.id === 'providerModalOverlay') {
+                closeProviderModal();
+            }
+        };
+
         // Fungsi buka dan tutup Modal (Perlu berada di scope global supaya boleh dipanggil oleh HTML hasil AJAX)
         window.openModal = function(modalId) {
             const modal = document.getElementById(modalId);
@@ -556,5 +733,56 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             if (modal) modal.classList.remove('show');
         };
     </script>
+
+    <!-- MODAL MAKLUMAT PROVIDER (POPUP) -->
+    <div class="neo-modal-overlay" id="providerModalOverlay" onclick="closeProviderModalOutside(event)" style="z-index: 3000;">
+        <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px;">
+            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 class="modal-title" style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem;">Maklumat Penyedia Kereta</h3>
+                <button class="modal-close-btn" onclick="closeProviderModal()" style="border: 2px solid var(--black); background: var(--pink); padding: 2px 8px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px var(--black);">X</button>
+            </div>
+            <div class="modal-body" style="font-weight: 700; font-size: 0.95rem;">
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <img id="modalProviderImg" src="" alt="Gambar Profil" style="width: 100px; height: 100px; border-radius: 50%; border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); object-fit: cover;">
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Username:</span>
+                    <span id="modalProviderUsername" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Email:</span>
+                    <span id="modalProviderEmail" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">No. Telefon:</span>
+                    <span id="modalProviderPhone" style="color: var(--black); font-weight: 800;"></span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Roadtax (Cukai Jalan):</span>
+                    <span>
+                        <a id="modalProviderRoadtax" href="" target="_blank" class="neo-badge bg-y" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--yellow); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Fail</a>
+                        <span id="modalProviderNoRoadtax" style="color: #999; display: none;">Tiada Fail</span>
+                    </span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Insurans (Insurance):</span>
+                    <span>
+                        <a id="modalProviderInsurance" href="" target="_blank" class="neo-badge bg-g" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--green); font-weight: 800;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Fail</a>
+                        <span id="modalProviderNoInsurance" style="color: #999; display: none;">Tiada Fail</span>
+                    </span>
+                </div>
+                <div class="detail-row" style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0;">
+                    <span style="color: #666;">Kod QR DuitNow:</span>
+                    <span>
+                        <a id="modalProviderQr" href="" target="_blank" class="neo-badge" style="display: inline-block; cursor: pointer; text-decoration: none; border: 2px solid var(--black); padding: 2px 6px; font-size: 0.75rem; background: var(--yellow); font-weight: 800;"><i class="bi bi-qr-code me-1"></i>Lihat QR</a>
+                        <span id="modalProviderNoQr" style="color: #999; display: none;">Tiada QR</span>
+                    </span>
+                </div>
+                <div style="text-align: center; margin-top: 20px;">
+                    <button class="neo-btn bg-p" style="width: 100%; justify-content: center;" onclick="closeProviderModal()"><i class="bi bi-arrow-left-short me-1"></i>Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
