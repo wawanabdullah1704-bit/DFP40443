@@ -278,7 +278,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <div class="neo-modal" style="max-width: 550px;">
                     <div class="modal-header">
                         <h3 class="modal-title"><i class="bi bi-file-earmark-check-fill me-1"></i> Pengesahan Tempahan</h3>
-                        <button type="button" class="close-btn" onclick="closeModal('modal<?php echo $car['id']; ?>')"><i class="bi bi-x-lg"></i></button>
                     </div>
                     
                     <form action="booking.php" method="POST">
@@ -438,7 +437,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="dashboard.php" class="neo-brand">SCRS PMU</a>
         </div>
         <div class="profile-container">
             <button class="profile-btn" id="profile-toggle">
@@ -739,7 +738,6 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;">
                 <h3 class="modal-title" style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem;">Maklumat Penyedia Kereta</h3>
-                <button class="modal-close-btn" onclick="closeProviderModal()" style="border: 2px solid var(--black); background: var(--pink); padding: 2px 8px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px var(--black);">X</button>
             </div>
             <div class="modal-body" style="font-weight: 700; font-size: 0.95rem;">
                 <div style="text-align: center; margin-bottom: 20px;">

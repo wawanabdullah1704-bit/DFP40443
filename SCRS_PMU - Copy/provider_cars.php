@@ -444,7 +444,7 @@ $stmt_prov->close();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU (PROVIDER)</div>
+            <a href="provider_dashboard.php" class="neo-brand">SCRS PMU (PROVIDER)</a>
         </div>
 
         <div class="profile-container">
@@ -587,7 +587,6 @@ $stmt_prov->close();
         <div class="neo-modal">
             <div class="modal-header">
                 <h3 class="modal-title"><i class="bi bi-plus-circle-fill me-1"></i> Tambah Kereta Baharu</h3>
-                <button type="button" class="close-btn" onclick="closeModal('addCarModal')"><i class="bi bi-x-lg"></i></button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data">
                 <div class="form-row">
@@ -650,7 +649,6 @@ $stmt_prov->close();
         <div class="neo-modal">
             <div class="modal-header">
                 <h3 class="modal-title"><i class="bi bi-pencil-square me-1"></i> Kemaskini Maklumat Kereta</h3>
-                <button type="button" class="close-btn" onclick="closeModal('editCarModal')"><i class="bi bi-x-lg"></i></button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data">
                 <input type="hidden" name="car_id" id="edit_car_id">
@@ -715,7 +713,6 @@ $stmt_prov->close();
         <div class="neo-modal">
             <div class="modal-header">
                 <h3 class="modal-title"><i class="bi bi-qr-code me-1"></i> Kod QR DuitNow</h3>
-                <button type="button" class="close-btn" onclick="closeModal('qrCodeModal')"><i class="bi bi-x-lg"></i></button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data">
                 <div style="text-align: center; margin-bottom: 20px;">

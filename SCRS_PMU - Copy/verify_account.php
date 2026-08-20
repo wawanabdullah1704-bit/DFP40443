@@ -19,30 +19,27 @@ require 'PHPMailer/SMTP.php';
 
 $message = "";
 
-// PROSES BUTANG APPROVE ATAU REJECT
+// PROSES BUTANG APPROVE ATAU REJECT PELAJAR
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $user_id = $_POST['user_id'];
-    $user_type = $_POST['user_type']; // 'student' atau 'provider'
+    $user_id = (int)$_POST['user_id'];
     $action = $_POST['action']; // 'approve' atau 'reject'
     
     $new_status = ($action === 'approve') ? 'approved' : 'rejected';
-    $table = ($user_type === 'provider') ? 'providers' : 'students';
     
-    $sql_update = "UPDATE $table SET status = ? WHERE id = ?";
+    $sql_update = "UPDATE students SET status = ? WHERE id = ?";
     $stmt = $conn->prepare($sql_update);
     $stmt->bind_param("si", $new_status, $user_id);
     
     if ($stmt->execute()) {
         $alert_type = ($action === 'approve') ? 'alert-success' : 'alert-danger';
         $alert_text = ($action === 'approve') ? 'diluluskan' : 'ditolak';
-        $user_label = ($user_type === 'provider') ? 'Penyedia Kereta' : 'Pelajar';
         
-        $message = "<div class='neo-alert {$alert_type} mb-3'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Akaun {$user_label} telah {$alert_text}!</div>";
+        $message = "<div class='neo-alert {$alert_type} mb-3'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Akaun Pelajar telah {$alert_text}!</div>";
 
         // ==========================================
         // FUNGSI HANTAR E-MEL MENGGUNAKAN PHPMAILER
         // ==========================================
-        $sql_email = "SELECT full_name, email FROM $table WHERE id = ?";
+        $sql_email = "SELECT full_name, email FROM students WHERE id = ?";
         $stmt_email = $conn->prepare($sql_email);
         $stmt_email->bind_param("i", $user_id);
         $stmt_email->execute();
@@ -90,12 +87,35 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $stmt->close();
 }
 
-// AMBIL SENARAI PELAJAR PENDING YANG TELAH MENGESAHKAN E-MEL
-$sql_pending_students = "SELECT * FROM students WHERE status = 'pending' AND email_verified = 1 ORDER BY id DESC";
-$result_students = $conn->query($sql_pending_students);
+// TAB FILTER
+$tab = $_GET['tab'] ?? 'pending';
 
-$sql_pending_providers = "SELECT * FROM providers WHERE status = 'pending' ORDER BY id DESC";
-$result_providers = $conn->query($sql_pending_providers);
+// KIRAAN STATISTIK TAB
+$count_pending = $conn->query("SELECT COUNT(*) AS total FROM students WHERE status = 'pending' AND email_verified = 1")->fetch_assoc()['total'] ?? 0;
+$count_approved = $conn->query("SELECT COUNT(*) AS total FROM students WHERE status = 'approved'")->fetch_assoc()['total'] ?? 0;
+$count_rejected = $conn->query("SELECT COUNT(*) AS total FROM students WHERE status = 'rejected'")->fetch_assoc()['total'] ?? 0;
+$count_all = $conn->query("SELECT COUNT(*) AS total FROM students")->fetch_assoc()['total'] ?? 0;
+
+// QUERY MENGIKUT TAB
+if ($tab === 'approved') {
+    $sql_students = "SELECT * FROM students WHERE status = 'approved' ORDER BY id DESC";
+    $tab_title = "Senarai Pelajar Telah Diluluskan";
+    $tab_icon = "bi-check-circle-fill text-success";
+} elseif ($tab === 'rejected') {
+    $sql_students = "SELECT * FROM students WHERE status = 'rejected' ORDER BY id DESC";
+    $tab_title = "Senarai Permohonan Pelajar Ditolak";
+    $tab_icon = "bi-x-circle-fill text-danger";
+} elseif ($tab === 'all') {
+    $sql_students = "SELECT * FROM students ORDER BY id DESC";
+    $tab_title = "Semua Rekod Pelajar Berdaftar";
+    $tab_icon = "bi-people-fill text-primary";
+} else {
+    $tab = 'pending';
+    $sql_students = "SELECT * FROM students WHERE status = 'pending' AND email_verified = 1 ORDER BY id DESC";
+    $tab_title = "Permohonan Pelajar Menunggu Kelulusan";
+    $tab_icon = "bi-hourglass-split text-warning";
+}
+$result_students = $conn->query($sql_students);
 ?>
 
 <!DOCTYPE html>
@@ -103,7 +123,7 @@ $result_providers = $conn->query($sql_pending_providers);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Pengesahan Akaun Pengguna - JHEPP PMU</title>
+    <title>Pengesahan Dokumen Pelajar - JHEPP PMU</title>
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
@@ -156,6 +176,47 @@ $result_providers = $conn->query($sql_pending_providers);
         .menu-toggle-btn:hover { transform: scale(1.1); }
         .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
 
+        /* PROFILE DROPDOWN */
+        .nav-right-actions { display: flex; align-items: center; gap: 12px; }
+        .profile-container { position: relative; }
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--yellow);
+            border: 3px solid var(--black);
+            padding: 8px 14px;
+            font-weight: 800;
+            box-shadow: 4px 4px 0px var(--black);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 6px 6px 0px var(--black);
+            width: 170px;
+            display: none;
+            z-index: 1001;
+            list-style: none;
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--black);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .dropdown-item:hover { background-color: var(--pink); color: var(--black); }
+
         /* SIDEBAR */
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -183,20 +244,50 @@ $result_providers = $conn->query($sql_pending_providers);
             text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition);
         }
         .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
+        .sidebar-link.logout-link:hover { background-color: var(--pink); }
 
         /* MAIN CONTENT */
         .main-content {
             flex: 1;
             padding: 2rem 20px;
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
             width: 100%;
         }
 
-        .section-title {
-            display: inline-block; background: var(--black); color: var(--white);
-            font-weight: 900; text-transform: uppercase; padding: 10px 20px;
-            box-shadow: 4px 4px 0px var(--yellow); margin-bottom: 25px;
+        /* TABS */
+        .tabs-nav {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+        }
+        .tab-btn {
+            background: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 4px 4px 0px var(--black);
+            padding: 10px 16px;
+            font-weight: 900;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: var(--transition);
+        }
+        .tab-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
+        .tab-btn.active {
+            background: var(--yellow);
+            transform: translate(2px, 2px);
+            box-shadow: 2px 2px 0px var(--black);
+        }
+        .tab-badge {
+            background: var(--black);
+            color: var(--white);
+            padding: 2px 6px;
+            font-size: 0.75rem;
+            border-radius: 3px;
         }
 
         .sub-header {
@@ -211,6 +302,10 @@ $result_providers = $conn->query($sql_pending_providers);
             box-shadow: var(--shadow-solid);
             padding: 25px;
             margin-bottom: 25px;
+            transition: var(--transition);
+        }
+        .user-card:hover {
+            box-shadow: 8px 8px 0px var(--black);
         }
 
         .user-info {
@@ -224,99 +319,64 @@ $result_providers = $conn->query($sql_pending_providers);
         .user-info div { display: flex; justify-content: space-between; border-bottom: 2px dashed #eee; padding-bottom: 4px; }
         .user-info label { text-transform: uppercase; color: #666; font-size: 0.8rem; font-weight: 800; }
 
-        .doc-title {
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            color: var(--black);
-            margin-bottom: 10px;
-        }
-
+        /* SUPPORTING DOCS BUTTONS */
+        .doc-title { font-weight: 900; text-transform: uppercase; margin-bottom: 8px; font-size: 0.85rem; }
         .doc-buttons-grid {
             display: grid;
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: 1fr 1fr;
             gap: 10px;
             margin-bottom: 20px;
         }
-
         .doc-btn {
-            background-color: var(--bg-color);
+            background: var(--bg-color);
             border: 3px solid var(--black);
+            box-shadow: 3px 3px 0px var(--black);
             padding: 10px;
             font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            box-shadow: 3px 3px 0px var(--black);
-            text-align: center;
-            transition: var(--transition);
-            display: inline-flex;
+            font-size: 0.85rem;
+            display: flex;
             align-items: center;
             justify-content: center;
             gap: 8px;
+            transition: var(--transition);
         }
-        .doc-btn:hover { transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--black); background: var(--white); }
-
-        .actions-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 15px;
-            border-top: 3px dashed var(--black);
-            padding-top: 15px;
-        }
+        .doc-btn:hover { background: var(--yellow); transform: translate(-2px, -2px); box-shadow: 5px 5px 0px var(--black); }
 
         .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 12px;
-            cursor: pointer;
-            transition: var(--transition);
-            flex: 1;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            background-color: var(--yellow); color: var(--black);
+            border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black);
+            padding: 10px 16px; font-weight: 900; text-transform: uppercase;
+            cursor: pointer; transition: var(--transition); display: inline-flex;
+            align-items: center; justify-content: center; gap: 8px;
         }
         .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
+        .neo-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0px var(--black); }
         .btn-approve { background-color: var(--green); }
         .btn-reject { background-color: var(--pink); }
 
-        .empty-box {
-            background: var(--white);
-            border: var(--border-thick);
-            box-shadow: var(--shadow-solid);
-            padding: 40px 20px;
-            text-align: center;
-            margin-bottom: 30px;
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 15px;
         }
-        .empty-box i { font-size: 3rem; display: block; margin-bottom: 10px; }
 
         .neo-alert {
-            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 12px 15px; font-weight: 800; text-transform: uppercase; font-size: 0.85rem;
+            border: var(--border-thick);
+            box-shadow: var(--shadow-solid);
+            padding: 15px;
+            font-weight: 700;
+            margin-bottom: 20px;
         }
         .alert-success { background-color: var(--green); }
         .alert-danger { background-color: var(--pink); }
         .alert-warning { background-color: var(--yellow); }
 
-        .neo-badge {
-            border: 2px solid var(--black);
-            padding: 4px 10px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-
         footer {
-            background-color: var(--yellow);
+            background: var(--black);
+            color: var(--white);
             border-top: var(--border-thick);
-            padding: 20px;
+            padding: 15px;
             text-align: center;
             font-weight: 900;
             text-transform: uppercase;
@@ -325,10 +385,13 @@ $result_providers = $conn->query($sql_pending_providers);
 
         @media (max-width: 600px) {
             .doc-buttons-grid { grid-template-columns: 1fr; }
+            .action-buttons { grid-template-columns: 1fr; }
             .user-info div { flex-direction: column; gap: 2px; }
             .main-content { padding: 1rem 10px; }
             .neo-brand { font-size: 1.2rem; }
             .user-card { padding: 15px; }
+            .tabs-nav { flex-direction: column; }
+            .tab-btn { width: 100%; justify-content: space-between; }
         }
     </style>
 </head>
@@ -338,17 +401,23 @@ $result_providers = $conn->query($sql_pending_providers);
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU (JHEPP)</div>
+            <a href="jhepp_dashboard.php" class="neo-brand">SCRS PMU (JHEPP)</a>
         </div>
-        <div style="display: flex; align-items: center; gap: 10px;">
-            <span class="neo-badge" style="background: var(--yellow); padding: 6px 12px; font-size: 0.85rem;">
-                <i class="bi bi-shield-lock-fill"></i> PEGAWAI JHEPP: <?php echo htmlspecialchars($jhepp_username); ?>
-            </span>
-            <a href="logout.php" class="neo-btn" style="flex: none; width: auto; padding: 6px 14px; font-size: 0.85rem; background: var(--pink); margin: 0;">Log Keluar</a>
+        <div class="nav-right-actions">
+            <div class="profile-container">
+                <button class="profile-btn" id="profile-toggle">
+                    <i class="bi bi-person-fill fs-5"></i>
+                    <span><?php echo htmlspecialchars($jhepp_username); ?></span>
+                </button>
+                <ul class="dropdown-menu" id="profile-menu">
+                    <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
+                    <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                </ul>
+            </div>
         </div>
     </header>
 
-    <!-- SIDEBAR (KHUSUS UNTUK PEGAWAI JHEPP SAHAJA) -->
+    <!-- SIDEBAR -->
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
@@ -356,37 +425,84 @@ $result_providers = $conn->query($sql_pending_providers);
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
+            <a href="jhepp_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="verify_account.php" class="sidebar-link active"><i class="bi bi-shield-check"></i> Pengesahan Pelajar</a>
-            <a href="logout.php" class="sidebar-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
+            <a href="edit_profile.php" class="sidebar-link"><i class="bi bi-person-gear"></i> Edit Profil</a>
+            <a href="logout.php" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
         </nav>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
-        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
-        <div style="margin-bottom: 25px;">
+        <!-- HEADING -->
+        <div style="margin-bottom: 20px;">
             <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; color: var(--black); display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-shield-check text-dark"></i> Pengesahan Akaun Pengguna (JHEPP)
+                <i class="bi bi-shield-check text-dark"></i> Pengesahan & Dokumen Pelajar (JHEPP)
             </h1>
             <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
-                Semak maklumat dan teliti dokumen pendaftaran pelajar dan penyedia kereta. Tekan butang "Luluskan" untuk mengaktifkan akaun atau "Tolak" jika dokumen tidak sah.
+                Semak maklumat dan teliti dokumen sokongan pelajar (Kad Pelajar & Lesen Memandu) untuk permohonan yang sedang pending, diluluskan, atau ditolak.
             </p>
         </div>
 
         <?php echo $message; ?>
 
-        <!-- BAHAGIAN 1: PELAJAR -->
-        <div class="sub-header">
-            <i class="bi bi-mortarboard-fill text-primary"></i> Permohonan Pelajar (E-mel Telah Disahkan)
+        <!-- TABS NAV -->
+        <div class="tabs-nav">
+            <a href="verify_account.php?tab=pending" class="tab-btn <?php echo ($tab === 'pending') ? 'active' : ''; ?>">
+                <i class="bi bi-hourglass-split"></i> Menunggu Semakan
+                <span class="tab-badge" style="background: var(--pink);"><?php echo $count_pending; ?></span>
+            </a>
+            <a href="verify_account.php?tab=approved" class="tab-btn <?php echo ($tab === 'approved') ? 'active' : ''; ?>">
+                <i class="bi bi-check-circle-fill"></i> Diluluskan
+                <span class="tab-badge"><?php echo $count_approved; ?></span>
+            </a>
+            <a href="verify_account.php?tab=rejected" class="tab-btn <?php echo ($tab === 'rejected') ? 'active' : ''; ?>">
+                <i class="bi bi-x-circle-fill"></i> Ditolak
+                <span class="tab-badge"><?php echo $count_rejected; ?></span>
+            </a>
+            <a href="verify_account.php?tab=all" class="tab-btn <?php echo ($tab === 'all') ? 'active' : ''; ?>">
+                <i class="bi bi-people-fill"></i> Semua Rekod
+                <span class="tab-badge"><?php echo $count_all; ?></span>
+            </a>
         </div>
 
-        <?php if ($result_students->num_rows > 0): ?>
+        <!-- SENARAI PELAJAR -->
+        <div class="sub-header">
+            <i class="bi <?php echo $tab_icon; ?>"></i> <?php echo $tab_title; ?> (<?php echo ($result_students ? $result_students->num_rows : 0); ?> Rekod)
+        </div>
+
+        <?php if ($result_students && $result_students->num_rows > 0): ?>
             <?php while ($row = $result_students->fetch_assoc()): ?>
-                <div class="user-card" style="border-left: 8px solid var(--blue);">
+                <?php 
+                    $card_border = "var(--blue)";
+                    $status_label = "Pending";
+                    $status_bg = "var(--yellow)";
+                    if ($row['status'] === 'approved') {
+                        $card_border = "var(--green)";
+                        $status_label = "Diluluskan";
+                        $status_bg = "var(--green)";
+                    } elseif ($row['status'] === 'rejected') {
+                        $card_border = "var(--pink)";
+                        $status_label = "Ditolak";
+                        $status_bg = "var(--pink)";
+                    }
+                ?>
+                <div class="user-card" style="border-left: 8px solid <?php echo $card_border; ?>;">
                     <div style="margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
-                        <span style="background: var(--green); color: var(--black); border: 2px solid var(--black); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; padding: 2px 8px; box-shadow: 2px 2px 0px var(--black);">
-                            <i class="bi bi-patch-check-fill me-1"></i> E-mel Telah Disahkan Pelajar
-                        </span>
+                        <div style="display:flex; gap:6px; flex-wrap:wrap;">
+                            <span style="background: <?php echo $status_bg; ?>; color: var(--black); border: 2px solid var(--black); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; padding: 2px 8px; box-shadow: 2px 2px 0px var(--black);">
+                                Status JHEPP: <?php echo $status_label; ?>
+                            </span>
+                            <?php if ((int)$row['email_verified'] === 1): ?>
+                                <span style="background: var(--green); color: var(--black); border: 2px solid var(--black); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; padding: 2px 8px; box-shadow: 2px 2px 0px var(--black);">
+                                    <i class="bi bi-check-all"></i> E-mel Sah
+                                </span>
+                            <?php else: ?>
+                                <span style="background: #ddd; color: #333; border: 2px solid var(--black); font-weight: 900; font-size: 0.75rem; text-transform: uppercase; padding: 2px 8px; box-shadow: 2px 2px 0px var(--black);">
+                                    <i class="bi bi-hourglass"></i> E-mel Belum Sah
+                                </span>
+                            <?php endif; ?>
+                        </div>
                         <span style="font-size: 0.8rem; font-weight: 700; color: #555;">
                             Daftar: <?php echo date('d/m/Y h:i A', strtotime($row['created_at'])); ?>
                         </span>
@@ -394,95 +510,63 @@ $result_providers = $conn->query($sql_pending_providers);
 
                     <div class="user-info">
                         <div><label>Nama Penuh</label><span><?php echo htmlspecialchars($row['full_name']); ?></span></div>
-                        <div><label>No. Telefon</label><span><?php echo htmlspecialchars($row['phone_no']); ?></span></div>
-                        <div><label>No. IC</label><span><?php echo htmlspecialchars($row['no_ic']); ?></span></div>
                         <div><label>No. Matrik / Pendaftaran</label><span><?php echo htmlspecialchars($row['no_pendaftaran']); ?></span></div>
-                        <div><label>E-mel</label><span><?php echo htmlspecialchars($row['email']); ?></span></div>
-                    </div>
-
-                    <div class="doc-title">Dokumen Sokongan:</div>
-                    <div class="doc-buttons-grid">
-                        <a href="<?php echo htmlspecialchars($row['student_id_file']); ?>" target="_blank" class="doc-btn">
-                            <i class="bi bi-card-heading"></i> Kad Pelajar (ID)
-                        </a>
-                        <a href="<?php echo htmlspecialchars($row['driving_license_file']); ?>" target="_blank" class="doc-btn">
-                            <i class="bi bi-card-checklist"></i> Lesen Memandu
-                        </a>
-                    </div>
-
-                    <form action="" method="POST">
-                        <input type="hidden" name="user_type" value="student">
-                        <input type="hidden" name="user_id" value="<?php echo $row['id']; ?>">
-                        
-                        <div class="action-buttons">
-                            <button type="submit" name="action" value="reject" class="neo-btn btn-reject" onclick="return confirm('Tolak pendaftaran pelajar ini?');">
-                                <i class="bi bi-x-circle-fill me-1"></i> Tolak (Reject)
-                            </button>
-                            <button type="submit" name="action" value="approve" class="neo-btn btn-approve" onclick="return confirm('Luluskan pendaftaran pelajar ini?');">
-                                <i class="bi bi-check-circle-fill me-1"></i> Luluskan (Approve)
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            <?php endwhile; ?>
-        <?php else: ?>
-            <div style="background: var(--white); border: 3px dashed var(--black); padding: 1.5rem; text-align: center; font-weight: 700; color: #666; margin-bottom: 30px;">
-                Tiada permohonan pendaftaran pelajar yang pending (pelajar perlu mengesahkan e-mel terlebih dahulu).
-            </div>
-        <?php endif; ?>
-
-        <!-- BAHAGIAN 2: PROVIDER -->
-        <div class="sub-header" style="margin-top: 35px;">
-            <i class="bi bi-car-front-fill text-success"></i> Permohonan Akaun Penyedia Kereta
-        </div>
-
-        <?php if ($result_providers->num_rows > 0): ?>
-            <?php while ($row = $result_providers->fetch_assoc()): ?>
-                <div class="user-card" style="border-left: 8px solid var(--green);">
-                    <div class="user-info">
-                        <div><label>Nama Penuh</label><span><?php echo htmlspecialchars($row['full_name']); ?></span></div>
                         <div><label>No. Telefon</label><span><?php echo htmlspecialchars($row['phone_no']); ?></span></div>
                         <div><label>No. IC</label><span><?php echo htmlspecialchars($row['no_ic']); ?></span></div>
                         <div><label>E-mel</label><span><?php echo htmlspecialchars($row['email']); ?></span></div>
                     </div>
 
-                    <div class="doc-title">Dokumen Sokongan (5 Dokumen):</div>
+                    <div class="doc-title"><i class="bi bi-file-earmark-medical me-1"></i> Dokumen Sokongan Pelajar:</div>
                     <div class="doc-buttons-grid">
-                        <a href="<?php echo htmlspecialchars($row['ic_file']); ?>" target="_blank" class="doc-btn">
-                            <i class="bi bi-person-vcard"></i> 1. Kad Pengenalan
-                        </a>
-                        <a href="<?php echo htmlspecialchars($row['licence_file']); ?>" target="_blank" class="doc-btn">
-                            <i class="bi bi-card-checklist"></i> 2. Lesen Memandu
-                        </a>
-                        <a href="<?php echo htmlspecialchars($row['insurance_file']); ?>" target="_blank" class="doc-btn">
-                            <i class="bi bi-file-earmark-text"></i> 3. Insurans
-                        </a>
-                        <a href="<?php echo htmlspecialchars($row['greencard_file']); ?>" target="_blank" class="doc-btn">
-                            <i class="bi bi-journal-text"></i> 4. Geran / Kad Hijau
-                        </a>
-                        <a href="<?php echo htmlspecialchars($row['roadtax_file']); ?>" target="_blank" class="doc-btn" style="grid-column: span 2;">
-                            <i class="bi bi-file-earmark-code"></i> 5. Cukai Jalan (Roadtax)
-                        </a>
+                        <?php if (!empty($row['student_id_file'])): ?>
+                            <a href="<?php echo htmlspecialchars($row['student_id_file']); ?>" target="_blank" class="doc-btn">
+                                <i class="bi bi-card-heading fs-5"></i> Lihat Kad Pelajar (ID)
+                            </a>
+                        <?php else: ?>
+                            <span class="doc-btn" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-x-circle"></i> Tiada Kad Pelajar</span>
+                        <?php endif; ?>
+
+                        <?php if (!empty($row['driving_license_file'])): ?>
+                            <a href="<?php echo htmlspecialchars($row['driving_license_file']); ?>" target="_blank" class="doc-btn">
+                                <i class="bi bi-card-checklist fs-5"></i> Lihat Lesen Memandu
+                            </a>
+                        <?php else: ?>
+                            <span class="doc-btn" style="opacity: 0.5; cursor: not-allowed;"><i class="bi bi-x-circle"></i> Tiada Lesen</span>
+                        <?php endif; ?>
                     </div>
 
                     <form action="" method="POST">
-                        <input type="hidden" name="user_type" value="provider">
                         <input type="hidden" name="user_id" value="<?php echo $row['id']; ?>">
                         
-                        <div class="action-buttons">
-                            <button type="submit" name="action" value="reject" class="neo-btn btn-reject" onclick="return confirm('Tolak pendaftaran penyedia ini?');">
-                                <i class="bi bi-x-circle-fill me-1"></i> Tolak (Reject)
-                            </button>
-                            <button type="submit" name="action" value="approve" class="neo-btn btn-approve" onclick="return confirm('Luluskan pendaftaran penyedia ini?');">
-                                <i class="bi bi-check-circle-fill me-1"></i> Luluskan (Approve)
-                            </button>
-                        </div>
+                        <?php if ($row['status'] === 'pending'): ?>
+                            <div class="action-buttons">
+                                <button type="submit" name="action" value="reject" class="neo-btn btn-reject" onclick="return confirm('Tolak pendaftaran pelajar ini?');">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Tolak (Reject)
+                                </button>
+                                <button type="submit" name="action" value="approve" class="neo-btn btn-approve" onclick="return confirm('Luluskan pendaftaran pelajar ini?');">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Luluskan (Approve)
+                                </button>
+                            </div>
+                        <?php elseif ($row['status'] === 'approved'): ?>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                                <button type="submit" name="action" value="reject" class="neo-btn btn-reject" style="padding: 6px 12px; font-size: 0.8rem;" onclick="return confirm('Tukar status pelajar ini kepada Ditolak (Rejected)?');">
+                                    <i class="bi bi-x-circle me-1"></i> Batalkan Kelulusan (Tolak)
+                                </button>
+                            </div>
+                        <?php elseif ($row['status'] === 'rejected'): ?>
+                            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+                                <button type="submit" name="action" value="approve" class="neo-btn btn-approve" style="padding: 6px 12px; font-size: 0.8rem;" onclick="return confirm('Tukar status pelajar ini kepada Diluluskan (Approved)?');">
+                                    <i class="bi bi-check-circle me-1"></i> Luluskan Semula Akaun Ini
+                                </button>
+                            </div>
+                        <?php endif; ?>
                     </form>
                 </div>
             <?php endwhile; ?>
         <?php else: ?>
-            <div style="background: var(--white); border: 3px dashed var(--black); padding: 1.5rem; text-align: center; font-weight: 700; color: #666; margin-bottom: 30px;">
-                Tiada permohonan pendaftaran penyedia kereta yang pending.
+            <div style="background: var(--white); border: 3px dashed var(--black); padding: 2.5rem; text-align: center; font-weight: 700; color: #666; margin-bottom: 30px; box-shadow: var(--shadow-solid);">
+                <i class="bi bi-folder-x text-muted" style="font-size: 2.5rem; display: block; margin-bottom: 10px;"></i>
+                Tiada rekod pelajar dalam kategori ini pada masa ini.
             </div>
         <?php endif; ?>
 
@@ -499,6 +583,8 @@ $result_providers = $conn->query($sql_pending_providers);
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const profileToggle = document.getElementById('profile-toggle');
+        const profileMenu = document.getElementById('profile-menu');
 
         function openSidebar() {
             sidebar.classList.add('open');
@@ -510,9 +596,19 @@ $result_providers = $conn->query($sql_pending_providers);
             sidebarOverlay.classList.remove('show');
         }
 
-        openSidebarBtn.addEventListener('click', openSidebar);
-        closeSidebarBtn.addEventListener('click', closeSidebar);
-        sidebarOverlay.addEventListener('click', closeSidebar);
+        if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
+        if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+        if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileMenu.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                profileMenu.classList.remove('show');
+            });
+        }
     </script>
 </body>
 </html>

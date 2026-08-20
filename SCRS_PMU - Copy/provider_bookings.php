@@ -466,7 +466,7 @@ $result_bookings = $stmt_b->get_result();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU (PROVIDER)</div>
+            <a href="provider_dashboard.php" class="neo-brand">SCRS PMU (PROVIDER)</a>
         </div>
 
         <div class="profile-container">
@@ -672,7 +672,6 @@ $result_bookings = $stmt_b->get_result();
         <div class="neo-modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 class="modal-title"><i class="bi bi-mortarboard-fill me-1"></i> Maklumat Pelajar (Penyewa)</h3>
-                <button class="modal-close-btn" onclick="closeStudentModal()" style="border: 2px solid var(--black); background: var(--pink); padding: 2px 8px; font-weight: 900; cursor: pointer; box-shadow: 2px 2px 0px var(--black);">X</button>
             </div>
             <div class="modal-body" style="font-weight: 700; font-size: 0.95rem;">
                 <div style="text-align: center; margin-bottom: 20px;">

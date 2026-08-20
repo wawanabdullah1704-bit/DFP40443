@@ -15,9 +15,19 @@ $message = "";
 if ($role === 'student') {
     $user_id = $_SESSION['student_id'];
     $table = 'students';
+    $return_url = 'dashboard.php';
 } else if ($role === 'provider') {
     $user_id = $_SESSION['provider_id'];
     $table = 'providers';
+    $return_url = 'provider_dashboard.php';
+} else if ($role === 'admin') {
+    $user_id = $_SESSION['admin_id'];
+    $table = 'admins';
+    $return_url = 'admin_dashboard.php';
+} else if ($role === 'jhepp') {
+    $user_id = $_SESSION['jhepp_id'];
+    $table = 'jhepp';
+    $return_url = 'jhepp_dashboard.php';
 } else {
     header("Location: index.php");
     exit();
@@ -26,14 +36,13 @@ if ($role === 'student') {
 // Prosess Kemaskini
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     $full_name = htmlspecialchars($_POST['full_name']);
-    $phone_no = htmlspecialchars($_POST['phone_no']);
+    $phone_no = isset($_POST['phone_no']) ? htmlspecialchars($_POST['phone_no']) : null;
     $new_password = $_POST['new_password'];
     $confirm_password = $_POST['confirm_password'];
 
-    // Handle profile picture upload
-    $pic_update_sql = "";
+    // Handle profile picture upload (if supported)
     $pic_update_val = null;
-    if (!empty($_FILES['profile_picture']['name'])) {
+    if (($role === 'student' || $role === 'provider') && !empty($_FILES['profile_picture']['name'])) {
         $targetDir = "uploads/profiles/";
         if (!is_dir($targetDir)) mkdir($targetDir, 0777, true);
 
@@ -57,16 +66,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
             $message = "<div class='neo-alert alert-danger'>Ralat: Pengesahan kata laluan tidak sepadan!</div>";
         } else {
             $hashed = password_hash($new_password, PASSWORD_DEFAULT);
-            if ($pic_update_val) {
-                $sql_up = "UPDATE $table SET full_name = ?, phone_no = ?, password = ?, profile_picture = ? WHERE id = ?";
+            if ($role === 'admin' || $role === 'jhepp') {
+                $sql_up = "UPDATE $table SET full_name = ?, password = ? WHERE id = ?";
                 $stmt_up = $conn->prepare($sql_up);
-                $stmt_up->bind_param("ssssi", $full_name, $phone_no, $hashed, $pic_update_val, $user_id);
+                $stmt_up->bind_param("ssi", $full_name, $hashed, $user_id);
             } else {
-                $sql_up = "UPDATE $table SET full_name = ?, phone_no = ?, password = ? WHERE id = ?";
-                $stmt_up = $conn->prepare($sql_up);
-                $stmt_up->bind_param("sssi", $full_name, $phone_no, $hashed, $user_id);
+                if ($pic_update_val) {
+                    $sql_up = "UPDATE $table SET full_name = ?, phone_no = ?, password = ?, profile_picture = ? WHERE id = ?";
+                    $stmt_up = $conn->prepare($sql_up);
+                    $stmt_up->bind_param("ssssi", $full_name, $phone_no, $hashed, $pic_update_val, $user_id);
+                } else {
+                    $sql_up = "UPDATE $table SET full_name = ?, phone_no = ?, password = ? WHERE id = ?";
+                    $stmt_up = $conn->prepare($sql_up);
+                    $stmt_up->bind_param("sssi", $full_name, $phone_no, $hashed, $user_id);
+                }
             }
             if ($stmt_up->execute()) {
+                $_SESSION['full_name'] = $full_name;
                 $message = "<div class='neo-alert alert-success'>Berjaya: Maklumat profil dan kata laluan telah dikemaskini!</div>";
             } else {
                 $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt_up->error . "</div>";
@@ -74,16 +90,23 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
             $stmt_up->close();
         }
     } else {
-        if ($pic_update_val) {
-            $sql_up = "UPDATE $table SET full_name = ?, phone_no = ?, profile_picture = ? WHERE id = ?";
+        if ($role === 'admin' || $role === 'jhepp') {
+            $sql_up = "UPDATE $table SET full_name = ? WHERE id = ?";
             $stmt_up = $conn->prepare($sql_up);
-            $stmt_up->bind_param("sssi", $full_name, $phone_no, $pic_update_val, $user_id);
+            $stmt_up->bind_param("si", $full_name, $user_id);
         } else {
-            $sql_up = "UPDATE $table SET full_name = ?, phone_no = ? WHERE id = ?";
-            $stmt_up = $conn->prepare($sql_up);
-            $stmt_up->bind_param("ssi", $full_name, $phone_no, $user_id);
+            if ($pic_update_val) {
+                $sql_up = "UPDATE $table SET full_name = ?, phone_no = ?, profile_picture = ? WHERE id = ?";
+                $stmt_up = $conn->prepare($sql_up);
+                $stmt_up->bind_param("sssi", $full_name, $phone_no, $pic_update_val, $user_id);
+            } else {
+                $sql_up = "UPDATE $table SET full_name = ?, phone_no = ? WHERE id = ?";
+                $stmt_up = $conn->prepare($sql_up);
+                $stmt_up->bind_param("ssi", $full_name, $phone_no, $user_id);
+            }
         }
         if ($stmt_up->execute()) {
+            $_SESSION['full_name'] = $full_name;
             $message = "<div class='neo-alert alert-success'>Berjaya: Maklumat profil anda telah dikemaskini!</div>";
         } else {
             $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt_up->error . "</div>";
@@ -304,8 +327,8 @@ $current_pic = $user_data['profile_picture'] ?? '';
 
     <!-- NAVBAR -->
     <header class="neo-navbar">
-        <div class="neo-brand">SCRS PMU</div>
-        <a href="<?php echo ($role === 'provider') ? 'provider_dashboard.php' : 'dashboard.php'; ?>" class="neo-btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem;">
+        <a href="<?php echo $return_url; ?>" class="neo-brand">SCRS PMU</a>
+        <a href="<?php echo $return_url; ?>" class="neo-btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem;">
             <i class="bi bi-arrow-left me-1"></i> Kembali
         </a>
     </header>
@@ -316,14 +339,15 @@ $current_pic = $user_data['profile_picture'] ?? '';
 
         <div class="neo-card">
             <div class="card-header-title">
-                <i class="bi bi-person-gear text-primary"></i> Kemaskini Profil Pengguna
+                <i class="bi bi-person-gear text-primary"></i> Kemaskini Profil Pengguna (<?php echo strtoupper($role); ?>)
             </div>
             <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 20px; text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 12px; line-height: 1.4;">
-                <strong>Panduan:</strong> Kemaskini maklumat peribadi anda di bawah. Anda boleh menukar gambar profil, nama penuh, nombor telefon, dan menukar kata laluan baharu jika perlu.
+                <strong>Panduan:</strong> Kemaskini maklumat peribadi anda di bawah dan tukar kata laluan baharu jika perlu.
             </p>
 
             <form action="" method="POST" enctype="multipart/form-data">
 
+                <?php if ($role === 'student' || $role === 'provider'): ?>
                 <!-- PROFILE PICTURE SECTION -->
                 <label for="profile_picture" style="display:block; cursor:pointer;">
                     <div class="profile-pic-area" id="picArea">
@@ -339,6 +363,7 @@ $current_pic = $user_data['profile_picture'] ?? '';
                     </div>
                 </label>
                 <input type="file" id="profile_picture" name="profile_picture" accept=".jpg,.jpeg,.png,.gif" style="display:none;">
+                <?php endif; ?>
 
                 <div class="form-group">
                     <label class="form-label">Nama Pengguna (Username)</label>
@@ -355,10 +380,12 @@ $current_pic = $user_data['profile_picture'] ?? '';
                     <input type="text" class="form-control" name="full_name" value="<?php echo htmlspecialchars($user_data['full_name']); ?>" required>
                 </div>
 
+                <?php if (isset($user_data['phone_no'])): ?>
                 <div class="form-group">
                     <label class="form-label">Nombor Telefon</label>
                     <input type="text" class="form-control" name="phone_no" value="<?php echo htmlspecialchars($user_data['phone_no']); ?>" required>
                 </div>
+                <?php endif; ?>
 
                 <div style="border-top: 2px dashed var(--black); margin: 25px 0 20px 0; padding-top: 15px;">
                     <p style="font-weight: 900; text-transform: uppercase; margin-bottom: 15px; font-size: 0.9rem; color: #333;">

@@ -167,7 +167,7 @@
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="index.php" class="neo-brand">SCRS PMU</a>
         </div>
         <a href="index.php" class="neo-btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--yellow);">Log Masuk</a>
     </header>

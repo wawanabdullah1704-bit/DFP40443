@@ -164,7 +164,7 @@
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="index.php" class="neo-brand">SCRS PMU</a>
         </div>
         <a href="index.php" class="role-card" style="margin-bottom: 0; padding: 6px 12px; font-size: 0.8rem; background: var(--blue); border-width: 3px; box-shadow: 3px 3px 0px var(--black);">
             Log Masuk

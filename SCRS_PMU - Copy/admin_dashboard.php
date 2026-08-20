@@ -105,18 +105,45 @@ $recent_students = $conn->query($sql_recent_students);
         .menu-toggle-btn:hover { transform: scale(1.1); }
         .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
 
-        .admin-badge {
-            background-color: var(--pink);
-            border: 3px solid var(--black);
-            box-shadow: 3px 3px 0px var(--black);
-            padding: 6px 14px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.85rem;
+        /* PROFILE DROPDOWN */
+        .profile-container { position: relative; }
+        .profile-btn {
             display: flex;
             align-items: center;
-            gap: 6px;
+            gap: 8px;
+            background-color: var(--yellow);
+            border: 3px solid var(--black);
+            padding: 8px 14px;
+            font-weight: 800;
+            box-shadow: 4px 4px 0px var(--black);
+            cursor: pointer;
+            transition: var(--transition);
         }
+        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 6px 6px 0px var(--black);
+            width: 170px;
+            display: none;
+            z-index: 1001;
+            list-style: none;
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--black);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .dropdown-item:hover { background-color: var(--pink); color: var(--black); }
 
         /* SIDEBAR */
         .sidebar-overlay {
@@ -330,12 +357,18 @@ $recent_students = $conn->query($sql_recent_students);
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="admin_dashboard.php" class="neo-brand">SCRS PMU</a>
         </div>
 
-        <div class="admin-badge">
-            <i class="bi bi-shield-fill-check"></i>
-            <span>ADMIN: <?php echo htmlspecialchars($admin_username); ?></span>
+        <div class="profile-container">
+            <button class="profile-btn" id="profile-toggle">
+                <i class="bi bi-person-fill fs-5"></i>
+                <span>ADMIN: <?php echo htmlspecialchars($admin_username); ?></span>
+            </button>
+            <ul class="dropdown-menu" id="profile-menu">
+                <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
+                <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+            </ul>
         </div>
     </header>
 
@@ -352,6 +385,7 @@ $recent_students = $conn->query($sql_recent_students);
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="edit_profile.php" class="sidebar-link"><i class="bi bi-person-gear"></i> Edit Profil</a>
             <a href="logout.php" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
         </nav>
     </aside>
@@ -536,6 +570,8 @@ $recent_students = $conn->query($sql_recent_students);
         const closeSidebarBtn = document.getElementById('close-sidebar');
         const sidebar = document.getElementById('sidebar');
         const sidebarOverlay = document.getElementById('sidebar-overlay');
+        const profileToggle = document.getElementById('profile-toggle');
+        const profileMenu = document.getElementById('profile-menu');
 
         function openSidebar() {
             sidebar.classList.add('open');
@@ -547,9 +583,19 @@ $recent_students = $conn->query($sql_recent_students);
             sidebarOverlay.classList.remove('show');
         }
 
-        openSidebarBtn.addEventListener('click', openSidebar);
-        closeSidebarBtn.addEventListener('click', closeSidebar);
-        sidebarOverlay.addEventListener('click', closeSidebar);
+        if (openSidebarBtn) openSidebarBtn.addEventListener('click', openSidebar);
+        if (closeSidebarBtn) closeSidebarBtn.addEventListener('click', closeSidebar);
+        if (sidebarOverlay) sidebarOverlay.addEventListener('click', closeSidebar);
+
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileMenu.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                profileMenu.classList.remove('show');
+            });
+        }
     </script>
 </body>
 </html>

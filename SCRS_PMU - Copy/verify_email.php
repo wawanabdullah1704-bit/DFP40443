@@ -180,7 +180,7 @@ $conn->close();
 
     <!-- NAVBAR -->
     <header class="neo-navbar">
-        <div class="neo-brand"><i class="bi bi-shield-check me-2"></i>SCRS PMU</div>
+        <a href="index.php" class="neo-brand"><i class="bi bi-shield-check me-2"></i>SCRS PMU</a>
         <a href="index.php" class="neo-btn" style="padding: 6px 14px; font-size: 0.8rem;">Log Masuk</a>
     </header>
 

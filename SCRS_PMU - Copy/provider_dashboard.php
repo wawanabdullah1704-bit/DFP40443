@@ -597,7 +597,7 @@ $stmt_lat->close();
             <button class="menu-toggle-btn" id="open-sidebar">
                 <i class="bi bi-list"></i>
             </button>
-            <div class="neo-brand">SCRS PMU (PROVIDER)</div>
+            <a href="provider_dashboard.php" class="neo-brand">SCRS PMU (PROVIDER)</a>
         </div>
 
         <div class="profile-container">
@@ -786,7 +786,6 @@ $stmt_lat->close();
         <div class="neo-modal">
             <div class="modal-header">
                 <h3 class="modal-title"><i class="bi bi-qr-code me-1"></i> Kod QR DuitNow</h3>
-                <button type="button" class="close-btn" onclick="closeModal('qrCodeModal')"><i class="bi bi-x-lg"></i></button>
             </div>
             <form action="" method="POST" enctype="multipart/form-data">
                 <div style="text-align: center; margin-bottom: 20px;">

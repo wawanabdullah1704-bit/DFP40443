@@ -472,7 +472,7 @@ $conn->close();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="index.php" class="neo-brand">SCRS PMU</a>
         </div>
         <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Tukar Peranan</a>
     </header>
@@ -607,7 +607,6 @@ $conn->close();
         <div class="modal-box">
             <div class="modal-header-custom">
                 <h5><i class="bi bi-file-earmark-text-fill me-2"></i>Terma &amp; Syarat / Terms &amp; Conditions</h5>
-                <button class="modal-close-btn" onclick="closeTermsModal()">&times;</button>
             </div>
             <div class="modal-body-custom">
                 <!-- Versi Bahasa Melayu -->

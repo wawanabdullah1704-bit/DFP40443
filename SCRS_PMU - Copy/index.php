@@ -54,7 +54,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $_SESSION['full_name'] = $row['full_name'];
                 $_SESSION['role'] = 'jhepp';
                 
-                header("Location: verify_account.php"); 
+                header("Location: jhepp_dashboard.php"); 
                 exit();
             } else {
                 $error_message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan salah!</div>';
@@ -348,7 +348,7 @@ $conn->close();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="index.php" class="neo-brand">SCRS PMU</a>
         </div>
         <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Daftar Akaun</a>
     </header>

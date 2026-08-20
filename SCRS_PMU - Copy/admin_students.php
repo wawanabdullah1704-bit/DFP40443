@@ -205,6 +205,47 @@ $students_result = $stmt_list->get_result();
         .menu-toggle-btn:hover { transform: scale(1.1); }
         .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
 
+        /* PROFILE DROPDOWN */
+        .nav-right-actions { display: flex; align-items: center; gap: 12px; }
+        .profile-container { position: relative; }
+        .profile-btn {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background-color: var(--yellow);
+            border: 3px solid var(--black);
+            padding: 8px 14px;
+            font-weight: 800;
+            box-shadow: 4px 4px 0px var(--black);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            right: 0;
+            background: var(--white);
+            border: 3px solid var(--black);
+            box-shadow: 6px 6px 0px var(--black);
+            width: 170px;
+            display: none;
+            z-index: 1001;
+            list-style: none;
+        }
+        .dropdown-menu.show { display: block; }
+        .dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            color: var(--black);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+        .dropdown-item:hover { background-color: var(--pink); color: var(--black); }
+
         /* SIDEBAR */
         .sidebar-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
@@ -408,11 +449,23 @@ $students_result = $stmt_list->get_result();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="admin_dashboard.php" class="neo-brand">SCRS PMU</a>
         </div>
-        <a href="admin_dashboard.php" class="neo-btn" style="padding: 6px 12px; font-size: 0.8rem;">
-            <i class="bi bi-speedometer2"></i> Dashboard
-        </a>
+        <div class="nav-right-actions">
+            <a href="admin_dashboard.php" class="neo-btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--yellow);">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <div class="profile-container">
+                <button class="profile-btn" id="profile-toggle">
+                    <i class="bi bi-person-fill fs-5"></i>
+                    <span>ADMIN: <?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
+                </button>
+                <ul class="dropdown-menu" id="profile-menu">
+                    <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
+                    <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+                </ul>
+            </div>
+        </div>
     </header>
 
     <!-- SIDEBAR -->
@@ -428,6 +481,7 @@ $students_result = $stmt_list->get_result();
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="edit_profile.php" class="sidebar-link"><i class="bi bi-person-gear"></i> Edit Profil</a>
             <a href="logout.php" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
         </nav>
     </aside>
@@ -566,7 +620,6 @@ $students_result = $stmt_list->get_result();
                 <h3 style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
                     <i class="bi bi-person-plus-fill text-success"></i> Tambah Pelajar Baharu
                 </h3>
-                <button class="close-btn" onclick="closeCreateModal()">X</button>
             </div>
             
             <form action="" method="POST">
@@ -645,7 +698,6 @@ $students_result = $stmt_list->get_result();
                 <h3 style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem; display: flex; align-items: center; gap: 8px;">
                     <i class="bi bi-pencil-square text-warning"></i> Kemaskini Pelajar
                 </h3>
-                <button class="close-btn" onclick="closeEditModal()">X</button>
             </div>
             
             <form action="" method="POST">
@@ -725,7 +777,6 @@ $students_result = $stmt_list->get_result();
                 <h3 style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem;">
                     <i class="bi bi-person-badge-fill text-primary"></i> Butiran Pelajar
                 </h3>
-                <button class="close-btn" onclick="closeViewModal()">X</button>
             </div>
             <div style="font-weight: 700; font-size: 0.9rem; display: flex; flex-direction: column; gap: 8px;">
                 <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 6px 0;">
@@ -794,6 +845,18 @@ $students_result = $stmt_list->get_result();
         openSidebarBtn.addEventListener('click', openSidebar);
         closeSidebarBtn.addEventListener('click', closeSidebar);
         sidebarOverlay.addEventListener('click', closeSidebar);
+
+        const profileToggle = document.getElementById('profile-toggle');
+        const profileMenu = document.getElementById('profile-menu');
+        if (profileToggle && profileMenu) {
+            profileToggle.addEventListener('click', (e) => {
+                e.stopPropagation();
+                profileMenu.classList.toggle('show');
+            });
+            document.addEventListener('click', () => {
+                profileMenu.classList.remove('show');
+            });
+        }
 
         // CREATE MODAL
         function openCreateModal() { document.getElementById('createModalOverlay').classList.add('show'); }

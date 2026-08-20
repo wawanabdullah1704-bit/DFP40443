@@ -569,7 +569,7 @@ $stmt_latest->close();
             <button class="menu-toggle-btn" id="open-sidebar">
                 <i class="bi bi-list"></i>
             </button>
-            <div class="neo-brand">SCRS PMU</div>
+            <a href="dashboard.php" class="neo-brand">SCRS PMU</a>
         </div>
 
         <div class="profile-container">
@@ -644,32 +644,6 @@ $stmt_latest->close();
                 <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin: 0; line-height: 1.4;">
                     Selamat Datang, <strong><?php echo htmlspecialchars($student_name); ?></strong>!
                 </p>
-            </div>
-
-            <!-- STATISTIK KHUSUS PELAJAR (3 RUANGAN METRIK MAKLUMAT - BUKAN BUTTON) -->
-            <div class="section-title"><i class="bi bi-bar-chart-fill me-1"></i> Imbasan Status</div>
-            <div class="neo-grid-3">
-                <div class="stat-widget border-g">
-                    <i class="bi bi-car-front-fill stat-icon icon-g"></i>
-                    <div class="stat-info">
-                        <h2><?php echo $total_cars; ?></h2>
-                        <p>Kereta Tersedia</p>
-                    </div>
-                </div>
-                <div class="stat-widget border-y">
-                    <i class="bi bi-hourglass-split stat-icon icon-y"></i>
-                    <div class="stat-info">
-                        <h2><?php echo $total_active_bookings; ?></h2>
-                        <p>Tempahan Aktif</p>
-                    </div>
-                </div>
-                <div class="stat-widget border-b">
-                    <i class="bi bi-journal-check stat-icon icon-b"></i>
-                    <div class="stat-info">
-                        <h2><?php echo $total_my_bookings; ?></h2>
-                        <p>Jumlah Rekod</p>
-                    </div>
-                </div>
             </div>
 
             <!-- MENU UTAMA PINTAS (3 RUANGAN MENDATAR PADA MOBILE - TIADA SCROLL) -->
@@ -764,7 +738,6 @@ $stmt_latest->close();
         <div class="neo-modal" onclick="event.stopPropagation()">
             <div class="modal-header">
                 <h3 class="modal-title"><i class="bi bi-info-circle-fill text-primary me-2"></i>Panduan Mudah Menyewa</h3>
-                <button type="button" class="neo-btn" style="padding: 4px 10px; font-size: 0.85rem; background: var(--pink);" onclick="closeGuideModal()">X</button>
             </div>
             <div class="modal-body">
                 <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 15px;">Ikuti 3 langkah mudah berikut untuk menyewa kenderaan di SCRS PMU:</p>
