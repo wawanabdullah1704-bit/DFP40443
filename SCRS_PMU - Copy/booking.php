@@ -240,8 +240,8 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <div class="car-card">
                 <img src="<?php echo htmlspecialchars($car['car_image']); ?>" class="car-img" alt="Kereta">
                 <div class="car-body">
-                    <h5 class="car-title"><?php echo htmlspecialchars($car['car_model']); ?></h5>
-                    <p class="car-plate"><i class="bi bi-123 me-1"></i> <?php echo htmlspecialchars($car['car_plate']); ?></p>
+                    <h5 class="car-title"><?php echo (!empty($car['car_brand']) ? htmlspecialchars($car['car_brand']) . ' ' : '') . htmlspecialchars($car['car_model']); ?></h5>
+                    <p class="car-plate"><?php echo htmlspecialchars($car['car_plate']); ?></p>
                     
                     <div class="badges-box">
                         <span class="neo-badge"><i class="bi bi-gear-fill"></i> <?php echo htmlspecialchars($car['transmission']); ?></span>
@@ -284,7 +284,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     </div>
 
                     <button type="button" class="neo-btn btn-green" style="width: 100%; justify-content: center;" onclick="openModal('modal<?php echo $car['id']; ?>')">
-                        <i class="bi bi-key-fill me-1"></i> Tempah Kereta Ini
+                        <i class="bi bi-key-fill me-1"></i> Tempah Sekarang
                     </button>
                 </div>
             </div>
@@ -298,7 +298,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     
                     <form action="booking.php" method="POST">
                         <div>
-                            <h4 style="font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: #0055ff;">
+                            <h4 style="font-weight: 900; text-transform: uppercase; margin-bottom: 15px; color: var(--black);">
                                 <?php echo !empty($car['car_brand']) ? htmlspecialchars($car['car_brand']) . ' ' : ''; ?><?php echo htmlspecialchars($car['car_model']); ?>
                                 <span style="font-size: 0.9rem; color: #555;">(<?php echo htmlspecialchars($car['car_plate']); ?>)</span>
                             </h4>
@@ -339,8 +339,11 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                 </div>
                             </div>
 
-                            <div class="neo-alert" style="background: var(--yellow); font-size: 0.85rem; padding: 12px; margin-bottom: 0;">
-                                <i class="bi bi-info-circle-fill me-1"></i> <strong>Nota Pembayaran:</strong> Kod QR DuitNow untuk pembayaran akan disediakan di menu <strong>Status Tempahan</strong> sebaik sahaja tempahan ini diluluskan oleh Penyedia Kereta.
+                            <div style="background: var(--yellow); border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); border-radius: var(--radius-md); padding: 10px 14px; font-size: 0.85rem; font-weight: 700; text-transform: none; line-height: 1.4; display: flex; align-items: center; gap: 10px; text-align: left;">
+                                <i class="bi bi-info-circle-fill fs-5" style="color: var(--black); flex-shrink: 0;"></i>
+                                <div style="flex: 1;">
+                                    <strong>Nota Pembayaran:</strong> Kod QR DuitNow disediakan di <strong>Status Tempahan</strong> selepas tempahan disahkan.
+                                </div>
                             </div>
                         </div>
 
@@ -352,7 +355,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
                         <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 25px; border-top: 3px solid var(--black); padding-top: 20px; flex-wrap: wrap;">
                             <button type="button" class="neo-btn" style="background: #ccc; flex: 1;" onclick="closeModal('modal<?php echo $car['id']; ?>')">Batal</button>
-                            <button type="submit" name="submit_booking" class="neo-btn btn-green" style="flex: 2;"><i class="bi bi-send-fill me-1"></i> Hantar Permohonan Tempahan</button>
+                            <button type="submit" name="submit_booking" class="neo-btn btn-green" style="flex: 1.5;"><i class="bi bi-send-fill me-1"></i> Hantar Tempahan</button>
                         </div>
                     </form>
                 </div>

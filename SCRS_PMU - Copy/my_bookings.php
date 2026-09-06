@@ -312,8 +312,8 @@ $result_bookings = $stmt->get_result();
                         <div>
                             <div class="booking-header">
                                 <div>
-                                    <h3 class="car-name"><?php echo htmlspecialchars($booking['car_model']); ?></h3>
-                                    <span class="car-plate"><i class="bi bi-123 me-1"></i> <?php echo htmlspecialchars($booking['car_plate']); ?></span>
+                                    <h3 class="car-name"><?php echo (!empty($booking['car_brand']) ? htmlspecialchars($booking['car_brand']) . ' ' : '') . htmlspecialchars($booking['car_model']); ?></h3>
+                                    <span class="car-plate"><?php echo htmlspecialchars($booking['car_plate']); ?></span>
                                 </div>
                                 <span class="neo-badge <?php echo $badge_class; ?>">
                                     <i class="bi <?php echo $status_icon; ?>"></i> <?php echo $status_text; ?>
@@ -385,7 +385,7 @@ $result_bookings = $stmt->get_result();
                                 // JSON data untuk popup modal
                                 $bookingModalData = htmlspecialchars(json_encode([
                                     'id' => (int)$booking['id'],
-                                    'carModel' => $booking['car_model'],
+                                    'carModel' => (!empty($booking['car_brand']) ? $booking['car_brand'] . ' ' : '') . $booking['car_model'],
                                     'carPlate' => $booking['car_plate'],
                                     'totalPrice' => (float)$booking['total_price'],
                                     'providerName' => $booking['provider_name'],
@@ -439,7 +439,7 @@ $result_bookings = $stmt->get_result();
                                         <button type="button" class="neo-btn btn-blue mobile-btn-full" data-booking="<?php echo $bookingModalData; ?>" onclick="handleReturnClick(this)">
                                             <i class="bi bi-camera-fill"></i> Muat Naik Gambar
                                         </button>
-                                        <a href="https://wa.me/<?php echo $phone; ?>?text=Hai,%20saya%20pelajar%20dari%20SCRS%20PMU.%20Tempahan%20kereta%20<?php echo urlencode($booking['car_model']); ?>%20saya%20telah%20diluluskan." target="_blank" class="neo-btn btn-green mobile-btn-full">
+                                        <a href="https://wa.me/<?php echo $phone; ?>?text=Hai,%20saya%20pelajar%20dari%20SCRS%20PMU.%20Tempahan%20kereta%20<?php echo urlencode((!empty($booking['car_brand']) ? $booking['car_brand'] . ' ' : '') . $booking['car_model']); ?>%20saya%20telah%20diluluskan." target="_blank" class="neo-btn btn-green mobile-btn-full">
                                             <i class="bi bi-whatsapp"></i> Hubungi Penyedia
                                         </a>
                                     </div>
@@ -658,8 +658,8 @@ $result_bookings = $stmt->get_result();
                 </div>
 
                 <!-- Panduan Nota Pengesahan -->
-                <div style="background: #fff8e1; border: 2px dashed #f57f17; padding: 10px 12px; font-size: 0.82rem; color: #5d4037; margin-bottom: 15px;">
-                    <i class="bi bi-info-circle-fill text-warning me-1"></i> <strong>Nota:</strong> Butang <em>"Sahkan Kereta Telah Dikembalikan"</em> terdapat pada kad tempahan dan hanya boleh ditekan selepas kedua-dua <strong>Resit Pembayaran</strong> dan <strong>Gambar Pulangan</strong> telah dimuat naik.
+                <div style="background: #fff8e1; border: 2px dashed #f57f17; padding: 8px 12px; font-size: 0.82rem; color: #5d4037; margin-bottom: 15px;">
+                    <i class="bi bi-info-circle-fill text-warning me-1"></i> <strong>Nota:</strong> Sila muat naik kedua-dua <strong>Resit Bayaran</strong> dan <strong>Gambar Pulangan</strong> sebelum membuat pengesahan pulangan kereta.
                 </div>
 
                 <div style="text-align: center;">

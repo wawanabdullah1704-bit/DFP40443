@@ -394,13 +394,13 @@ $stmt_prov->close();
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Menu Penyedia</h2>
+            <h2>Penyedia Kereta</h2>
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="provider_cars.php" class="sidebar-link active"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
-            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Senarai Permohonan</a>
             <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
@@ -453,7 +453,7 @@ $stmt_prov->close();
                                 <span class="neo-badge <?php echo $badge_class; ?>"><?php echo $status_text; ?></span>
                             </div>
                             
-                            <div class="car-plate"><i class="bi bi-123 me-1"></i><?php echo htmlspecialchars($car['car_plate']); ?></div>
+                            <div class="car-plate"><?php echo htmlspecialchars($car['car_plate']); ?></div>
                             
                             <div style="display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap;">
                                 <span class="neo-badge"><i class="bi bi-gear-fill me-1"></i><?php echo htmlspecialchars($car['transmission']); ?></span>

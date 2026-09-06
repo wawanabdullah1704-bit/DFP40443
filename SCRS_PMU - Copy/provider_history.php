@@ -29,7 +29,7 @@ $total_earnings = $stats['total_earnings'] ?? 0;
 $stmt_s->close();
 
 // AMBIL SENARAI SEJARAH TEMPAHAN
-$sql_history = "SELECT b.*, c.car_model, c.car_plate, c.car_image,
+$sql_history = "SELECT b.*, c.car_brand, c.car_model, c.car_plate, c.car_image,
                        s.username as student_username, s.full_name as student_name, s.email as student_email,
                        s.phone_no as student_phone, s.no_pendaftaran as student_matrix,
                        s.student_id_file as student_id_file, s.driving_license_file as student_license_file,
@@ -221,13 +221,13 @@ $result_history = $stmt_h->get_result();
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Menu Penyedia</h2>
+            <h2>Penyedia Kereta</h2>
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
-            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Senarai Permohonan</a>
             <a href="provider_history.php" class="sidebar-link active"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
@@ -331,7 +331,7 @@ $result_history = $stmt_h->get_result();
                                     </a>
                                 </td>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($row['car_model']); ?></strong><br>
+                                    <strong><?php echo (!empty($row['car_brand']) ? htmlspecialchars($row['car_brand']) . ' ' : '') . htmlspecialchars($row['car_model']); ?></strong><br>
                                     <small style="color: #666; font-weight: 700;"><?php echo htmlspecialchars($row['car_plate']); ?></small>
                                 </td>
                                 <td><?php echo date('d M Y, h:i A', strtotime($row['start_date'])); ?></td>

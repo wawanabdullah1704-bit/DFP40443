@@ -43,7 +43,7 @@ $total_spent = $stats['total_spent'] ?? 0;
 $stmt_s->close();
 
 // Ambil SEMUA rekod tempahan pelajar beserta maklumat kereta & penyedia
-$sql_history = "SELECT b.*, c.car_model, c.car_plate, c.car_image, 
+$sql_history = "SELECT b.*, c.car_brand, c.car_model, c.car_plate, c.car_image, 
                        p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, 
                        p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance, 
                        p.profile_picture AS provider_profile_picture, p.qr_code_image AS provider_qr_code,
@@ -339,7 +339,7 @@ $result_history = $stmt->get_result();
                             <tr>
                                 <td style="text-align: center;"><?php echo $no++; ?></td>
                                 <td>
-                                    <strong><?php echo htmlspecialchars($row['car_model']); ?></strong><br>
+                                    <strong><?php echo (!empty($row['car_brand']) ? htmlspecialchars($row['car_brand']) . ' ' : '') . htmlspecialchars($row['car_model']); ?></strong><br>
                                     <small style="color: #666; font-weight: 700;"><?php echo htmlspecialchars($row['car_plate']); ?></small>
                                 </td>
                                 <td>

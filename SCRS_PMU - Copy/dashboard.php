@@ -42,7 +42,7 @@ $total_my_bookings = $stmt_my->get_result()->fetch_assoc()['total'] ?? 0;
 $stmt_my->close();
 
 // --- DAPATKAN TEMPAHAN TERBAHARU PELAJAR & MAKLUMAT PENYEDIA ---
-$sql_latest_booking = "SELECT b.*, c.car_model, c.car_plate, c.car_image, p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance 
+$sql_latest_booking = "SELECT b.*, c.car_brand, c.car_model, c.car_plate, c.car_image, p.username AS provider_username, p.email AS provider_email, p.phone_no AS provider_phone, p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance 
                        FROM bookings b 
                        JOIN cars c ON b.car_id = c.id
                        JOIN providers p ON c.provider_id = p.id
@@ -451,7 +451,7 @@ $stmt_latest->close();
                 <div class="section-title"><i class="bi bi-geo-alt-fill me-1"></i> Perjalanan Anda</div>
                 <div class="booking-status-card" onclick="window.location.href='my_bookings.php'" style="background-color: var(--white); border: var(--border-thick); border-radius: var(--radius-lg); box-shadow: var(--shadow-solid); padding: 20px; cursor: pointer; transition: var(--transition); margin-bottom: 30px;">
                     <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 0.95rem; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                        <span><i class="bi bi-car-front-fill me-1 text-primary"></i> <strong><?php echo htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</strong></span>
+                        <span><i class="bi bi-car-front-fill me-1 text-primary"></i> <strong><?php echo (!empty($latest_booking['car_brand']) ? htmlspecialchars($latest_booking['car_brand']) . ' ' : '') . htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</strong></span>
                         <span class="status-badge <?php echo strtolower($latest_booking['status']); ?>">
                             <?php echo htmlspecialchars($latest_booking['status']); ?>
                         </span>

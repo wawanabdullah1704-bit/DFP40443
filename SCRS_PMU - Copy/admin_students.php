@@ -289,6 +289,7 @@ $students_result = $stmt_list->get_result();
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="admin_staff.php" class="sidebar-link"><i class="bi bi-shield-shaded"></i> Urus Admin & JHEPP</a>
         </nav>
     </aside>
 

@@ -94,18 +94,26 @@ $provider_info = $stmt_prov->get_result()->fetch_assoc();
 $has_qr = (!empty($provider_info['qr_code_image']) && file_exists($provider_info['qr_code_image']));
 $stmt_prov->close();
 
-// Latest Booking for Provider's Cars
-$sql_latest = "SELECT b.*, c.car_model, c.car_plate, s.full_name as student_name, s.phone_no as student_phone 
-               FROM bookings b 
-               JOIN cars c ON b.car_id = c.id 
-               JOIN students s ON b.student_id = s.id 
-               WHERE c.provider_id = ? 
-               ORDER BY b.created_at DESC LIMIT 1";
-$stmt_lat = $conn->prepare($sql_latest);
-$stmt_lat->bind_param("i", $provider_id);
-$stmt_lat->execute();
-$latest_booking = $stmt_lat->get_result()->fetch_assoc();
-$stmt_lat->close();
+// Senarai Permohonan Tempahan untuk Kenderaan Provider (Pending didahulukan)
+$sql_applications = "SELECT b.*, c.car_model, c.car_plate, c.car_brand, c.car_image, 
+                            s.full_name as student_name, s.phone_no as student_phone, s.no_pendaftaran as student_matrix
+                     FROM bookings b 
+                     JOIN cars c ON b.car_id = c.id 
+                     JOIN students s ON b.student_id = s.id 
+                     WHERE c.provider_id = ? 
+                     ORDER BY 
+                        CASE 
+                            WHEN b.status = 'Pending' THEN 1 
+                            WHEN b.status = 'Approved' THEN 2 
+                            ELSE 3 
+                        END, 
+                        b.created_at DESC 
+                     LIMIT 6";
+$stmt_app = $conn->prepare($sql_applications);
+$stmt_app->bind_param("i", $provider_id);
+$stmt_app->execute();
+$result_applications = $stmt_app->get_result();
+$stmt_app->close();
 ?>
 
 <!DOCTYPE html>
@@ -373,13 +381,13 @@ $stmt_lat->close();
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Menu Penyedia</h2>
+            <h2>Penyedia Kereta</h2>
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link active"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
-            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Senarai Permohonan</a>
             <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
@@ -453,7 +461,7 @@ $stmt_lat->close();
                     </div>
                     <div class="stat-info">
                         <h2><?php echo $total_cars; ?></h2>
-                        <p>Jumlah Kereta</p>
+                        <p>Jumlah kereta didaftarkan</p>
                     </div>
                 </div>
                 <div class="stat-widget">
@@ -462,7 +470,7 @@ $stmt_lat->close();
                     </div>
                     <div class="stat-info">
                         <h2><?php echo $total_pending; ?></h2>
-                        <p>Menunggu</p>
+                        <p>Menunggu disahkan</p>
                     </div>
                 </div>
                 <div class="stat-widget">
@@ -471,7 +479,7 @@ $stmt_lat->close();
                     </div>
                     <div class="stat-info">
                         <h2><?php echo $total_active; ?></h2>
-                        <p>Aktif</p>
+                        <p>Tempahan aktif</p>
                     </div>
                 </div>
                 <div class="stat-widget">
@@ -494,10 +502,10 @@ $stmt_lat->close();
                 </div>
                 <div class="action-card bg-g" onclick="window.location.href='provider_bookings.php'">
                     <i class="bi bi-clipboard-check-fill action-icon"></i>
-                    <h4>Tempahan Semasa</h4>
+                    <h4>Senarai Permohonan</h4>
                     <?php if ($total_pending > 0): ?>
                         <div style="margin-top: 4px; font-weight: 900; font-size: 0.65rem; background: var(--pink); color: #000; border: 1.5px solid #000; padding: 1px 4px; text-transform: uppercase;">
-                            <?php echo $total_pending; ?> Menunggu
+                            <?php echo $total_pending; ?> Menunggu Disahkan
                         </div>
                     <?php endif; ?>
                 </div>
@@ -523,23 +531,145 @@ $stmt_lat->close();
                 </button>
             </div>
 
-            <?php if ($latest_booking): ?>
-                <!-- STATUS TEMPAHAN TERKINI (INLINE) -->
-                <div class="section-title"><i class="bi bi-activity me-1"></i> Permohonan / Tempahan Terkini</div>
-                <div class="neo-card bg-w clickable-card" onclick="window.location.href='provider_bookings.php'" style="text-align: left; align-items: stretch; padding: 20px; margin-bottom: 30px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; font-weight: 900; font-size: 1rem; border-bottom: 2px dashed #ccc; padding-bottom: 10px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
-                        <span><i class="bi bi-car-front-fill me-1 text-primary"></i> <?php echo htmlspecialchars($latest_booking['car_model']); ?> (<?php echo htmlspecialchars($latest_booking['car_plate']); ?>)</span>
-                        <span style="border: 2px solid var(--black); padding: 2px 8px; font-size: 0.75rem; text-transform: uppercase; font-weight: 900; background: <?php echo ($latest_booking['status'] === 'Approved') ? 'var(--blue)' : (($latest_booking['status'] === 'Completed') ? 'var(--green)' : 'var(--yellow)'); ?>;">
-                            <?php echo htmlspecialchars($latest_booking['status']); ?>
-                        </span>
-                    </div>
-                    <div style="display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; flex-wrap: wrap; gap: 10px; margin-bottom: 10px;">
-                        <span><i class="bi bi-person-fill me-1"></i> Pelajar: <strong><?php echo htmlspecialchars($latest_booking['student_name']); ?></strong></span>
-                        <span><i class="bi bi-cash me-1"></i> Jumlah: <strong>RM <?php echo number_format($latest_booking['total_price'], 2); ?></strong></span>
-                    </div>
-                    <div style="font-size: 0.8rem; font-weight: 800; color: #555; text-align: right; text-transform: uppercase;">
-                        Tekan untuk lihat dan urus di Tempahan Semasa <i class="bi bi-arrow-right-circle-fill ms-1"></i>
-                    </div>
+            <!-- SENARAI PERMOHONAN PELAJAR -->
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; margin-bottom: 14px;">
+                <div class="section-title" style="margin: 0;"><i class="bi bi-clipboard-data-fill me-1"></i> Senarai Permohonan</div>
+                <a href="provider_bookings.php" class="neo-btn btn-sm btn-yellow" style="font-size: 0.78rem; padding: 6px 12px;">
+                    Urus Semua Permohonan <i class="bi bi-arrow-right ms-1"></i>
+                </a>
+            </div>
+
+            <?php if ($result_applications && $result_applications->num_rows > 0): ?>
+                <div style="display: flex; flex-direction: column; gap: 14px; margin-bottom: 30px;">
+                    <?php while ($app = $result_applications->fetch_assoc()): 
+                        $app_status = $app['status'];
+                        $is_pending = ($app_status === 'Pending');
+                        $is_approved = ($app_status === 'Approved');
+                        
+                        if ($is_pending) {
+                            $status_label = 'Menunggu disahkan';
+                            $status_bg = 'var(--yellow)';
+                            $status_icon = 'bi-hourglass-split';
+                            $border_accent = '#eab308';
+                        } elseif ($is_approved) {
+                            $status_label = 'Tempahan aktif';
+                            $status_bg = 'var(--blue)';
+                            $status_icon = 'bi-check-circle-fill';
+                            $border_accent = '#0284c7';
+                        } elseif ($app_status === 'Completed') {
+                            $status_label = 'Selesai';
+                            $status_bg = 'var(--green)';
+                            $status_icon = 'bi-patch-check-fill';
+                            $border_accent = '#16a34a';
+                        } else {
+                            $status_label = 'Ditolak';
+                            $status_bg = 'var(--pink)';
+                            $status_icon = 'bi-x-circle-fill';
+                            $border_accent = '#dc2626';
+                        }
+                        
+                        $phone_clean = preg_replace('/[^0-9]/', '', $app['student_phone']);
+                        if (strpos($phone_clean, '0') === 0) {
+                            $phone_clean = '6' . $phone_clean;
+                        }
+                        
+                        $start_fmt = date("d/m/Y, h:i A", strtotime($app['start_date']));
+                        $end_fmt = date("d/m/Y, h:i A", strtotime($app['end_date']));
+                    ?>
+                        <div class="neo-card bg-w" style="text-align: left; padding: 18px; margin-bottom: 0; display: flex; flex-direction: column; gap: 12px; border-left: 6px solid <?php echo $border_accent; ?>;">
+                            
+                            <!-- BARIS ATAS: KENDERAAN & STATUS -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; border-bottom: 2px dashed #ddd; padding-bottom: 10px;">
+                                <div style="display: flex; align-items: center; gap: 10px;">
+                                    <?php if (!empty($app['car_image']) && file_exists($app['car_image'])): ?>
+                                        <img src="<?php echo htmlspecialchars($app['car_image']); ?>" alt="Car" style="width: 48px; height: 36px; object-fit: cover; border: 2px solid var(--black); border-radius: 4px;">
+                                    <?php else: ?>
+                                        <div style="width: 42px; height: 34px; background: var(--bg-color); border: 2px solid var(--black); display: flex; align-items: center; justify-content: center; font-size: 1.2rem;">
+                                            <i class="bi bi-car-front-fill text-primary"></i>
+                                        </div>
+                                    <?php endif; ?>
+                                    <div>
+                                        <h4 style="margin: 0; font-size: 1rem; font-weight: 900; text-transform: uppercase;">
+                                            <?php echo (!empty($app['car_brand']) ? htmlspecialchars($app['car_brand']) . ' ' : '') . htmlspecialchars($app['car_model']); ?> 
+                                            <span style="font-size: 0.8rem; color: #555; font-weight: 700;">(<?php echo htmlspecialchars($app['car_plate']); ?>)</span>
+                                        </h4>
+                                        <span style="font-size: 0.75rem; font-weight: 800; color: #666;">ID Permohonan: #<?php echo $app['id']; ?></span>
+                                    </div>
+                                </div>
+                                <span style="border: 2px solid var(--black); padding: 3px 10px; font-size: 0.72rem; text-transform: uppercase; font-weight: 900; background: <?php echo $status_bg; ?>; display: inline-flex; align-items: center; gap: 4px; box-shadow: 2px 2px 0px var(--black);">
+                                    <i class="bi <?php echo $status_icon; ?>"></i> <?php echo $status_label; ?>
+                                </span>
+                            </div>
+
+                            <!-- BARIS TENGAH: MAKLUMAT PELAJAR, TARIKH & JUMLAH -->
+                            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 14px; font-size: 0.85rem;">
+                                <div>
+                                    <div style="font-size: 0.72rem; font-weight: 900; text-transform: uppercase; color: #777;">Pelajar Pemohon:</div>
+                                    <div style="font-weight: 800; color: var(--black); font-size: 0.92rem; margin-top: 2px;">
+                                        <i class="bi bi-person-fill text-dark me-1"></i> <?php echo htmlspecialchars($app['student_name']); ?>
+                                    </div>
+                                    <?php if (!empty($app['student_matrix'])): ?>
+                                        <div style="font-size: 0.75rem; font-weight: 700; color: #555;">No Matrik: <?php echo htmlspecialchars($app['student_matrix']); ?></div>
+                                    <?php endif; ?>
+                                    <?php if (!empty($app['student_phone'])): ?>
+                                        <a href="https://wa.me/<?php echo $phone_clean; ?>" target="_blank" style="display: inline-flex; align-items: center; gap: 4px; font-weight: 800; color: #15803d; font-size: 0.8rem; margin-top: 3px; text-decoration: none;">
+                                            <i class="bi bi-whatsapp"></i> <?php echo htmlspecialchars($app['student_phone']); ?>
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
+
+                                <div>
+                                    <div style="font-size: 0.72rem; font-weight: 900; text-transform: uppercase; color: #777;">Tempoh Sewaan:</div>
+                                    <div style="font-weight: 700; color: #333; margin-top: 2px; font-size: 0.82rem;">
+                                        <div><i class="bi bi-box-arrow-up-right text-success me-1"></i> <strong>Ambil:</strong> <?php echo $start_fmt; ?></div>
+                                        <div style="margin-top: 2px;"><i class="bi bi-box-arrow-in-down-left text-danger me-1"></i> <strong>Pulang:</strong> <?php echo $end_fmt; ?></div>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <div style="font-size: 0.72rem; font-weight: 900; text-transform: uppercase; color: #777;">Jumlah Bayaran:</div>
+                                    <div style="font-size: 1.2rem; font-weight: 900; color: var(--black); margin-top: 2px;">
+                                        RM <?php echo number_format($app['total_price'], 2); ?>
+                                    </div>
+                                    <div style="font-size: 0.75rem; font-weight: 700; margin-top: 2px;">
+                                        <?php if (!empty($app['payment_receipt']) && file_exists($app['payment_receipt'])): ?>
+                                            <span style="color: #16a34a; font-weight: 800;"><i class="bi bi-receipt-cutoff me-1"></i> Resit Bayaran Ada</span>
+                                        <?php else: ?>
+                                            <span style="color: #666;"><i class="bi bi-clock me-1"></i> Resit belum dimuat naik</span>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- BARIS BAWAH: BUTANG TINDAKAN -->
+                            <div style="display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #eee; padding-top: 10px; flex-wrap: wrap; gap: 8px;">
+                                <div style="font-size: 0.75rem; font-weight: 700; color: #888;">
+                                    Permohonan dibuat: <?php echo date("d/m/Y, h:i A", strtotime($app['created_at'])); ?>
+                                </div>
+                                <div>
+                                    <a href="provider_bookings.php" class="neo-btn btn-sm <?php echo $is_pending ? 'btn-green' : 'btn-blue'; ?>" style="font-size: 0.78rem; padding: 6px 14px;">
+                                        <?php if ($is_pending): ?>
+                                            <i class="bi bi-check2-circle me-1"></i> Semak & Sahkan Permohonan
+                                        <?php elseif ($is_approved): ?>
+                                            <i class="bi bi-gear-fill me-1"></i> Urus Tempahan & Pemulangan
+                                        <?php else: ?>
+                                            <i class="bi bi-eye-fill me-1"></i> Lihat Rekod Tempahan
+                                        <?php endif; ?>
+                                    </a>
+                                </div>
+                            </div>
+
+                        </div>
+                    <?php endwhile; ?>
+                </div>
+            <?php else: ?>
+                <div class="neo-card bg-w" style="text-align: center; padding: 35px 20px; margin-bottom: 30px;">
+                    <i class="bi bi-inbox" style="font-size: 2.5rem; color: #999;"></i>
+                    <h4 style="font-weight: 900; text-transform: uppercase; margin-top: 10px; font-size: 1rem;">Tiada Permohonan Tempahan</h4>
+                    <p style="font-weight: 700; color: #666; font-size: 0.85rem; margin-bottom: 15px;">Pelajar belum membuat permohonan tempahan untuk kenderaan anda pada masa ini.</p>
+                    <a href="provider_cars.php" class="neo-btn btn-blue" style="display: inline-flex;">
+                        <i class="bi bi-car-front-fill me-1"></i> Semak Senarai Kenderaan Anda
+                    </a>
                 </div>
             <?php endif; ?>
 

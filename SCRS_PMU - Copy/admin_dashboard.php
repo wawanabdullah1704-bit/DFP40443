@@ -32,7 +32,7 @@ $sum_revenue = $conn->query("SELECT SUM(total_price) AS total FROM bookings WHER
 
 // 5. Tempahan Terkini (5 rekod)
 $sql_recent_bookings = "SELECT b.*, s.full_name AS student_name, s.username AS student_user,
-                               c.car_model, c.car_plate, p.full_name AS provider_name
+                               c.car_brand, c.car_model, c.car_plate, p.full_name AS provider_name
                         FROM bookings b
                         JOIN students s ON b.student_id = s.id
                         JOIN cars c ON b.car_id = c.id
@@ -285,6 +285,7 @@ $recent_students = $conn->query($sql_recent_students);
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="admin_staff.php" class="sidebar-link"><i class="bi bi-shield-shaded"></i> Urus Admin & JHEPP</a>
         </nav>
     </aside>
 
@@ -403,6 +404,16 @@ $recent_students = $conn->query($sql_recent_students);
                     <span style="font-size: 0.75rem; color: #666; font-weight: 700;">Rekod & status</span>
                 </div>
             </a>
+
+            <a href="admin_staff.php" class="shortcut-card">
+                <div class="shortcut-icon-box" style="background: #e1f5fe;">
+                    <i class="bi bi-shield-lock-fill" style="color: #0277bd;"></i>
+                </div>
+                <div>
+                    <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase;">Admin & JHEPP</div>
+                    <span style="font-size: 0.75rem; color: #666; font-weight: 700;">Akaun staf sistem</span>
+                </div>
+            </a>
         </div>
 
         <!-- TEMPAHAN TERKINI -->
@@ -445,7 +456,7 @@ $recent_students = $conn->query($sql_recent_students);
                                         <small style="color: #666;">@<?php echo htmlspecialchars($b['student_user']); ?></small>
                                     </td>
                                     <td>
-                                        <strong><?php echo htmlspecialchars($b['car_model']); ?></strong><br>
+                                        <strong><?php echo (!empty($b['car_brand']) ? htmlspecialchars($b['car_brand']) . ' ' : '') . htmlspecialchars($b['car_model']); ?></strong><br>
                                         <small style="color: #666;"><?php echo htmlspecialchars($b['car_plate']); ?></small>
                                     </td>
                                     <td><?php echo htmlspecialchars($b['provider_name']); ?></td>

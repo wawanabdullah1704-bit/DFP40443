@@ -375,6 +375,7 @@ $bookings_result = $stmt_list->get_result();
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link active"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="admin_staff.php" class="sidebar-link"><i class="bi bi-shield-shaded"></i> Urus Admin & JHEPP</a>
         </nav>
     </aside>
 
@@ -469,7 +470,7 @@ $bookings_result = $stmt_list->get_result();
                                         <small style="color: #666;">@<?php echo htmlspecialchars($b['student_username']); ?></small>
                                     </td>
                                     <td>
-                                        <strong><?php echo htmlspecialchars($b['car_model']); ?></strong><br>
+                                        <strong><?php echo (!empty($b['car_brand']) ? htmlspecialchars($b['car_brand']) . ' ' : '') . htmlspecialchars($b['car_model']); ?></strong><br>
                                         <small style="color: #666;"><code><?php echo htmlspecialchars($b['car_plate']); ?></code></small>
                                     </td>
                                     <td>
@@ -561,7 +562,7 @@ $bookings_result = $stmt_list->get_result();
                         <option value="">-- Pilih Kenderaan --</option>
                         <?php foreach ($all_cars as $cr): ?>
                             <option value="<?php echo $cr['id']; ?>">
-                                <?php echo htmlspecialchars($cr['car_model']); ?> (<?php echo htmlspecialchars($cr['car_plate']); ?>) - RM<?php echo number_format($cr['price_per_day'], 2); ?>/hari
+                                <?php echo (!empty($cr['car_brand']) ? htmlspecialchars($cr['car_brand']) . ' ' : '') . htmlspecialchars($cr['car_model']); ?> (<?php echo htmlspecialchars($cr['car_plate']); ?>) - RM<?php echo number_format($cr['price_per_day'], 2); ?>/hari
                             </option>
                         <?php endforeach; ?>
                     </select>
@@ -773,7 +774,7 @@ $bookings_result = $stmt_list->get_result();
             const data = JSON.parse(btn.getAttribute('data-booking'));
             document.getElementById('editBookingId').value = data.id;
             document.getElementById('editStudentLabel').textContent = data.student_name + ' (@' + data.student_username + ')';
-            document.getElementById('editCarLabel').textContent = data.car_model + ' (' + data.car_plate + ')';
+            document.getElementById('editCarLabel').textContent = (data.car_brand ? data.car_brand + ' ' : '') + data.car_model + ' (' + data.car_plate + ')';
             document.getElementById('editRentType').value = data.rent_type;
             document.getElementById('editTotalPrice').value = parseFloat(data.total_price).toFixed(2);
             document.getElementById('editStartDate').value = data.start_date.replace(' ', 'T').substring(0, 16);

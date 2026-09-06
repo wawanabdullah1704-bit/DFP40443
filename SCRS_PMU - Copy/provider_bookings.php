@@ -167,7 +167,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['complete_booking'])) {
 }
 
 // AMBIL TEMPAHAN SEMASA (PENDING & APPROVED)
-$sql_bookings = "SELECT b.*, c.car_model, c.car_plate, c.car_image, c.price_per_day, c.price_per_hour,
+$sql_bookings = "SELECT b.*, c.car_brand, c.car_model, c.car_plate, c.car_image, c.price_per_day, c.price_per_hour,
                         s.username as student_username, s.full_name as student_name, s.email as student_email,
                         s.phone_no as student_phone, s.no_pendaftaran as student_matrix,
                         s.student_id_file as student_id_file, s.driving_license_file as student_license_file,
@@ -309,13 +309,13 @@ $result_bookings = $stmt_b->get_result();
     <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
-            <h2>Menu Penyedia</h2>
+            <h2>Penyedia Kereta</h2>
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
-            <a href="provider_bookings.php" class="sidebar-link active"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_bookings.php" class="sidebar-link active"><i class="bi bi-clipboard-check-fill"></i> Senarai Permohonan</a>
             <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
@@ -330,7 +330,7 @@ $result_bookings = $stmt_b->get_result();
             <div class="header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 6px;">
                 <div>
                     <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
-                        <i class="bi bi-clipboard-check-fill text-dark"></i> Tempahan Semasa Pelajar
+                        <i class="bi bi-clipboard-check-fill text-dark"></i> Senarai Permohonan & Tempahan Semasa
                     </h1>
                 </div>
                 <div style="display: flex; gap: 8px; flex-wrap: wrap;">
@@ -367,8 +367,8 @@ $result_bookings = $stmt_b->get_result();
                         <div>
                             <div class="booking-header">
                                 <div>
-                                    <h3 class="car-name"><?php echo htmlspecialchars($booking['car_model']); ?></h3>
-                                    <span class="car-plate"><i class="bi bi-123 me-1"></i> <?php echo htmlspecialchars($booking['car_plate']); ?></span>
+                                    <h3 class="car-name"><?php echo (!empty($booking['car_brand']) ? htmlspecialchars($booking['car_brand']) . ' ' : '') . htmlspecialchars($booking['car_model']); ?></h3>
+                                    <span class="car-plate"><?php echo htmlspecialchars($booking['car_plate']); ?></span>
                                 </div>
                                 <span class="neo-badge <?php echo $badge_class; ?>">
                                     <i class="bi <?php echo $status_icon; ?>"></i> <?php echo $status_text; ?>
@@ -466,7 +466,7 @@ $result_bookings = $stmt_b->get_result();
 
                                     <!-- BUTANG WHATSAPP & SELESAIKAN TEMPAHAN -->
                                     <div style="display: flex; gap: 10px; flex-wrap: wrap;" class="mobile-btn-group">
-                                        <a href="https://wa.me/<?php echo $phone; ?>?text=Hai%20<?php echo urlencode($booking['student_name']); ?>,%20saya%20penyedia%20kereta%20<?php echo urlencode($booking['car_model']); ?>%20SCRS%20PMU." target="_blank" class="neo-btn btn-green" style="flex: 1;">
+                                        <a href="https://wa.me/<?php echo $phone; ?>?text=Hai%20<?php echo urlencode($booking['student_name']); ?>,%20saya%20penyedia%20kereta%20<?php echo urlencode((!empty($booking['car_brand']) ? $booking['car_brand'] . ' ' : '') . $booking['car_model']); ?>%20SCRS%20PMU." target="_blank" class="neo-btn btn-green" style="flex: 1;">
                                             <i class="bi bi-whatsapp"></i> Hubungi Pelajar (WhatsApp)
                                         </a>
 
