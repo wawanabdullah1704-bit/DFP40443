@@ -31,12 +31,6 @@ $rejected_students = $res_rejected ? ($res_rejected->fetch_assoc()['total'] ?? 0
 // 5. Jumlah Keseluruhan Pelajar
 $res_total = $conn->query("SELECT COUNT(*) AS total FROM students");
 $total_students = $res_total ? ($res_total->fetch_assoc()['total'] ?? 0) : 0;
-
-// 6. 10 Pendaftaran Pelajar Terkini
-$sql_recent = "SELECT id, full_name, username, no_pendaftaran, phone_no, email, status, email_verified, student_id_file, driving_license_file, created_at 
-               FROM students 
-               ORDER BY created_at DESC LIMIT 10";
-$recent_students = $conn->query($sql_recent);
 ?>
 
 <!DOCTYPE html>
@@ -48,229 +42,18 @@ $recent_students = $conn->query($sql_recent);
     
     <!-- Bootstrap Icons -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --orange: #ff914d;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        button, input, select { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-
-        .menu-toggle-btn {
-            font-size: 2rem;
-            color: var(--black);
-            background: none;
-            border: none;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            transition: var(--transition);
-        }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-
-        .neo-brand {
-            font-size: 1.5rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            color: var(--black);
-            text-decoration: none;
-            display: inline-block;
-        }
-
-        .neo-brand:hover { color: #333; }
-
-        /* PROFILE DROPDOWN */
-        .nav-right-actions { display: flex; align-items: center; gap: 12px; }
-        .profile-container { position: relative; }
-        .profile-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            padding: 8px 14px;
-            font-weight: 800;
-            box-shadow: 4px 4px 0px var(--black);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 170px;
-            display: none;
-            z-index: 1001;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: block; }
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 14px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--black);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .dropdown-item:hover { background-color: var(--pink); color: var(--black); }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            color: var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 10px 16px;
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-
-        .neo-btn:hover {
-            transform: translate(-2px, -2px);
-            box-shadow: 6px 6px 0px var(--black);
-        }
-
-        .neo-btn:active {
-            transform: translate(2px, 2px);
-            box-shadow: 2px 2px 0px var(--black);
-        }
-
-        /* SIDEBAR */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1005;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed;
-            top: 0; left: -300px;
-            width: 280px; height: 100%;
-            background-color: var(--bg-color);
-            border-right: var(--border-thick);
-            z-index: 1010;
-            transition: left 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-
-        .sidebar-header {
-            padding: 20px;
-            border-bottom: var(--border-thick);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: var(--yellow);
-        }
-        .sidebar-header h2 { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; }
-        .close-btn {
-            border: 3px solid var(--black);
-            background: var(--white);
-            padding: 5px 10px;
-            font-weight: 900;
-            box-shadow: 2px 2px 0px var(--black);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .close-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px var(--black); }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-link {
-            padding: 12px 15px;
-            border: 3px solid transparent;
-            font-weight: 800;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: var(--transition);
-        }
-        .sidebar-link.active, .sidebar-link:hover {
-            border: 3px solid var(--black);
-            background: var(--white);
-            transform: translate(-2px, -2px);
-            box-shadow: 4px 4px 0px var(--black);
-        }
-        .sidebar-link.logout-link:hover { background-color: var(--pink); }
-
-        /* MAIN CONTENT */
-        .main-content {
-            flex: 1;
-            padding: 2rem 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
         /* HERO CARD */
         .hero-banner {
             background: var(--yellow);
             border: var(--border-thick);
+            border-radius: var(--radius-xl);
             box-shadow: var(--shadow-solid);
-            padding: 24px;
-            margin-bottom: 25px;
+            padding: 22px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -279,14 +62,14 @@ $recent_students = $conn->query($sql_recent);
         }
 
         .hero-title {
-            font-size: 1.6rem;
+            font-size: 1.45rem;
             font-weight: 900;
             text-transform: uppercase;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
         }
 
         .hero-desc {
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 700;
             color: #333;
             line-height: 1.4;
@@ -295,92 +78,76 @@ $recent_students = $conn->query($sql_recent);
         /* STAT GRIDS */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 16px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
         }
 
         .stat-card {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            padding: 18px;
+            padding: 16px;
             display: flex;
             align-items: center;
-            gap: 16px;
+            gap: 14px;
             transition: var(--transition);
         }
         .stat-card:hover {
-            transform: translate(-3px, -3px);
-            box-shadow: 8px 8px 0px var(--black);
+            box-shadow: var(--shadow-lg);
         }
 
         .stat-icon {
-            width: 55px;
-            height: 55px;
-            border: 3px solid var(--black);
+            width: 50px;
+            height: 50px;
+            border: var(--border-thin);
+            border-radius: var(--radius-sm);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             flex-shrink: 0;
-            box-shadow: 3px 3px 0px var(--black);
+            box-shadow: var(--shadow-sm);
         }
 
         .stat-content h3 {
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             font-weight: 900;
             line-height: 1;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
         }
         .stat-content p {
-            font-size: 0.85rem;
+            font-size: 0.775rem;
             font-weight: 800;
             text-transform: uppercase;
-            color: #444;
-        }
-
-        /* SECTION HEADER */
-        .section-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 16px;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .section-title {
-            font-size: 1.3rem;
-            font-weight: 900;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 8px;
+            color: #555;
         }
 
         /* QUICK ACTION CARD */
         .action-banner {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            padding: 20px;
-            margin-bottom: 30px;
+            padding: 18px;
+            margin-bottom: 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
-            border-left: 12px solid var(--pink);
+            gap: 14px;
+            border-left: 10px solid var(--pink);
         }
 
         /* TABLE */
         .table-card {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-xl);
             box-shadow: var(--shadow-solid);
             overflow: hidden;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         .table-responsive {
@@ -397,37 +164,23 @@ $recent_students = $conn->query($sql_recent);
         th {
             background: var(--yellow);
             border-bottom: var(--border-thick);
-            padding: 12px 16px;
+            padding: 10px 14px;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             text-transform: uppercase;
             white-space: nowrap;
         }
 
         td {
-            padding: 12px 16px;
+            padding: 10px 14px;
             border-bottom: 2px solid #ddd;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             vertical-align: middle;
         }
 
         tr:last-child td { border-bottom: none; }
         tr:hover td { background-color: #fafafa; }
-
-        .badge-status {
-            padding: 3px 8px;
-            font-weight: 900;
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            border: 2px solid var(--black);
-            box-shadow: 2px 2px 0px var(--black);
-            display: inline-block;
-        }
-        .badge-pending { background: var(--yellow); }
-        .badge-approved { background: var(--green); }
-        .badge-rejected { background: var(--pink); }
-        .badge-unverified { background: #e0e0e0; color: #555; }
 
         .doc-link-btn {
             display: inline-flex;
@@ -437,33 +190,19 @@ $recent_students = $conn->query($sql_recent);
             font-weight: 800;
             font-size: 0.75rem;
             background: var(--white);
-            border: 2px solid var(--black);
-            box-shadow: 2px 2px 0px var(--black);
+            border: var(--border-thin);
+            box-shadow: var(--shadow-sm);
             margin: 2px;
             transition: var(--transition);
         }
         .doc-link-btn:hover {
             background: var(--yellow);
             transform: translate(-1px, -1px);
-            box-shadow: 3px 3px 0px var(--black);
-        }
-
-        footer {
-            background: var(--black);
-            color: var(--white);
-            border-top: var(--border-thick);
-            padding: 15px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
         }
 
         @media (max-width: 600px) {
-            .neo-brand { font-size: 1.2rem; }
-            .hero-banner { padding: 16px; }
-            .hero-title { font-size: 1.3rem; }
-            .main-content { padding: 1rem 10px; }
+            .hero-banner { padding: 14px; }
+            .hero-title { font-size: 1.25rem; }
         }
     </style>
 </head>
@@ -473,7 +212,7 @@ $recent_students = $conn->query($sql_recent);
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="jhepp_dashboard.php" class="neo-brand">SCRS PMU (JHEPP)</a>
+            <a href="jhepp_dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
         <div class="nav-right-actions">
             <div class="profile-container">
@@ -498,9 +237,10 @@ $recent_students = $conn->query($sql_recent);
         </div>
         <nav class="sidebar-nav">
             <a href="jhepp_dashboard.php" class="sidebar-link active"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
-            <a href="verify_account.php" class="sidebar-link"><i class="bi bi-shield-check"></i> Pengesahan Pelajar</a>
-            <a href="edit_profile.php" class="sidebar-link"><i class="bi bi-person-gear"></i> Edit Profil</a>
-            <a href="logout.php" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
+            <a href="jhepp_pending.php" class="sidebar-link"><i class="bi bi-hourglass-split"></i> Menunggu Kelulusan</a>
+            <a href="jhepp_approved.php" class="sidebar-link"><i class="bi bi-check-circle-fill"></i> Pelajar Diluluskan</a>
+            <a href="jhepp_rejected.php" class="sidebar-link"><i class="bi bi-x-circle-fill"></i> Pendaftaran Ditolak</a>
+            <a href="senarai_pendaftaran.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Semua Rekod Pelajar</a>
         </nav>
     </aside>
 
@@ -513,10 +253,10 @@ $recent_students = $conn->query($sql_recent);
                 <h1 class="hero-title"><i class="bi bi-shield-shaded me-2"></i>Portal Pegawai JHEPP PMU</h1>
                 <p class="hero-desc">Selamat bertugas, <strong><?php echo htmlspecialchars($jhepp_fullname); ?></strong>. Semak dan sahkan permohonan akaun pelajar Politeknik Mukah.</p>
             </div>
-            <a href="verify_account.php" class="neo-btn" style="background: var(--blue);">
-                <i class="bi bi-person-check-fill"></i> Semak Pengesahan
+            <a href="jhepp_pending.php" class="neo-btn" style="background: var(--blue);">
+                <i class="bi bi-hourglass-split"></i> Menunggu Kelulusan
                 <?php if ($pending_students > 0): ?>
-                    <span style="background: var(--pink); border: 2px solid #000; padding: 2px 6px; font-size: 0.75rem; border-radius: 3px;">
+                    <span style="background: var(--pink); border: 2px solid #000; padding: 2px 8px; font-size: 0.75rem; border-radius: var(--radius-full);">
                         <?php echo $pending_students; ?>
                     </span>
                 <?php endif; ?>
@@ -528,7 +268,7 @@ $recent_students = $conn->query($sql_recent);
         <div class="stats-grid">
             
             <!-- 1. PENDING VERIFICATION -->
-            <a href="verify_account.php?tab=pending" class="stat-card" style="cursor: pointer;">
+            <a href="jhepp_pending.php" class="stat-card" style="cursor: pointer;">
                 <div class="stat-icon" style="background: var(--yellow);">
                     <i class="bi bi-hourglass-split"></i>
                 </div>
@@ -539,7 +279,7 @@ $recent_students = $conn->query($sql_recent);
             </a>
 
             <!-- 2. APPROVED -->
-            <a href="verify_account.php?tab=approved" class="stat-card" style="cursor: pointer;">
+            <a href="jhepp_approved.php" class="stat-card" style="cursor: pointer;">
                 <div class="stat-icon" style="background: var(--green);">
                     <i class="bi bi-check-circle-fill"></i>
                 </div>
@@ -550,7 +290,7 @@ $recent_students = $conn->query($sql_recent);
             </a>
 
             <!-- 3. REJECTED -->
-            <a href="verify_account.php?tab=rejected" class="stat-card" style="cursor: pointer;">
+            <a href="jhepp_rejected.php" class="stat-card" style="cursor: pointer;">
                 <div class="stat-icon" style="background: var(--pink);">
                     <i class="bi bi-x-circle-fill"></i>
                 </div>
@@ -561,7 +301,7 @@ $recent_students = $conn->query($sql_recent);
             </a>
 
             <!-- 4. TOTAL REGISTERED -->
-            <a href="verify_account.php?tab=all" class="stat-card" style="cursor: pointer;">
+            <a href="senarai_pendaftaran.php" class="stat-card" style="cursor: pointer;">
                 <div class="stat-icon" style="background: var(--blue);">
                     <i class="bi bi-people-fill"></i>
                 </div>
@@ -584,80 +324,41 @@ $recent_students = $conn->query($sql_recent);
                         Pelajar ini telah mengesahkan alamat e-mel dan memuat naik kad matrik serta lesen memandu.
                     </p>
                 </div>
-                <a href="verify_account.php?tab=pending" class="neo-btn" style="background: var(--green);">
-                    <i class="bi bi-shield-check"></i> Buka Pengesahan Sekarang
+                <a href="jhepp_pending.php" class="neo-btn" style="background: var(--green);">
+                    <i class="bi bi-check-circle-fill"></i> Buka Menunggu Kelulusan Sekarang
                 </a>
             </div>
         <?php endif; ?>
 
-        <!-- TABLE: PENDAFTARAN PELAJAR TERKINI -->
-        <div class="section-header">
-            <div class="section-title"><i class="bi bi-clock-history me-1"></i> Pendaftaran Pelajar Terkini</div>
-            <a href="verify_account.php?tab=pending" class="neo-btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--white);">
-                <i class="bi bi-arrow-right-short"></i> Lihat Pengesahan Pelajar
-            </a>
-        </div>
+        <!-- PANDUAN & TINDAKAN PANTAS JHEPP -->
+        <div class="section-title" style="margin-bottom: 12px;"><i class="bi bi-lightning-charge-fill me-1"></i> Tindakan Pantas & Pengurusan JHEPP</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-bottom: 24px;">
+            <div class="neo-card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+                <div>
+                    <h3 style="font-weight: 900; font-size: 1.15rem; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-person-lines-fill text-primary"></i> Senarai Pendaftaran Pelajar
+                    </h3>
+                    <p style="font-weight: 700; color: #555; font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                        Akses rekod penuh semua pendaftaran pelajar, semak dokumen Kad Matrik PMU dan Lesen Memandu, serta uruskan kelulusan akaun.
+                    </p>
+                </div>
+                <a href="senarai_pendaftaran.php" class="neo-btn btn-yellow" style="width: 100%; justify-content: center;">
+                    <i class="bi bi-arrow-right-circle me-1"></i> Buka Senarai Pendaftaran
+                </a>
+            </div>
 
-        <div class="table-card">
-            <div class="table-responsive">
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Tarikh Daftar</th>
-                            <th>Nama Penuh</th>
-                            <th>No. Pendaftaran</th>
-                            <th>No. Telefon</th>
-                            <th>Dokumen Sokongan</th>
-                            <th>Status JHEPP</th>
-                            <th>Tindakan</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <?php if ($recent_students && $recent_students->num_rows > 0): ?>
-                            <?php while ($st = $recent_students->fetch_assoc()): ?>
-                                <tr>
-                                    <td><?php echo date('d/m/Y h:i A', strtotime($st['created_at'])); ?></td>
-                                    <td><strong><?php echo htmlspecialchars($st['full_name']); ?></strong><br><small style="color: #666;"><?php echo htmlspecialchars($st['email']); ?></small></td>
-                                    <td><?php echo htmlspecialchars($st['no_pendaftaran']); ?></td>
-                                    <td><?php echo htmlspecialchars($st['phone_no']); ?></td>
-                                    <td>
-                                        <?php if (!empty($st['student_id_file'])): ?>
-                                            <a href="<?php echo htmlspecialchars($st['student_id_file']); ?>" target="_blank" class="doc-link-btn">
-                                                <i class="bi bi-card-heading"></i> Kad Pelajar
-                                            </a>
-                                        <?php endif; ?>
-                                        <?php if (!empty($st['driving_license_file'])): ?>
-                                            <a href="<?php echo htmlspecialchars($st['driving_license_file']); ?>" target="_blank" class="doc-link-btn">
-                                                <i class="bi bi-card-checklist"></i> Lesen
-                                            </a>
-                                        <?php endif; ?>
-                                        <?php if (empty($st['student_id_file']) && empty($st['driving_license_file'])): ?>
-                                            <span style="color:#999; font-size:0.8rem;">Tiada fail</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <?php if ($st['status'] === 'approved'): ?>
-                                            <span class="badge-status badge-approved">Lulus</span>
-                                        <?php elseif ($st['status'] === 'rejected'): ?>
-                                            <span class="badge-status badge-rejected">Ditolak</span>
-                                        <?php else: ?>
-                                            <span class="badge-status badge-pending">Pending</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td>
-                                        <a href="verify_account.php?tab=<?php echo $st['status']; ?>" class="neo-btn" style="padding: 4px 8px; font-size: 0.75rem; background: var(--yellow);">
-                                            <i class="bi bi-eye-fill"></i> Urus
-                                        </a>
-                                    </td>
-                                </tr>
-                            <?php endwhile; ?>
-                        <?php else: ?>
-                            <tr>
-                                <td colspan="7" style="text-align: center; padding: 2rem; color: #666;">Tiada rekod pendaftaran pelajar.</td>
-                            </tr>
-                        <?php endif; ?>
-                    </tbody>
-                </table>
+            <div class="neo-card" style="display: flex; flex-direction: column; justify-content: space-between; margin-bottom: 0;">
+                <div>
+                    <h3 style="font-weight: 900; font-size: 1.15rem; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-shield-check text-success"></i> Garis Panduan Pengesahan
+                    </h3>
+                    <p style="font-weight: 700; color: #555; font-size: 0.9rem; line-height: 1.5; margin-bottom: 16px;">
+                        Pastikan Kad Pelajar PMU sah dan Lesen Memandu masih aktif sebelum meluluskan akaun bagi memastikan kepatuhan peraturan PMU.
+                    </p>
+                </div>
+                <a href="jhepp_pending.php" class="neo-btn btn-green" style="width: 100%; justify-content: center;">
+                    <i class="bi bi-check2-square me-1"></i> Semak Pelajar Menunggu
+                </a>
             </div>
         </div>
 
@@ -700,6 +401,13 @@ $recent_students = $conn->query($sql_recent);
                 profileMenu.classList.remove('show');
             });
         }
+
+        // Cegah paparan semula melalui butang Back selepas log keluar
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

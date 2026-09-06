@@ -47,87 +47,46 @@ $conn->close();
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 12px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .neo-brand { font-size: 1.4rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* MAIN CONTENT */
         .main-content {
             flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 2rem 15px;
+            padding: 2rem 16px;
         }
 
         .confirm-card {
             background-color: var(--white);
             border: var(--border-thick);
-            box-shadow: var(--shadow-solid);
-            padding: 35px 25px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: 36px 24px;
             width: 100%;
-            max-width: 520px;
+            max-width: 500px;
             text-align: center;
         }
 
         .status-icon-box {
-            font-size: 3.5rem;
+            font-size: 3.2rem;
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 90px;
-            height: 90px;
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
+            width: 80px;
+            height: 80px;
+            border: var(--border-thick);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-solid);
             margin-bottom: 20px;
         }
         .status-icon-box.success { background-color: var(--green); color: var(--black); }
         .status-icon-box.error { background-color: var(--pink); color: var(--black); }
 
         .confirm-title {
-            font-size: 1.4rem;
+            font-size: 1.35rem;
             font-weight: 900;
             text-transform: uppercase;
             margin-bottom: 12px;
@@ -137,51 +96,22 @@ $conn->close();
         .confirm-desc {
             font-weight: 700;
             color: #444;
-            margin-bottom: 25px;
-            font-size: 0.95rem;
+            margin-bottom: 22px;
+            font-size: 0.9rem;
             line-height: 1.5;
             text-align: left;
-            background: #fafaf5;
-            border: 2px solid var(--black);
-            padding: 15px;
-        }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 12px 22px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
-            color: var(--black);
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 18px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
+            background: #fafafa;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            padding: 14px;
         }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR -->
     <header class="neo-navbar">
-        <a href="index.php" class="neo-brand"><i class="bi bi-shield-check me-2"></i>SCRS PMU</a>
-        <a href="index.php" class="neo-btn" style="padding: 6px 14px; font-size: 0.8rem;">Log Masuk</a>
+        <a href="index.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
+        <a href="index.php" class="neo-btn btn-sm btn-yellow">Log Masuk</a>
     </header>
 
     <!-- MAIN CONTENT -->

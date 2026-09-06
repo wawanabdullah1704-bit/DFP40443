@@ -54,297 +54,197 @@ $recent_students = $conn->query($sql_recent_students);
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --orange: #ff914d;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        button, input, select { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); background: none; border: none; cursor: pointer; transition: var(--transition); }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* PROFILE DROPDOWN */
-        .profile-container { position: relative; }
-        .profile-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            padding: 8px 14px;
-            font-weight: 800;
-            box-shadow: 4px 4px 0px var(--black);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 170px;
-            display: none;
-            z-index: 1001;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: block; }
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 14px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--black);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .dropdown-item:hover { background-color: var(--pink); color: var(--black); }
-
-        /* SIDEBAR */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-        .sidebar-link {
-            padding: 10px 14px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 12px; transition: var(--transition);
-            font-size: 0.9rem;
-        }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-        .sidebar-link.logout-link:hover { background-color: var(--pink); }
-
-        /* MAIN CONTENT */
-        .main-content {
-            flex: 1;
-            padding: 2rem 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
         .page-header {
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 10px 16px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-        .btn-blue { background-color: var(--blue); }
-        .btn-pink { background-color: var(--pink); }
-        .btn-orange { background-color: var(--orange); }
 
         /* STATS GRID */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 16px;
+            margin-bottom: 24px;
         }
 
         .stat-card {
-            background-color: var(--white);
-            border: var(--border-thick);
-            box-shadow: var(--shadow-solid);
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            transition: var(--transition);
+            background-color: var(--white) !important;
+            border: var(--border-thick) !important;
+            border-radius: var(--radius-lg) !important;
+            box-shadow: var(--shadow-solid) !important;
+            padding: 18px 20px !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: space-between !important;
+            text-align: left !important;
+            gap: 0 !important;
+            min-height: 135px;
+            transition: var(--transition) !important;
         }
-        .stat-card:hover { transform: translate(-2px, -2px); box-shadow: 8px 8px 0px var(--black); }
+        .stat-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg) !important;
+        }
 
-        .stat-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            margin-bottom: 12px;
+        .stat-card-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-bottom: 12px !important;
         }
-        .stat-title { font-size: 0.85rem; font-weight: 900; text-transform: uppercase; color: #555; }
-        .stat-icon {
-            font-size: 1.8rem;
-            border: 2px solid var(--black);
-            padding: 6px 10px;
-            box-shadow: 2px 2px 0px var(--black);
+        .stat-title { 
+            font-size: 0.85rem !important; 
+            font-weight: 900 !important; 
+            text-transform: uppercase !important; 
+            color: #555 !important;
+            letter-spacing: 0.5px;
+            margin: 0 !important;
+            line-height: 1.2 !important;
         }
-        .stat-number { font-size: 2.2rem; font-weight: 900; line-height: 1; margin-bottom: 8px; }
-        .stat-sub { font-size: 0.8rem; font-weight: 700; color: #666; }
+        .stat-icon-badge {
+            font-size: 1.35rem !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: var(--border-thin) !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: var(--shadow-sm) !important;
+            color: var(--black) !important;
+            flex-shrink: 0 !important;
+        }
+        .stat-number { 
+            font-size: 2rem !important; 
+            font-weight: 900 !important; 
+            line-height: 1 !important; 
+            margin-bottom: 6px !important; 
+            color: var(--black) !important;
+            text-align: left !important;
+        }
+        .stat-sub { 
+            font-size: 0.775rem !important; 
+            font-weight: 700 !important; 
+            color: #666 !important; 
+            text-align: left !important;
+            line-height: 1.3 !important;
+        }
 
         /* QUICK ACTIONS GRID */
         .mgmt-shortcuts {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 14px;
+            margin-bottom: 24px;
         }
 
         .shortcut-card {
             background-color: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            padding: 18px 15px;
+            padding: 16px 14px;
             display: flex;
             align-items: center;
             gap: 12px;
             font-weight: 900;
             text-transform: uppercase;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             transition: var(--transition);
+            text-decoration: none;
+            color: var(--black);
         }
-        .shortcut-card:hover { transform: translate(-3px, -3px); box-shadow: 8px 8px 0px var(--black); }
-        .shortcut-card i { font-size: 1.8rem; }
+        .shortcut-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .shortcut-card:active {
+            transform: translate(2px, 2px);
+            box-shadow: var(--shadow-active);
+        }
+        .shortcut-icon-box {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            color: var(--black);
+        }
 
         /* DATA SECTIONS */
         .section-box {
             background-color: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-xl);
             box-shadow: var(--shadow-solid);
-            padding: 20px;
-            margin-bottom: 30px;
+            padding: 18px;
+            margin-bottom: 24px;
         }
 
         .section-header {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 3px solid var(--black);
-            padding-bottom: 12px;
-            margin-bottom: 18px;
+            border-bottom: 2.5px solid var(--black);
+            padding-bottom: 10px;
+            margin-bottom: 16px;
             flex-wrap: wrap;
             gap: 10px;
         }
-        .section-title { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
+        .section-title { font-size: 1.1rem; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 8px; }
 
         .neo-table-wrapper { overflow-x: auto; }
         .neo-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            overflow: hidden;
             text-align: left;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .neo-table th {
             background-color: var(--yellow);
-            border: 2px solid var(--black);
-            padding: 10px;
+            border-bottom: var(--border-thin);
+            border-right: var(--border-thin);
+            padding: 9px 12px;
             text-transform: uppercase;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
         }
         .neo-table td {
-            border: 2px solid var(--black);
-            padding: 10px;
+            border-bottom: var(--border-thin);
+            border-right: var(--border-thin);
+            padding: 9px 12px;
             vertical-align: middle;
+        }
+        .neo-table th:last-child, .neo-table td:last-child {
+            border-right: none;
+        }
+        .neo-table tr:last-child td {
+            border-bottom: none;
         }
         .neo-table tr:nth-child(even) { background-color: #fafafa; }
 
-        .neo-badge {
-            border: 2px solid var(--black);
-            padding: 3px 8px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .badge-pending { background-color: var(--yellow); }
-        .badge-approved { background-color: var(--green); }
-        .badge-completed { background-color: var(--blue); }
-        .badge-rejected { background-color: var(--pink); }
-
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
-        }
-
         @media (max-width: 768px) {
-            .main-content { padding: 1rem 10px; }
             .stats-grid { grid-template-columns: 1fr; }
             .mgmt-shortcuts { grid-template-columns: 1fr; }
             .stat-number { font-size: 1.8rem; }
@@ -356,14 +256,14 @@ $recent_students = $conn->query($sql_recent_students);
     <!-- NAVBAR -->
     <header class="neo-navbar">
         <div class="neo-nav-left">
-            <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="admin_dashboard.php" class="neo-brand">SCRS PMU</a>
+            <button class="menu-toggle-btn" id="open-sidebar" aria-label="Buka Menu"><i class="bi bi-list"></i></button>
+            <a href="admin_dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
 
         <div class="profile-container">
             <button class="profile-btn" id="profile-toggle">
-                <i class="bi bi-person-fill fs-5"></i>
-                <span>ADMIN: <?php echo htmlspecialchars($admin_username); ?></span>
+                <i class="bi bi-person-circle fs-5"></i>
+                <span><?php echo htmlspecialchars($admin_username); ?></span>
             </button>
             <ul class="dropdown-menu" id="profile-menu">
                 <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
@@ -377,7 +277,7 @@ $recent_students = $conn->query($sql_recent_students);
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2>Panel Admin</h2>
-            <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
+            <button class="close-btn" id="close-sidebar" aria-label="Tutup Menu"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="admin_dashboard.php" class="sidebar-link active"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
@@ -385,8 +285,6 @@ $recent_students = $conn->query($sql_recent_students);
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
-            <a href="edit_profile.php" class="sidebar-link"><i class="bi bi-person-gear"></i> Edit Profil</a>
-            <a href="logout.php" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
         </nav>
     </aside>
 
@@ -395,11 +293,11 @@ $recent_students = $conn->query($sql_recent_students);
         
         <div class="page-header">
             <div>
-                <h1 style="font-size: 1.8rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 10px;">
+                <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
                     <i class="bi bi-shield-lock-fill"></i> Papan Pemuka Pentadbir
                 </h1>
-                <p style="font-weight: 700; color: #555; margin: 5px 0 0 0; font-size: 0.95rem;">
-                    Selamat kembali, <strong><?php echo htmlspecialchars($admin_username); ?></strong>. Pusat kawalan dan pengurusan sistem SCRS PMU.
+                <p style="font-weight: 700; color: #555; margin: 4px 0 0 0; font-size: 0.9rem;">
+                    Pusat kawalan utama dan statistik pengurusan sistem SCRS PMU.
                 </p>
             </div>
         </div>
@@ -407,32 +305,38 @@ $recent_students = $conn->query($sql_recent_students);
         <!-- STATISTIK KAD -->
         <div class="stats-grid">
             <div class="stat-card">
-                <div class="stat-header">
+                <div class="stat-card-top">
                     <span class="stat-title">Jumlah Pelajar</span>
-                    <i class="bi bi-mortarboard-fill stat-icon" style="background: var(--yellow);"></i>
+                    <div class="stat-icon-badge" style="background: var(--yellow);">
+                        <i class="bi bi-mortarboard-fill"></i>
+                    </div>
                 </div>
                 <div class="stat-number"><?php echo $total_students; ?></div>
                 <div class="stat-sub">
-                    <span style="color: #007700; font-weight: 800;"><?php echo $approved_students; ?> Diluluskan</span> &bull; 
-                    <span style="color: #d97706; font-weight: 800;"><?php echo $pending_students; ?> Pending</span>
+                    <span style="color: #007700; font-weight: 800;"><?php echo $approved_students; ?> Lulus</span> &bull; 
+                    <span style="color: #d97706; font-weight: 800;"><?php echo $pending_students; ?> Menunggu</span>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-header">
+                <div class="stat-card-top">
                     <span class="stat-title">Penyedia Kereta</span>
-                    <i class="bi bi-people-fill stat-icon" style="background: var(--green);"></i>
+                    <div class="stat-icon-badge" style="background: var(--green);">
+                        <i class="bi bi-people-fill"></i>
+                    </div>
                 </div>
                 <div class="stat-number"><?php echo $total_providers; ?></div>
                 <div class="stat-sub">
-                    <span style="color: #007700; font-weight: 800;"><?php echo $approved_providers; ?> Aktif & Diluluskan</span>
+                    <span style="color: #007700; font-weight: 800;"><?php echo $approved_providers; ?> Aktif & Lulus</span>
                 </div>
             </div>
 
             <div class="stat-card">
-                <div class="stat-header">
+                <div class="stat-card-top">
                     <span class="stat-title">Jumlah Kenderaan</span>
-                    <i class="bi bi-car-front-fill stat-icon" style="background: var(--blue);"></i>
+                    <div class="stat-icon-badge" style="background: var(--blue);">
+                        <i class="bi bi-car-front-fill"></i>
+                    </div>
                 </div>
                 <div class="stat-number"><?php echo $total_cars; ?></div>
                 <div class="stat-sub">
@@ -441,9 +345,11 @@ $recent_students = $conn->query($sql_recent_students);
             </div>
 
             <div class="stat-card">
-                <div class="stat-header">
-                    <span class="stat-title">Tempahan & Nilai Sewaan</span>
-                    <i class="bi bi-cash-stack stat-icon" style="background: var(--orange);"></i>
+                <div class="stat-card-top">
+                    <span class="stat-title">Nilai Sewaan</span>
+                    <div class="stat-icon-badge" style="background: var(--pink);">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
                 </div>
                 <div class="stat-number">RM <?php echo number_format($sum_revenue, 2); ?></div>
                 <div class="stat-sub">
@@ -453,40 +359,48 @@ $recent_students = $conn->query($sql_recent_students);
         </div>
 
         <!-- PINTASAN PENGURUSAN -->
-        <h2 style="font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 15px; border-left: 6px solid var(--black); padding-left: 10px;">
-            Modul Pengurusan Sistem
+        <h2 style="font-size: 1.15rem; font-weight: 900; text-transform: uppercase; margin-bottom: 14px; display: flex; align-items: center; gap: 8px;">
+            <i class="bi bi-grid-fill"></i> Modul Pengurusan Sistem
         </h2>
 
         <div class="mgmt-shortcuts">
-            <a href="admin_students.php" class="shortcut-card" style="border-left: 8px solid var(--yellow);">
-                <i class="bi bi-mortarboard-fill text-warning"></i>
+            <a href="admin_students.php" class="shortcut-card">
+                <div class="shortcut-icon-box" style="background: var(--yellow);">
+                    <i class="bi bi-mortarboard-fill"></i>
+                </div>
                 <div>
-                    <div>Pelajar</div>
-                    <span style="font-size: 0.75rem; color: #666; text-transform: none; font-weight: 700;">Tambah, Edit, Padam Pelajar</span>
+                    <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase;">Pelajar</div>
+                    <span style="font-size: 0.75rem; color: #666; font-weight: 700;">Data & pengesahan</span>
                 </div>
             </a>
 
-            <a href="admin_providers.php" class="shortcut-card" style="border-left: 8px solid var(--green);">
-                <i class="bi bi-people-fill text-success"></i>
+            <a href="admin_providers.php" class="shortcut-card">
+                <div class="shortcut-icon-box" style="background: var(--green);">
+                    <i class="bi bi-people-fill"></i>
+                </div>
                 <div>
-                    <div>Penyedia Kereta</div>
-                    <span style="font-size: 0.75rem; color: #666; text-transform: none; font-weight: 700;">Tambah, Edit, Padam Penyedia</span>
+                    <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase;">Penyedia</div>
+                    <span style="font-size: 0.75rem; color: #666; font-weight: 700;">Akaun tuan kereta</span>
                 </div>
             </a>
 
-            <a href="admin_cars.php" class="shortcut-card" style="border-left: 8px solid var(--blue);">
-                <i class="bi bi-car-front-fill text-info"></i>
+            <a href="admin_cars.php" class="shortcut-card">
+                <div class="shortcut-icon-box" style="background: var(--blue);">
+                    <i class="bi bi-car-front-fill"></i>
+                </div>
                 <div>
-                    <div>Kenderaan</div>
-                    <span style="font-size: 0.75rem; color: #666; text-transform: none; font-weight: 700;">Tambah, Edit, Padam Kereta</span>
+                    <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase;">Kenderaan</div>
+                    <span style="font-size: 0.75rem; color: #666; font-weight: 700;">Senarai & kadar sewa</span>
                 </div>
             </a>
 
-            <a href="admin_bookings.php" class="shortcut-card" style="border-left: 8px solid var(--pink);">
-                <i class="bi bi-calendar-check-fill" style="color: #ff007f;"></i>
+            <a href="admin_bookings.php" class="shortcut-card">
+                <div class="shortcut-icon-box" style="background: var(--pink);">
+                    <i class="bi bi-calendar-check-fill"></i>
+                </div>
                 <div>
-                    <div>Tempahan</div>
-                    <span style="font-size: 0.75rem; color: #666; text-transform: none; font-weight: 700;">Cipta, Kemaskini, Padam Rekod</span>
+                    <div style="font-weight: 900; font-size: 0.95rem; text-transform: uppercase;">Tempahan</div>
+                    <span style="font-size: 0.75rem; color: #666; font-weight: 700;">Rekod & status</span>
                 </div>
             </a>
         </div>
@@ -596,6 +510,13 @@ $recent_students = $conn->query($sql_recent_students);
                 profileMenu.classList.remove('show');
             });
         }
+
+        // Cegah paparan semula melalui butang Back selepas log keluar
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

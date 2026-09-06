@@ -12,8 +12,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $userPassword = $_POST['password'];
     $confirmPassword = $_POST['confirmPassword'];
 
-    if (strlen($userPassword) <= 8) {
-        $message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan mestilah lebih daripada 8 aksara!</div>';
+    if (strlen($userPassword) < 8) {
+        $message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan mestilah sekurang-kurangnya 8 aksara (8 aksara atau lebih)!</div>';
     } 
     else if (!preg_match('/[A-Z]/', $userPassword) || !preg_match('/[a-z]/', $userPassword) || !preg_match('/[0-9]/', $userPassword) || !preg_match('/[^A-Za-z0-9]/', $userPassword)) {
         $message = '<div class="neo-alert alert-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Ralat: Kata laluan mesti mengandungi huruf besar, huruf kecil, nombor, dan simbol!</div>';
@@ -39,37 +39,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             $icName = basename($_FILES["ic_file"]["name"]);
             $licenceName = basename($_FILES["licence_file"]["name"]);
-            $insuranceName = basename($_FILES["insurance_file"]["name"]);
-            $greencardName = basename($_FILES["greencard_file"]["name"]);
-            $roadtaxName = basename($_FILES["roadtax_file"]["name"]);
 
             $time = time();
 
             $newIc = $noIC . "_IC_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $icName);
             $newLicence = $noIC . "_Licence_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $licenceName);
-            $newInsurance = $noIC . "_Ins_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $insuranceName);
-            $newGreencard = $noIC . "_GC_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $greencardName);
-            $newRoadtax = $noIC . "_RT_" . $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $roadtaxName);
 
             $targetIc = $targetDir . $newIc;
             $targetLicence = $targetDir . $newLicence;
-            $targetInsurance = $targetDir . $newInsurance;
-            $targetGreencard = $targetDir . $newGreencard;
-            $targetRoadtax = $targetDir . $newRoadtax;
 
             if (
                 move_uploaded_file($_FILES["ic_file"]["tmp_name"], $targetIc) &&
-                move_uploaded_file($_FILES["licence_file"]["tmp_name"], $targetLicence) &&
-                move_uploaded_file($_FILES["insurance_file"]["tmp_name"], $targetInsurance) &&
-                move_uploaded_file($_FILES["greencard_file"]["tmp_name"], $targetGreencard) &&
-                move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $targetRoadtax)
+                move_uploaded_file($_FILES["licence_file"]["tmp_name"], $targetLicence)
             ) {
                 $status = 'approved';
-                $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, insurance_file, greencard_file, roadtax_file, status) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+                $sql = "INSERT INTO providers (username, email, full_name, phone_no, no_ic, password, ic_file, licence_file, status) 
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
                 $stmt = $conn->prepare($sql);
-                $stmt->bind_param("ssssssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $targetInsurance, $targetGreencard, $targetRoadtax, $status);
+                $stmt->bind_param("sssssssss", $username, $email, $fullName, $phoneNo, $noIC, $hashedPassword, $targetIc, $targetLicence, $status);
 
                 if ($stmt->execute()) {
                     header("Location: index.php?registered=provider");
@@ -93,93 +81,18 @@ $conn->close();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Daftar Akaun Penyedia Kereta - SCRS PMU</title>
+    <title>Daftar Penyedia Kereta - SCRS PMU</title>
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        button, input { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); background: none; border: none; cursor: pointer; transition: var(--transition); }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* SIDEBAR */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-link {
-            padding: 12px 15px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition);
-        }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-
-        /* MAIN CONTENT */
         .main-content {
             flex: 1;
-            padding: 2rem 20px;
-            max-width: 650px;
+            padding: 2rem 16px;
+            max-width: 680px;
             margin: 0 auto;
             width: 100%;
         }
@@ -187,33 +100,25 @@ $conn->close();
         .reg-card {
             background-color: var(--white);
             border: var(--border-thick);
-            box-shadow: var(--shadow-solid);
-            padding: 30px;
+            border-radius: var(--radius-xl);
+            box-shadow: var(--shadow-lg);
+            padding: 28px 24px;
         }
 
         .reg-header {
-            font-size: 1.6rem;
+            font-size: 1.45rem;
             font-weight: 900;
             text-transform: uppercase;
             text-align: center;
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             background-color: var(--green);
-            border: 3px solid var(--black);
-            padding: 10px;
-            box-shadow: 4px 4px 0px var(--black);
-        }
-
-        .form-group {
-            margin-bottom: 18px;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
             display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .form-label {
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.85rem;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .input-wrapper {
@@ -221,16 +126,6 @@ $conn->close();
             display: flex;
             align-items: center;
         }
-
-        .form-control {
-            border: 3px solid var(--black);
-            padding: 11px;
-            font-weight: 700;
-            background-color: var(--bg-color);
-            outline: none;
-            width: 100%;
-        }
-        .form-control:focus { background-color: var(--white); box-shadow: 3px 3px 0px var(--black); }
 
         .password-toggle-btn {
             position: absolute;
@@ -240,66 +135,32 @@ $conn->close();
             color: var(--black);
             background: none;
             border: none;
+            padding: 4px;
+            border-radius: var(--radius-sm);
         }
 
         .form-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 14px;
         }
 
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 12px;
-            cursor: pointer;
-            transition: var(--transition);
-            width: 100%;
-            font-size: 1rem;
-            margin-top: 10px;
-            display: inline-flex;
-            justify-content: center;
-            align-items: center;
-            gap: 8px;
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-
-        .neo-alert {
-            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 12px 15px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; font-size: 0.85rem;
-        }
-        .alert-danger { background-color: var(--pink); }
-
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
-        }
-
-        /* TERMS CHECKBOX */
         .terms-box {
-            background-color: #e8f5e9;
-            border: 3px solid var(--black);
-            box-shadow: 3px 3px 0px var(--black);
-            padding: 14px 16px;
-            margin-bottom: 16px;
+            background-color: #fffde7;
+            border: var(--border-thick);
+            border-radius: var(--radius-md);
+            padding: 12px 14px;
+            margin-top: 10px;
             display: flex;
             align-items: flex-start;
-            gap: 12px;
+            gap: 10px;
         }
         .terms-box input[type="checkbox"] {
             width: 22px;
             height: 22px;
             min-width: 22px;
-            border: 3px solid var(--black);
+            border: var(--border-thin);
+            border-radius: var(--radius-xs);
             cursor: pointer;
             accent-color: var(--black);
             margin-top: 2px;
@@ -338,12 +199,14 @@ $conn->close();
         .modal-box {
             background: var(--white);
             border: 4px solid var(--black);
+            border-radius: var(--radius-xl);
             box-shadow: 8px 8px 0px var(--black);
             max-width: 680px;
             width: 100%;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
+            overflow: hidden;
         }
         .modal-header-custom {
             background-color: var(--green);
@@ -361,6 +224,7 @@ $conn->close();
         .modal-close-btn {
             background: var(--white);
             border: 3px solid var(--black);
+            border-radius: var(--radius-sm);
             box-shadow: 2px 2px 0px var(--black);
             font-size: 1.2rem;
             font-weight: 900;
@@ -397,6 +261,7 @@ $conn->close();
         .modal-agree-btn {
             background-color: var(--yellow);
             border: 3px solid var(--black);
+            border-radius: var(--radius-md);
             box-shadow: 4px 4px 0px var(--black);
             font-weight: 900;
             text-transform: uppercase;
@@ -421,10 +286,12 @@ $conn->close();
     <!-- NAVBAR -->
     <header class="neo-navbar">
         <div class="neo-nav-left">
-            <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="index.php" class="neo-brand">SCRS PMU</a>
+            <button class="menu-toggle-btn" id="open-sidebar" aria-label="Buka Menu"><i class="bi bi-list"></i></button>
+            <a href="index.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
-        <a href="choose_role.php" class="neo-btn" style="width: auto; padding: 6px 12px; font-size: 0.8rem; background: var(--yellow); margin-top: 0;">Tukar Peranan</a>
+        <a href="choose_role.php" class="neo-btn btn-sm btn-yellow">
+            <i class="bi bi-arrow-left"></i> Kembali
+        </a>
     </header>
 
     <!-- SIDEBAR -->
@@ -432,7 +299,7 @@ $conn->close();
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2>Menu Utama</h2>
-            <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
+            <button class="close-btn" id="close-sidebar" aria-label="Tutup Menu"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="index.php" class="sidebar-link"><i class="bi bi-box-arrow-in-right"></i> Log Masuk</a>
@@ -447,7 +314,7 @@ $conn->close();
                 <i class="bi bi-car-front-fill me-2"></i> Pendaftaran Penyedia Kereta
             </div>
             <p style="font-weight: 700; color: #555; font-size: 0.9rem; margin-bottom: 20px; text-align: center; border-bottom: 2px dashed #ddd; padding-bottom: 12px; line-height: 1.4;">
-                <strong>Panduan:</strong> Sila lengkapkan maklumat peribadi dan muat naik 5 dokumen wajib (Kad Pengenalan, Lesen Memandu, Geran Kenderaan, Cukai Jalan & Insurans) untuk pengesahan akaun oleh pihak JHEPP.
+                <strong>Panduan:</strong> Sila lengkapkan maklumat peribadi dan muat naik 5 dokumen wajib (Kad Pengenalan, Lesen Memandu, Geran Kenderaan, Cukai Jalan &amp; Insurans) untuk pengesahan akaun oleh pihak JHEPP.
             </p>
 
             <?php echo $message; ?>
@@ -485,7 +352,7 @@ $conn->close();
                     <div class="form-group">
                         <label class="form-label">Kata Laluan</label>
                         <div class="input-wrapper">
-                            <input type="password" class="form-control" name="password" id="password" placeholder="Lebih 8 aksara" required>
+                            <input type="password" class="form-control" name="password" id="password" placeholder="8 aksara atau lebih" minlength="8" required>
                             <button type="button" class="password-toggle-btn" id="togglePassword">
                                 <i class="bi bi-eye-fill"></i>
                             </button>
@@ -497,11 +364,13 @@ $conn->close();
                                 <div id="s2" style="flex:1;height:5px;background:#ddd;"></div>
                                 <div id="s3" style="flex:1;height:5px;background:#ddd;"></div>
                                 <div id="s4" style="flex:1;height:5px;background:#ddd;"></div>
+                                <div id="s5" style="flex:1;height:5px;background:#ddd;"></div>
                             </div>
-                            <div style="font-size:0.78rem; font-weight:800;">
-                                <span id="chk-upper" style="margin-right:8px;">&#x2715; Huruf Besar</span>
-                                <span id="chk-lower" style="margin-right:8px;">&#x2715; Huruf Kecil</span>
-                                <span id="chk-num" style="margin-right:8px;">&#x2715; Nombor</span>
+                            <div style="font-size:0.78rem; font-weight:800; display:flex; flex-wrap:wrap; gap:8px;">
+                                <span id="chk-len">&#x2715; 8+ Aksara</span>
+                                <span id="chk-upper">&#x2715; Huruf Besar</span>
+                                <span id="chk-lower">&#x2715; Huruf Kecil</span>
+                                <span id="chk-num">&#x2715; Nombor</span>
                                 <span id="chk-sym">&#x2715; Simbol</span>
                             </div>
                         </div>
@@ -509,13 +378,14 @@ $conn->close();
                     <div class="form-group">
                         <label class="form-label">Sahkan Kata Laluan</label>
                         <div class="input-wrapper">
-                            <input type="password" class="form-control" name="confirmPassword" id="confirmPassword" placeholder="Ulang kata laluan" required>
+                            <input type="password" class="form-control" name="confirmPassword" id="confirmPassword" placeholder="Ulang kata laluan" minlength="8" required>
                         </div>
                     </div>
                 </div>
 
                 <div style="border-top: 2px dashed var(--black); margin: 20px 0 15px 0; padding-top: 15px;">
-                    <p style="font-weight: 900; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 12px; color: #0055ff;">Muat Naik Dokumen Wajib (5 Dokumen)</p>
+                    <p style="font-weight: 900; text-transform: uppercase; font-size: 0.9rem; margin-bottom: 6px; color: #0055ff;">Muat Naik Dokumen Wajib (2 Dokumen Sahaja)</p>
+                    <p style="font-size: 0.8rem; font-weight: 700; color: #666; margin-bottom: 12px;">*Dokumen kenderaan (Insurans, Geran & Cukai Jalan) akan dimuat naik semasa anda menambah kenderaan di portal penyedia.</p>
 
                     <div class="form-group">
                         <label class="form-label">1. Kad Pengenalan (IC)</label>
@@ -525,21 +395,6 @@ $conn->close();
                     <div class="form-group">
                         <label class="form-label">2. Lesen Memandu</label>
                         <input type="file" class="form-control" name="licence_file" accept=".jpg, .jpeg, .png, .pdf" required style="border-style: dashed;">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">3. Insurans Kenderaan</label>
-                        <input type="file" class="form-control" name="insurance_file" accept=".jpg, .jpeg, .png, .pdf" required style="border-style: dashed;">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">4. Geran / Kad Hijau Kenderaan</label>
-                        <input type="file" class="form-control" name="greencard_file" accept=".jpg, .jpeg, .png, .pdf" required style="border-style: dashed;">
-                    </div>
-
-                    <div class="form-group">
-                        <label class="form-label">5. Cukai Jalan (Roadtax)</label>
-                        <input type="file" class="form-control" name="roadtax_file" accept=".jpg, .jpeg, .png, .pdf" required style="border-style: dashed;">
                     </div>
                 </div>
 
@@ -553,7 +408,7 @@ $conn->close();
                     </label>
                 </div>
 
-                <button type="submit" class="neo-btn">
+                <button type="submit" class="neo-btn btn-green btn-block" style="margin-top: 14px;">
                     <i class="bi bi-cloud-arrow-up-fill me-1"></i> Hantar Pendaftaran Penyedia
                 </button>
             </form>
@@ -620,12 +475,19 @@ $conn->close();
 
         // Password Strength Indicator
         const strengthBox = document.getElementById('strength-box');
-        const bars = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+        const bars = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4'), document.getElementById('s5')];
+        const chkLen   = document.getElementById('chk-len');
         const chkUpper = document.getElementById('chk-upper');
         const chkLower = document.getElementById('chk-lower');
         const chkNum   = document.getElementById('chk-num');
         const chkSym   = document.getElementById('chk-sym');
-        const colors   = ['#ff4444','#ffbb00','#00bbff','#00e676'];
+        const colors   = ['#ff4444','#ff7700','#ffbb00','#00bbff','#00e676'];
+
+        function updateCheck(el, pass, text) {
+            if (!el) return;
+            el.style.color = pass ? '#007700' : '#cc0000';
+            el.innerHTML = (pass ? '&#x2714;' : '&#x2715;') + ' ' + text;
+        }
 
         if (password) {
             password.addEventListener('input', function() {
@@ -633,22 +495,22 @@ $conn->close();
                 if (!v) { strengthBox.style.display = 'none'; return; }
                 strengthBox.style.display = 'block';
 
+                const hasLen   = v.length >= 8;
                 const hasUpper = /[A-Z]/.test(v);
                 const hasLower = /[a-z]/.test(v);
                 const hasNum   = /[0-9]/.test(v);
                 const hasSym   = /[^A-Za-z0-9]/.test(v);
-                const score    = [hasUpper, hasLower, hasNum, hasSym].filter(Boolean).length;
+                const score    = [hasLen, hasUpper, hasLower, hasNum, hasSym].filter(Boolean).length;
 
-                bars.forEach((b, i) => b.style.background = i < score ? colors[score - 1] : '#ddd');
+                bars.forEach((b, i) => {
+                    if (b) b.style.background = i < score ? colors[score - 1] : '#ddd';
+                });
 
-                chkUpper.innerHTML = (hasUpper ? '&#x2714;' : '&#x2715;') + ' Huruf Besar';
-                chkUpper.style.color = hasUpper ? '#007700' : '#cc0000';
-                chkLower.innerHTML = (hasLower ? '&#x2714;' : '&#x2715;') + ' Huruf Kecil';
-                chkLower.style.color = hasLower ? '#007700' : '#cc0000';
-                chkNum.innerHTML   = (hasNum   ? '&#x2714;' : '&#x2715;') + ' Nombor';
-                chkNum.style.color = hasNum ? '#007700' : '#cc0000';
-                chkSym.innerHTML   = (hasSym   ? '&#x2714;' : '&#x2715;') + ' Simbol';
-                chkSym.style.color = hasSym ? '#007700' : '#cc0000';
+                updateCheck(chkLen, hasLen, '8+ Aksara');
+                updateCheck(chkUpper, hasUpper, 'Huruf Besar');
+                updateCheck(chkLower, hasLower, 'Huruf Kecil');
+                updateCheck(chkNum, hasNum, 'Nombor');
+                updateCheck(chkSym, hasSym, 'Simbol');
             });
         }
 

@@ -248,10 +248,26 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         <span class="neo-badge"><i class="bi bi-people-fill"></i> <?php echo htmlspecialchars($car['seat_capacity']); ?> Tempat Duduk</span>
                     </div>
 
+                    <!-- MAKLUMAT DOKUMEN & SAH LAKU KERETA -->
+                    <div style="background: #fafafa; border: 2px solid var(--black); padding: 8px 10px; margin-bottom: 12px; font-size: 0.8rem; font-weight: 700;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 3px;">
+                            <span style="color: #555;"><i class="bi bi-calendar-event me-1 text-dark"></i> Cukai Jalan Sah Sehingga:</span>
+                            <span style="color: var(--black); font-weight: 800;">
+                                <?php echo !empty($car['roadtax_expiry']) ? date('d/m/Y', strtotime($car['roadtax_expiry'])) : '<span style="color:#888;">Tidak Dinyatakan</span>'; ?>
+                            </span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between;">
+                            <span style="color: #555;"><i class="bi bi-shield-check me-1 text-success"></i> Insurans Sah Sehingga:</span>
+                            <span style="color: var(--black); font-weight: 800;">
+                                <?php echo !empty($car['insurance_expiry']) ? date('d/m/Y', strtotime($car['insurance_expiry'])) : '<span style="color:#888;">Tidak Dinyatakan</span>'; ?>
+                            </span>
+                        </div>
+                    </div>
+
                     <!-- MAKLUMAT PENYEDIA KERETA -->
                     <div style="margin-bottom: 12px; font-size: 0.85rem; font-weight: 800; display: flex; align-items: center; justify-content: space-between; background: #f0f4f8; border: 2px solid var(--black); padding: 6px 10px;">
                         <span style="color: #444;"><i class="bi bi-person-badge text-primary me-1"></i> Penyedia:</span>
-                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($car['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_roadtax'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_insurance'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
+                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($car['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars(!empty($car['roadtax_file']) ? $car['roadtax_file'] : ($car['provider_roadtax'] ?? ''), ENT_QUOTES); ?>', '<?php echo htmlspecialchars(!empty($car['insurance_file']) ? $car['insurance_file'] : ($car['provider_insurance'] ?? ''), ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($car['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
                             <?php echo htmlspecialchars($car['provider_name']); ?> <i class="bi bi-info-circle-fill ms-1"></i>
                         </a>
                     </div>
@@ -307,6 +323,14 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                                     <span style="color: #666;">Tempoh:</span> 
                                     <span><?php echo $duration; ?> <?php echo ($rent_type === 'Daily') ? 'Hari' : 'Jam'; ?></span>
                                 </li>
+                                <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
+                                    <span style="color: #666;">Cukai Jalan Sah Sehingga:</span> 
+                                    <span style="font-weight: 800;"><?php echo !empty($car['roadtax_expiry']) ? date('d/m/Y', strtotime($car['roadtax_expiry'])) : 'Tidak Dinyatakan'; ?></span>
+                                </li>
+                                <li style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ddd; padding-bottom: 5px;">
+                                    <span style="color: #666;">Insurans Sah Sehingga:</span> 
+                                    <span style="font-weight: 800;"><?php echo !empty($car['insurance_expiry']) ? date('d/m/Y', strtotime($car['insurance_expiry'])) : 'Tidak Dinyatakan'; ?></span>
+                                </li>
                             </ul>
                             <div style="background: var(--bg-color); border: 3px solid var(--black); padding: 15px; margin-bottom: 15px;">
                                 <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 1.2rem;">
@@ -352,83 +376,190 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <title>Tempahan Kereta - SCRS PMU</title>
     
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM KESELURUHAN -->
     <style>
-        :root {
-            --black: #000000; --white: #ffffff; --yellow: #ffde59; --green: #00e676; --blue: #00e5ff; --pink: #ff66c4; --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black); --shadow-solid: 6px 6px 0px var(--black); --shadow-hover: 4px 4px 0px var(--black); --shadow-active: 0px 0px 0px var(--black); --transition: all 0.15s ease-in-out;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-        body { background-color: var(--bg-color); background-image: radial-gradient(#ccc 1.5px, transparent 1.5px); background-size: 20px 20px; min-height: 100vh; display: flex; flex-direction: column; overflow-x: hidden; }
-        a { text-decoration: none; color: inherit; } ul { list-style: none; } button, input, select { font-family: inherit; }
-
-        /* NAVBAR & SIDEBAR (Dikekalkan sama) */
-        .neo-navbar { background-color: var(--white); border-bottom: var(--border-thick); padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 1000; }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; } .menu-toggle-btn { font-size: 2rem; color: var(--black); background: none; border: none; cursor: pointer; } .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-        .profile-container { position: relative; }
-        .profile-btn { background-color: var(--yellow); border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); padding: 8px 15px; font-weight: 800; display: flex; align-items: center; gap: 8px; cursor: pointer; transition: var(--transition); }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); } .profile-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-        .dropdown-menu { position: absolute; top: calc(100% + 10px); right: 0; background-color: var(--white); border: 3px solid var(--black); box-shadow: 6px 6px 0px var(--black); width: 200px; display: none; flex-direction: column; z-index: 1050; margin: 0; padding: 0; list-style: none; }
-        .dropdown-menu.show { display: flex; } .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
-        .dropdown-item { display: flex; align-items: center; width: 100%; padding: 12px 15px; font-weight: 800; color: var(--black); border-bottom: 2px solid var(--black); transition: background 0.1s; text-decoration: none; }
-        .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); } .dropdown-item:hover { background-color: var(--yellow); } .dropdown-item:last-child:hover { background-color: #ff33aa; }
-
-        .sidebar-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s; } .sidebar-overlay.show { display: block; opacity: 1; }
-        .sidebar { position: fixed; top: 0; left: -300px; width: 280px; height: 100%; background-color: var(--bg-color); border-right: var(--border-thick); z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column; } .sidebar.open { left: 0; }
-        .sidebar-header { padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick); display: flex; justify-content: space-between; align-items: center; } .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; } .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; } .sidebar-link { padding: 12px 15px; border: 3px solid transparent; font-weight: 800; text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition); } .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-
-        /* KANDUNGAN UTAMA */
-        .main-content { flex: 1; padding: 2rem 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-        .neo-alert { border: var(--border-thick); box-shadow: 4px 4px 0px var(--black); padding: 15px 20px; font-weight: 800; margin-bottom: 25px; text-transform: uppercase; }
-        .alert-success { background-color: var(--green); } .alert-danger { background-color: var(--pink); }
-
         /* Borang Carian */
-        .search-card { background-color: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); padding: 25px; margin-bottom: 30px; }
-        .search-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
-        .form-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 15px; align-items: end; }
-        .form-grid.grid-hourly { grid-template-columns: repeat(5, 1fr); }
-        .form-group { display: flex; flex-direction: column; gap: 5px; } .form-label { font-weight: 800; text-transform: uppercase; font-size: 0.85rem; }
-        .form-control, .form-select { border: 3px solid var(--black); padding: 10px; font-weight: 700; background: var(--bg-color); outline: none; border-radius: 0; width: 100%; }
-        .form-control:focus, .form-select:focus { background: var(--white); box-shadow: 3px 3px 0px var(--black); }
-        .neo-btn { background-color: var(--yellow); border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black); font-weight: 900; text-transform: uppercase; padding: 11px 20px; cursor: pointer; transition: var(--transition); display: inline-block; text-align: center; }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); } .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); } .btn-red { background-color: var(--pink); }
+        .search-card { 
+            background-color: var(--white); 
+            border: var(--border-thick); 
+            border-radius: var(--radius-xl); 
+            box-shadow: var(--shadow-solid); 
+            padding: 22px; 
+            margin-bottom: 25px; 
+        }
+        .search-title { 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            font-size: 1.15rem; 
+            margin-bottom: 16px; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px; 
+        }
+        .rent-toggle-btn {
+            background-color: var(--white);
+            color: var(--black);
+            padding: 9px 18px;
+            font-size: 0.9rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            border: var(--border-thick);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-solid);
+            cursor: pointer;
+            transition: var(--transition);
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        .rent-toggle-btn.active {
+            background-color: var(--yellow) !important;
+            box-shadow: var(--shadow-sm);
+            transform: translate(2px, 2px);
+        }
+        .rent-toggle-btn:hover:not(.active) {
+            background-color: #f0f0f0;
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .form-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr auto; 
+            gap: 14px; 
+            align-items: end; 
+        }
 
         /* Senarai Kereta & Modal */
-        .section-heading { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; display: flex; align-items: center; gap: 8px; border-bottom: 2px solid var(--black); padding-bottom: 6px; }
-        .section-desc { font-weight: 700; color: #555; margin-bottom: 20px; font-size: 0.9rem; }
-        .cars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
-        .car-card { background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid); display: flex; flex-direction: column; overflow: hidden; }
-        .car-img { height: 200px; width: 100%; object-fit: cover; border-bottom: var(--border-thick); } 
-        .car-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
-        .car-title { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 5px; } 
-        .car-plate { font-weight: 700; color: #666; margin-bottom: 15px; }
-        .badges-box { display: flex; gap: 8px; margin-bottom: 15px; flex-wrap: wrap; } 
-        .neo-badge { border: 2px solid var(--black); padding: 3px 8px; font-weight: 800; font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase; border-radius: 4px; display: inline-flex; align-items: center; gap: 4px; box-shadow: none; cursor: default; }
-        .price-box { background: var(--bg-color); border: 3px solid var(--black); padding: 12px; margin-top: auto; margin-bottom: 15px; } 
-        .price-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; } 
-        .price-total { display: flex; justify-content: space-between; font-weight: 900; font-size: 1.1rem; border-top: 2px dashed var(--black); margin-top: 8px; padding-top: 8px; }
+        .section-heading { 
+            font-size: 1.15rem; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            margin-bottom: 6px; 
+            display: flex; 
+            align-items: center; 
+            gap: 8px; 
+            border-bottom: 2px solid var(--black); 
+            padding-bottom: 6px; 
+        }
+        .section-desc { 
+            font-weight: 700; 
+            color: #555; 
+            margin-bottom: 18px; 
+            font-size: 0.875rem; 
+        }
+        .cars-grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); 
+            gap: 18px; 
+            margin-bottom: 35px; 
+        }
+        .car-card { 
+            background: var(--white); 
+            border: var(--border-thick); 
+            border-radius: var(--radius-lg); 
+            box-shadow: var(--shadow-solid); 
+            display: flex; 
+            flex-direction: column; 
+            overflow: hidden; 
+            transition: var(--transition);
+        }
+        .car-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg);
+        }
+        .car-img { 
+            height: 180px; 
+            width: 100%; 
+            object-fit: cover; 
+            border-bottom: var(--border-thick); 
+            background-color: #eee;
+        } 
+        .car-body { 
+            padding: 16px; 
+            display: flex; 
+            flex-direction: column; 
+            flex: 1; 
+        }
+        .car-title { 
+            font-weight: 900; 
+            font-size: 1.15rem; 
+            text-transform: uppercase; 
+            margin-bottom: 4px; 
+        } 
+        .car-plate { 
+            font-weight: 700; 
+            color: #666; 
+            margin-bottom: 12px; 
+            font-size: 0.85rem;
+        }
+        .badges-box { 
+            display: flex; 
+            gap: 6px; 
+            margin-bottom: 14px; 
+            flex-wrap: wrap; 
+        } 
+        .price-box { 
+            background: var(--bg-color); 
+            border: var(--border-thin); 
+            border-radius: var(--radius-md); 
+            padding: 10px 12px; 
+            margin-top: auto; 
+            margin-bottom: 14px; 
+        } 
+        .price-row { 
+            display: flex; 
+            justify-content: space-between; 
+            font-weight: 700; 
+            font-size: 0.85rem; 
+        } 
+        .price-total { 
+            display: flex; 
+            justify-content: space-between; 
+            font-weight: 900; 
+            font-size: 1.05rem; 
+            border-top: 2px dashed var(--black); 
+            margin-top: 6px; 
+            padding-top: 6px; 
+        }
 
-        .neo-modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px; } .neo-modal-overlay.show { display: flex; }
-        .neo-modal { background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black); width: 100%; max-width: 800px; max-height: 90vh; overflow-y: auto; padding: 30px; position: relative; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 15px; margin-bottom: 20px; } .modal-title { font-weight: 900; text-transform: uppercase; font-size: 1.3rem; }
-        .modal-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; } .modal-divider { border-right: 3px solid var(--black); padding-right: 20px; }
-        .qr-img { max-height: 180px; width: auto; border: 3px solid var(--black); object-fit: contain; margin: 10px 0; }
-
-        footer { background-color: var(--yellow); border-top: var(--border-thick); padding: 20px; text-align: center; font-weight: 900; text-transform: uppercase; margin-top: auto; }
+        .modal-grid { 
+            display: grid; 
+            grid-template-columns: 1fr 1fr; 
+            gap: 20px; 
+        } 
+        .modal-divider { 
+            border-right: 3px solid var(--black); 
+            padding-right: 18px; 
+        }
+        .qr-img { 
+            max-height: 170px; 
+            width: auto; 
+            border: var(--border-thin); 
+            border-radius: var(--radius-md); 
+            object-fit: contain; 
+            margin: 10px 0; 
+        }
 
         /* Loader Animation */
-        .spinner { border: 4px solid var(--bg-color); border-top: 4px solid var(--black); border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 0 auto 10px auto; }
+        .spinner { 
+            border: 4px solid #eee; 
+            border-top: 4px solid var(--black); 
+            border-radius: 50%; 
+            width: 36px; 
+            height: 36px; 
+            animation: spin 0.8s linear infinite; 
+            margin: 0 auto 10px auto; 
+        }
         @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
         @media (max-width: 768px) {
-            .neo-brand { font-size: 1.2rem; } .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
-            .form-grid, .form-grid.grid-hourly { grid-template-columns: 1fr !important; gap: 10px; } .cars-grid { grid-template-columns: 1fr; gap: 15px; } .modal-grid { grid-template-columns: 1fr; gap: 15px; }
-            .modal-divider { border-right: none; padding-right: 0; border-bottom: 3px solid var(--black); padding-bottom: 15px; }
-            .main-content { padding: 1rem 10px; } .search-card { padding: 15px; } .neo-modal { padding: 15px; }
+            .form-grid, .form-grid.grid-hourly { grid-template-columns: 1fr !important; gap: 10px; } 
+            .cars-grid { grid-template-columns: 1fr; gap: 14px; } 
+            .modal-grid { grid-template-columns: 1fr; gap: 14px; }
+            .modal-divider { border-right: none; padding-right: 0; border-bottom: 2px solid var(--black); padding-bottom: 14px; }
+            .search-card { padding: 16px; } 
         }
     </style>
 </head>
@@ -437,7 +568,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="dashboard.php" class="neo-brand">SCRS PMU</a>
+            <a href="dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
         <div class="profile-container">
             <button class="profile-btn" id="profile-toggle">
@@ -458,10 +589,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="dashboard.php" class="sidebar-link"><i class="bi bi-house-door-fill"></i> Papan Pemuka</a>
+            <a href="dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="booking.php" class="sidebar-link active"><i class="bi bi-car-front-fill"></i> Cari & Tempah</a>
-            <a href="my_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Status Tempahan</a>
-            <a href="booking_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
+            <a href="my_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Tempahan Saya</a>
+            <a href="booking_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
 
@@ -469,56 +600,72 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         
         <?php echo $message; ?>
 
-        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
-        <div style="margin-bottom: 25px;">
-            <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin-bottom: 6px; color: var(--black); display: flex; align-items: center; gap: 8px;">
-                <i class="bi bi-car-front-fill text-dark"></i> Cari & Tempah Kenderaan
-            </h1>
-            <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
-                Pilih jenis sewaan (Harian atau Jam), tetapkan tarikh & masa sewaan, kemudian tekan butang <strong>"Cari Kereta"</strong> untuk melihat kenderaan yang tersedia.
-            </p>
+        <!-- HEADING PANDUAN PENGGUNA (DENGAN BUTANG KEMBALI) -->
+        <div style="margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+            <div>
+                <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin-bottom: 4px; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-car-front-fill text-dark"></i> Cari & Tempah Kenderaan
+                </h1>
+                <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
+                    Pilih jenis sewaan (Harian atau Jam), tetapkan tarikh & masa sewaan, kemudian tekan butang <strong>"Cari Kereta"</strong> untuk melihat kenderaan yang tersedia.
+                </p>
+            </div>
+            <a href="dashboard.php" class="neo-btn btn-sm btn-yellow">
+                <i class="bi bi-arrow-left"></i> Papan Pemuka
+            </a>
         </div>
 
         <!-- LANGKAH 1: BORANG CARIAN AJAX -->
         <div class="search-card">
-            <div class="search-title"><i class="bi bi-calendar-check text-dark"></i> Langkah 1: Pilih Tarikh & Masa Carian</div>
+            <div class="search-title"><i class="bi bi-calendar-check text-dark"></i> Langkah 1: Pilih Jenis Sewaan, Tarikh & Masa</div>
+            
+            <!-- Pilihan Butang Jenis Sewaan -->
+            <div style="margin-bottom: 18px;">
+                <label class="form-label" style="display: block; margin-bottom: 8px;">Pilih Mod Sewaan:</label>
+                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button type="button" class="rent-toggle-btn active" id="btnTypeDaily" onclick="switchRentType('Daily')">
+                        <i class="bi bi-calendar-range-fill"></i> Sewaan Harian (Daily)
+                    </button>
+                    <button type="button" class="rent-toggle-btn" id="btnTypeHourly" onclick="switchRentType('Hourly')">
+                        <i class="bi bi-clock-fill"></i> Sewaan Jam (Hourly)
+                    </button>
+                </div>
+            </div>
+
             <form id="ajaxSearchForm">
-                <div class="form-grid" id="formGridContainer">
+                <input type="hidden" name="rent_type" id="rent_type_input" value="Daily">
+
+                <!-- Borang Carian Harian -->
+                <div class="form-grid" id="dailyFormGrid">
                     <div class="form-group">
-                        <label class="form-label">Jenis Sewaan</label>
-                        <select class="form-select" name="rent_type" id="rent_type" required>
-                            <option value="" disabled selected>Pilih...</option>
-                            <option value="Daily">Harian (Daily)</option>
-                            <option value="Hourly">Jam (Hourly)</option>
-                        </select>
-                    </div>
-                    
-                    <!-- Pilihan Harian (Daily) -->
-                    <div class="form-group daily-group">
                         <label class="form-label">Tarikh & Masa Ambil</label>
-                        <input type="datetime-local" class="form-control" name="start_date" id="daily_start" required>
+                        <input type="datetime-local" class="form-control" name="start_date_daily" id="daily_start" required>
                     </div>
-                    <div class="form-group daily-group">
+                    <div class="form-group">
                         <label class="form-label">Tarikh & Masa Pulang</label>
-                        <input type="datetime-local" class="form-control" name="end_date" id="daily_end" required>
+                        <input type="datetime-local" class="form-control" name="end_date_daily" id="daily_end" required>
                     </div>
-                    
-                    <!-- Pilihan Jam (Hourly) - Tersembunyi -->
-                    <div class="form-group hourly-group" style="display: none;">
+                    <div class="form-group">
+                        <button type="submit" class="neo-btn btn-yellow" style="width: 100%;"><i class="bi bi-search me-1"></i> Cari Kereta</button>
+                    </div>
+                </div>
+
+                <!-- Borang Carian Jam (Hourly) -->
+                <div class="form-grid" id="hourlyFormGrid" style="display: none; grid-template-columns: 1.2fr 1fr 1fr auto;">
+                    <div class="form-group">
                         <label class="form-label">Tarikh Sewaan</label>
                         <input type="date" class="form-control" id="hourly_date">
                     </div>
-                    <div class="form-group hourly-group" style="display: none;">
+                    <div class="form-group">
                         <label class="form-label">Masa Ambil (Mula)</label>
                         <input type="time" class="form-control" id="hourly_start_time">
                     </div>
-                    <div class="form-group hourly-group" style="display: none;">
+                    <div class="form-group">
                         <label class="form-label">Masa Pulang (Tamat)</label>
                         <input type="time" class="form-control" id="hourly_end_time">
                     </div>
-
                     <div class="form-group">
-                        <button type="submit" class="neo-btn bg-y" style="width: 100%; margin-top: 22px;"><i class="bi bi-search me-1"></i> Cari Kereta</button>
+                        <button type="submit" class="neo-btn btn-yellow" style="width: 100%;"><i class="bi bi-search me-1"></i> Cari Kereta</button>
                     </div>
                 </div>
             </form>
@@ -526,10 +673,10 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
         <!-- CONTAINER UNTUK HASIL CARIAN AJAX -->
         <div id="searchResultsContainer">
-            <div style="text-align: center; padding: 4rem 1rem; border: 3px dashed var(--black); background: var(--white); box-shadow: var(--shadow-solid);">
-                <i class="bi bi-search" style="font-size: 3rem;"></i>
-                <h3 style="font-weight: 900; text-transform: uppercase; margin-top: 10px;">Sila Pilih Tarikh & Masa</h3>
-                <p style="font-weight: 700; color: #666;">Sistem akan mencari kereta tanpa muat semula muka surat.</p>
+            <div style="text-align: center; padding: 3.5rem 1rem; border: 3px dashed var(--black); border-radius: var(--radius-xl); background: var(--white); box-shadow: var(--shadow-solid);">
+                <i class="bi bi-search" style="font-size: 3rem; color: #444;"></i>
+                <h3 style="font-weight: 900; text-transform: uppercase; margin-top: 10px;">Sila Tetapkan Tarikh & Masa Sewaan</h3>
+                <p style="font-weight: 700; color: #666;">Tekan butang <strong>"Cari Kereta"</strong> untuk melihat kenderaan yang sedia disewa.</p>
             </div>
         </div>
 
@@ -541,93 +688,119 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
     <!-- SKRIP ASLI (VANILLA JS & AJAX) -->
     <script>
-        // --- 1. AJAX FETCH UNTUK CARIAN KERETA ---
+        // --- 1. SWITCH JENIS SEWAAN (DAILY / HOURLY) ---
+        function switchRentType(type) {
+            const btnDaily = document.getElementById('btnTypeDaily');
+            const btnHourly = document.getElementById('btnTypeHourly');
+            const rentTypeInput = document.getElementById('rent_type_input');
+            const dailyGrid = document.getElementById('dailyFormGrid');
+            const hourlyGrid = document.getElementById('hourlyFormGrid');
+            const dailyStart = document.getElementById('daily_start');
+            const dailyEnd = document.getElementById('daily_end');
+            const hourlyDate = document.getElementById('hourly_date');
+            const hourlyStartTime = document.getElementById('hourly_start_time');
+            const hourlyEndTime = document.getElementById('hourly_end_time');
+
+            rentTypeInput.value = type;
+
+            if (type === 'Hourly') {
+                btnHourly.classList.add('active');
+                btnDaily.classList.remove('active');
+                
+                dailyGrid.style.display = 'none';
+                hourlyGrid.style.display = 'grid';
+                
+                dailyStart.required = false;
+                dailyEnd.required = false;
+                dailyStart.disabled = true;
+                dailyEnd.disabled = true;
+
+                hourlyDate.required = true;
+                hourlyStartTime.required = true;
+                hourlyEndTime.required = true;
+                hourlyDate.disabled = false;
+                hourlyStartTime.disabled = false;
+                hourlyEndTime.disabled = false;
+            } else {
+                btnDaily.classList.add('active');
+                btnHourly.classList.remove('active');
+                
+                hourlyGrid.style.display = 'none';
+                dailyGrid.style.display = 'grid';
+
+                dailyStart.required = true;
+                dailyEnd.required = true;
+                dailyStart.disabled = false;
+                dailyEnd.disabled = false;
+
+                hourlyDate.required = false;
+                hourlyStartTime.required = false;
+                hourlyEndTime.required = false;
+                hourlyDate.disabled = true;
+                hourlyStartTime.disabled = true;
+                hourlyEndTime.disabled = true;
+            }
+        }
+
+        // --- 2. AJAX FETCH UNTUK CARIAN KERETA ---
         const searchForm = document.getElementById('ajaxSearchForm');
         const resultsContainer = document.getElementById('searchResultsContainer');
-        const rentTypeSelect = document.getElementById('rent_type');
-        const dailyGroups = document.querySelectorAll('.daily-group');
-        const hourlyGroups = document.querySelectorAll('.hourly-group');
-        const formGridContainer = document.getElementById('formGridContainer');
-        
-        const dailyStart = document.getElementById('daily_start');
-        const dailyEnd = document.getElementById('daily_end');
-        const hourlyDate = document.getElementById('hourly_date');
-        const hourlyStartTime = document.getElementById('hourly_start_time');
-        const hourlyEndTime = document.getElementById('hourly_end_time');
-
-        if (rentTypeSelect) {
-            rentTypeSelect.addEventListener('change', function() {
-                if (this.value === 'Hourly') {
-                    dailyGroups.forEach(g => {
-                        g.style.display = 'none';
-                        const input = g.querySelector('input');
-                        input.required = false;
-                        input.disabled = true;
-                    });
-                    hourlyGroups.forEach(g => {
-                        g.style.display = 'flex';
-                        const input = g.querySelector('input');
-                        input.required = true;
-                        input.disabled = false;
-                    });
-                    formGridContainer.classList.add('grid-hourly');
-                } else {
-                    hourlyGroups.forEach(g => {
-                        g.style.display = 'none';
-                        const input = g.querySelector('input');
-                        input.required = false;
-                        input.disabled = true;
-                    });
-                    dailyGroups.forEach(g => {
-                        g.style.display = 'flex';
-                        const input = g.querySelector('input');
-                        input.required = true;
-                        input.disabled = false;
-                    });
-                    formGridContainer.classList.remove('grid-hourly');
-                }
-            });
-        }
 
         if (searchForm) {
             searchForm.addEventListener('submit', function(e) {
-                e.preventDefault(); // Halang form dari muat semula muka surat (reload)
+                e.preventDefault();
+
+                const rentType = document.getElementById('rent_type_input').value;
+                let startDateVal = '';
+                let endDateVal = '';
+
+                if (rentType === 'Hourly') {
+                    const dateVal = document.getElementById('hourly_date').value;
+                    const startVal = document.getElementById('hourly_start_time').value;
+                    const endVal = document.getElementById('hourly_end_time').value;
+
+                    if (!dateVal || !startVal || !endVal) {
+                        alert('Sila lengkapkan tarikh dan masa sewaan jam!');
+                        return;
+                    }
+                    startDateVal = `${dateVal}T${startVal}`;
+                    endDateVal = `${dateVal}T${endVal}`;
+                } else {
+                    const startVal = document.getElementById('daily_start').value;
+                    const endVal = document.getElementById('daily_end').value;
+
+                    if (!startVal || !endVal) {
+                        alert('Sila lengkapkan tarikh dan masa sewaan harian!');
+                        return;
+                    }
+                    startDateVal = startVal;
+                    endDateVal = endVal;
+                }
 
                 // Tunjuk Animasi Loading
                 resultsContainer.innerHTML = `
-                    <div style="text-align: center; padding: 4rem 1rem; border: 3px solid var(--black); background: var(--white); box-shadow: var(--shadow-solid);">
+                    <div style="text-align: center; padding: 4rem 1rem; border: 3px solid var(--black); border-radius: var(--radius-xl); background: var(--white); box-shadow: var(--shadow-solid);">
                         <div class="spinner"></div>
-                        <h3 style="font-weight: 900; text-transform: uppercase;">Sedang Mencari...</h3>
+                        <h3 style="font-weight: 900; text-transform: uppercase;">Sedang Mencari Kenderaan...</h3>
                         <p style="font-weight: 700; color: #666;">Sila tunggu sebentar.</p>
                     </div>
                 `;
 
-                // Ambil Data Borang
-                const formData = new FormData(searchForm);
-                
-                // Jika jenis sewaan adalah Jam (Hourly), gabungkan tarikh dan masa
-                if (rentTypeSelect && rentTypeSelect.value === 'Hourly') {
-                    const dateVal = hourlyDate.value;
-                    const startVal = hourlyStartTime.value;
-                    const endVal = hourlyEndTime.value;
-                    
-                    formData.set('start_date', `${dateVal}T${startVal}`);
-                    formData.set('end_date', `${dateVal}T${endVal}`);
-                }
+                const params = new URLSearchParams();
+                params.append('rent_type', rentType);
+                params.append('start_date', startDateVal);
+                params.append('end_date', endDateVal);
+                params.append('ajax', '1');
 
-                const params = new URLSearchParams(formData);
-                params.append('ajax', '1'); // Beritahu PHP ini adalah AJAX
-
-                // Hantar Permintaan (Fetch API)
                 fetch('booking.php?' + params.toString())
                     .then(response => response.text())
                     .then(htmlData => {
-                        resultsContainer.innerHTML = htmlData; // Masukkan kod HTML ke dalam container
+                        resultsContainer.innerHTML = htmlData;
                     })
                     .catch(error => {
                         resultsContainer.innerHTML = `
-                            <div class="neo-alert alert-danger" style="text-align: center;">
-                                Ralat sistem: Gagal menyambung ke pelayan. Cuba lagi.
+                            <div class="neo-alert alert-danger" style="text-align: center; border-radius: var(--radius-lg);">
+                                Ralat sistem: Gagal menyambung ke pelayan. Sila cuba lagi.
                             </div>
                         `;
                     });
@@ -731,6 +904,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.remove('show');
         };
+
+        // Cegah paparan semula melalui butang Back selepas log keluar
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
 
     <!-- MODAL MAKLUMAT PROVIDER (POPUP) -->

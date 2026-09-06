@@ -37,7 +37,7 @@ $sql_history = "SELECT b.*, c.car_model, c.car_plate, c.car_image,
                 FROM bookings b
                 JOIN cars c ON b.car_id = c.id
                 JOIN students s ON b.student_id = s.id
-                WHERE c.provider_id = ? AND b.status IN ('Completed', 'Rejected')
+                WHERE c.provider_id = ? AND b.status IN ('Completed', 'Rejected', 'Cancelled')
                 ORDER BY b.created_at DESC";
 
 $stmt_h = $conn->prepare($sql_history);
@@ -51,259 +51,144 @@ $result_history = $stmt_h->get_result();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Sejarah Rekod Tempahan - SCRS PMU</title>
+    <title>Rekod Tempahan - SCRS PMU</title>
     
+    <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; }
-        button, input, select { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); transition: var(--transition); border: none; background: none; cursor: pointer; }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* Dropdown Profil */
-        .profile-container { position: relative; }
-        .profile-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            padding: 8px 15px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
-
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            background-color: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 200px;
-            display: none;
-            flex-direction: column;
-            z-index: 1050;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: flex; }
-        .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 12px 15px;
-            font-weight: 800;
-            color: var(--black);
-            border-bottom: 2px solid var(--black);
-            text-decoration: none;
-        }
-        .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
-        .dropdown-item:hover { background-color: var(--yellow); }
-        .dropdown-item:last-child:hover { background-color: #ff33aa; }
-
-        /* SIDEBAR */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-link {
-            padding: 12px 15px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition);
-        }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-
-        /* KANDUNGAN UTAMA */
-        .main-content { flex: 1; padding: 2rem 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-
-        .neo-btn {
-            background-color: var(--yellow); border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900; text-transform: uppercase; padding: 10px 18px; cursor: pointer; transition: var(--transition);
-            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-        .btn-blue { background-color: var(--blue); }
-        .btn-pink { background-color: var(--pink); }
-
-        /* KAD STATISTIK (BUKAN BUTTON - MAKLUMAT WIDGET) */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin-bottom: 25px;
+            gap: 14px;
+            margin-bottom: 22px;
         }
         .stat-card {
-            border: var(--border-thick);
-            box-shadow: 4px 4px 0px var(--black);
-            padding: 16px 18px;
-            text-align: left;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
+            border: var(--border-thick) !important;
+            border-radius: var(--radius-lg) !important;
+            box-shadow: var(--shadow-solid) !important;
+            padding: 18px 20px !important;
+            text-align: left !important;
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: stretch !important;
+            justify-content: space-between !important;
             cursor: default;
             user-select: none;
+            background: var(--white) !important;
+            min-height: 135px;
+            transition: var(--transition) !important;
         }
-        .stat-card h3 { font-size: 2.2rem; font-weight: 900; margin-bottom: 4px; line-height: 1; }
-        .stat-card p { font-weight: 800; font-size: 0.85rem; text-transform: uppercase; margin: 0; color: #222; }
+        .stat-card:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg) !important;
+        }
+        .stat-card-top {
+            display: flex !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            width: 100% !important;
+            margin-bottom: 12px !important;
+        }
+        .stat-title {
+            font-size: 0.85rem !important;
+            font-weight: 900 !important;
+            text-transform: uppercase !important;
+            color: #555 !important;
+            letter-spacing: 0.5px;
+            margin: 0 !important;
+            line-height: 1.2 !important;
+        }
+        .stat-icon-badge {
+            font-size: 1.35rem !important;
+            width: 44px !important;
+            height: 44px !important;
+            min-width: 44px !important;
+            display: flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+            border: var(--border-thin) !important;
+            border-radius: var(--radius-md) !important;
+            box-shadow: var(--shadow-sm) !important;
+            color: var(--black) !important;
+            flex-shrink: 0 !important;
+        }
+        .stat-number {
+            font-size: 2rem !important;
+            font-weight: 900 !important;
+            line-height: 1 !important;
+            margin-bottom: 6px !important;
+            color: var(--black) !important;
+            text-align: left !important;
+        }
+        .stat-sub {
+            font-size: 0.775rem !important;
+            font-weight: 700 !important;
+            color: #666 !important;
+            text-align: left !important;
+            line-height: 1.3 !important;
+        }
 
-        /* JADUAL NEO-BRUTALISM */
         .neo-table-card {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
             padding: 20px;
             overflow-x: auto;
-            margin-bottom: 30px;
+            margin-bottom: 25px;
         }
 
         table.neo-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            overflow: hidden;
             text-align: left;
             min-width: 700px;
         }
 
-        table.neo-table th {
-            background-color: var(--yellow);
-            border: 2px solid var(--black);
-            padding: 12px 14px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-        }
-
-        table.neo-table td {
-            border: 2px solid var(--black);
-            padding: 12px 14px;
+        table.neo-table th, table.neo-table td {
+            padding: 11px 13px;
+            border-bottom: var(--border-thin);
+            border-right: var(--border-thin);
             font-weight: 700;
             font-size: 0.85rem;
             vertical-align: middle;
         }
-
-        table.neo-table tr:nth-child(even) {
-            background-color: #fafaf5;
+        table.neo-table th:last-child, table.neo-table td:last-child {
+            border-right: none;
+        }
+        table.neo-table tr:last-child td {
+            border-bottom: none;
         }
 
-        .neo-badge {
-            border: 2px solid var(--black);
-            padding: 3px 8px;
+        table.neo-table th {
+            background-color: var(--yellow);
             font-weight: 900;
             text-transform: uppercase;
-            font-size: 0.75rem;
-            border-radius: 4px;
-            display: inline-block;
-            box-shadow: none;
         }
-        .badge-completed { background-color: var(--blue); }
-        .badge-rejected { background-color: var(--pink); }
+
+        table.neo-table tr:nth-child(even) {
+            background-color: #fafafa;
+        }
 
         .empty-box {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            padding: 50px 20px;
+            padding: 40px 20px;
             text-align: center;
         }
-        .empty-box i { font-size: 4rem; display: block; margin-bottom: 15px; }
+        .empty-box i { font-size: 3.5rem; display: block; margin-bottom: 12px; }
 
-        /* Modal Popup */
-        .neo-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
-        }
-        .neo-modal-overlay.show { display: flex; }
-        .neo-modal {
-            background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black);
-            width: 100%; max-width: 480px; padding: 25px; position: relative; max-height: 90vh; overflow-y: auto;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px; }
-
-        /* FOOTER */
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
-        }
-
-        /* RESPONSIVE MOBILE */
         @media (max-width: 768px) {
-            .stats-grid { grid-template-columns: 1fr; }
-            .main-content { padding: 1rem 10px; }
-            .neo-brand { font-size: 1.2rem; }
-            .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
+            .stats-grid { grid-template-columns: 1fr; gap: 10px; }
             .header-flex { flex-direction: column; align-items: stretch !important; gap: 10px !important; }
             .mobile-btn-full { width: 100% !important; justify-content: center !important; text-align: center; }
             .neo-table-card { padding: 12px; }
@@ -317,7 +202,7 @@ $result_history = $stmt_h->get_result();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="provider_dashboard.php" class="neo-brand">SCRS PMU (PROVIDER)</a>
+            <a href="provider_dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
 
         <div class="profile-container">
@@ -341,24 +226,31 @@ $result_history = $stmt_h->get_result();
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
-            <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Senarai Kereta</a>
-            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Tempahan Semasa</a>
-            <a href="provider_history.php" class="sidebar-link active"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
+            <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_history.php" class="sidebar-link active"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
 
     <!-- KANDUNGAN UTAMA -->
     <main class="main-content">
         
-        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+        <!-- HEADING PANDUAN PENGGUNA (DENGAN BUTANG KEMBALI) -->
         <div style="margin-bottom: 25px;">
             <div class="header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 6px;">
-                <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-clock-history text-dark"></i> Sejarah Rekod Tempahan
-                </h1>
-                <a href="provider_bookings.php" class="neo-btn mobile-btn-full" style="background: var(--green); padding: 8px 16px; font-size: 0.85rem;">
-                    <i class="bi bi-clipboard-check-fill me-1"></i> Tempahan Semasa
-                </a>
+                <div>
+                    <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-clock-history text-dark"></i> Rekod Tempahan
+                    </h1>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="provider_dashboard.php" class="neo-btn btn-sm btn-yellow">
+                        <i class="bi bi-arrow-left"></i> Papan Pemuka
+                    </a>
+                    <a href="provider_bookings.php" class="neo-btn btn-sm btn-green">
+                        <i class="bi bi-clipboard-check-fill me-1"></i> Tempahan Semasa
+                    </a>
+                </div>
             </div>
             <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
                 Senarai arkib keseluruhan transaksi tempahan yang telah selesai atau ditolak bagi kenderaan milik anda.
@@ -367,17 +259,35 @@ $result_history = $stmt_h->get_result();
 
         <!-- STATISTIK RINGKAS -->
         <div class="stats-grid">
-            <div class="stat-card" style="background: var(--blue);">
-                <h3><?php echo $completed_count; ?></h3>
-                <p>Tempahan Selesai</p>
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <span class="stat-title">Tempahan Selesai</span>
+                    <div class="stat-icon-badge" style="background: var(--blue);">
+                        <i class="bi bi-patch-check-fill"></i>
+                    </div>
+                </div>
+                <div class="stat-number"><?php echo $completed_count; ?></div>
+                <div class="stat-sub">Selesai & Dipulangkan</div>
             </div>
-            <div class="stat-card" style="background: var(--green);">
-                <h3>RM <?php echo number_format($total_earnings, 2); ?></h3>
-                <p>Jumlah Pendapatan</p>
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <span class="stat-title">Jumlah Pendapatan</span>
+                    <div class="stat-icon-badge" style="background: var(--green);">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
+                </div>
+                <div class="stat-number">RM <?php echo number_format($total_earnings, 2); ?></div>
+                <div class="stat-sub">Jumlah Bersih Diterima</div>
             </div>
-            <div class="stat-card" style="background: var(--pink);">
-                <h3><?php echo $rejected_count; ?></h3>
-                <p>Permohonan Ditolak</p>
+            <div class="stat-card">
+                <div class="stat-card-top">
+                    <span class="stat-title">Permohonan Ditolak</span>
+                    <div class="stat-icon-badge" style="background: var(--pink);">
+                        <i class="bi bi-x-circle-fill"></i>
+                    </div>
+                </div>
+                <div class="stat-number"><?php echo $rejected_count; ?></div>
+                <div class="stat-sub">Permohonan Tidak Berjaya</div>
             </div>
         </div>
 
@@ -402,9 +312,16 @@ $result_history = $stmt_h->get_result();
                         <?php 
                         $counter = 1;
                         while ($row = $result_history->fetch_assoc()): 
-                            $is_comp = ($row['status'] === 'Completed');
-                            $badge_style = $is_comp ? 'badge-completed' : 'badge-rejected';
-                            $status_label = $is_comp ? 'Selesai' : 'Ditolak';
+                            if ($row['status'] === 'Completed') {
+                                $badge_style = 'badge-completed';
+                                $status_label = 'Selesai';
+                            } elseif ($row['status'] === 'Cancelled') {
+                                $badge_style = 'badge-rejected';
+                                $status_label = 'Dibatalkan';
+                            } else {
+                                $badge_style = 'badge-rejected';
+                                $status_label = 'Ditolak';
+                            }
                         ?>
                             <tr>
                                 <td style="text-align: center;"><?php echo $counter++; ?></td>
@@ -450,8 +367,8 @@ $result_history = $stmt_h->get_result();
             <?php else: ?>
                 <div class="empty-box" style="box-shadow: none; border: none; padding: 40px 10px;">
                     <i class="bi bi-clock-history"></i>
-                    <h2 style="font-weight: 900; text-transform: uppercase;">Tiada Sejarah Rekod</h2>
-                    <p style="font-weight: 700; color: #666; margin: 10px 0 0 0;">Belum ada rekod tempahan yang telah selesai atau ditolak.</p>
+                    <h2 style="font-weight: 900; text-transform: uppercase;">Tiada Rekod Tempahan</h2>
+                    <p style="font-weight: 700; color: #666; margin: 10px 0 0 0;">Belum ada rekod tempahan yang telah selesai, ditolak atau dibatalkan.</p>
                 </div>
             <?php endif; ?>
         </div>

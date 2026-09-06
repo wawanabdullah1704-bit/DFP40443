@@ -80,8 +80,25 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['complete_return'])) {
     exit();
 }
 
+// PROSES BATALKAN TEMPAHAN PENDING OLEH PELAJAR
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['cancel_booking'])) {
+    $booking_id = (int)$_POST['booking_id'];
+    $sql_cancel = "UPDATE bookings SET status = 'Cancelled' WHERE id = ? AND student_id = ? AND status = 'Pending'";
+    $stmt_cancel = $conn->prepare($sql_cancel);
+    $stmt_cancel->bind_param("ii", $booking_id, $student_id);
+    if ($stmt_cancel->execute() && $stmt_cancel->affected_rows > 0) {
+        $_SESSION['flash_msg'] = "<div class='neo-alert alert-success mb-3'><i class='bi bi-check-circle-fill me-2'></i>Tempahan #{$booking_id} telah berjaya dibatalkan.</div>";
+    } else {
+        $_SESSION['flash_msg'] = "<div class='neo-alert alert-danger mb-3'><i class='bi bi-exclamation-triangle-fill me-2'></i>Gagal membatalkan tempahan.</div>";
+    }
+    $stmt_cancel->close();
+    header("Location: my_bookings.php");
+    exit();
+}
+
 // Ambil senarai tempahan yang MASIH AKTIF / DALAM PROGRESS (Pending atau Approved)
 $sql_bookings = "SELECT b.*, c.car_brand, c.car_model, c.car_plate, c.car_image, c.transmission, c.seat_capacity, c.price_per_day, c.price_per_hour,
+                 c.roadtax_expiry, c.insurance_expiry, c.roadtax_file, c.insurance_file, c.grant_file,
                  p.username AS provider_username, p.email AS provider_email,
                  p.full_name AS provider_name, p.phone_no AS provider_phone,
                  p.roadtax_file AS provider_roadtax, p.insurance_file AS provider_insurance,
@@ -108,197 +125,47 @@ $result_bookings = $stmt->get_result();
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; }
-        button { border: none; background: none; cursor: pointer; font-family: inherit; }
-
-        /* --- NAVBAR --- */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); transition: var(--transition); }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* Dropdown Profil */
-        .profile-container { position: relative; }
-        .profile-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            padding: 8px 15px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
-        .profile-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            background-color: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 200px;
-            display: none;
-            flex-direction: column;
-            z-index: 1050;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: flex; }
-        .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
-        
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 12px 15px;
-            font-weight: 800;
-            color: var(--black);
-            border-bottom: 2px solid var(--black);
-            transition: background 0.1s;
-            text-decoration: none;
-        }
-        .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
-        .dropdown-item:hover { background-color: var(--yellow); }
-        .dropdown-item:last-child:hover { background-color: #ff33aa; }
-
-        /* --- SIDEBAR --- */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-link {
-            padding: 12px 15px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition);
-        }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-
-        /* --- KANDUNGAN UTAMA --- */
-        .main-content { flex: 1; padding: 2rem 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-
-        .page-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 25px;
-            flex-wrap: wrap;
-            gap: 15px;
-        }
-
-        .section-title {
+        .section-title-badge {
             display: inline-block;
             background: var(--black);
             color: var(--white);
             font-weight: 900;
             text-transform: uppercase;
-            padding: 10px 20px;
-            box-shadow: 4px 4px 0px var(--yellow);
+            padding: 8px 16px;
+            border-radius: var(--radius-full);
+            box-shadow: 3px 3px 0px var(--yellow);
+            font-size: 1.15rem;
         }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 10px 18px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-        .btn-blue { background-color: var(--blue); }
-        .btn-pink { background-color: var(--pink); }
 
         /* Kad Tempahan */
         .booking-card {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             display: flex;
             flex-direction: row;
             overflow: hidden;
+            transition: var(--transition);
+        }
+        .booking-card:hover {
+            box-shadow: var(--shadow-lg);
         }
         .booking-img {
-            width: 280px;
+            width: 260px;
             height: 100%;
-            min-height: 220px;
+            min-height: 200px;
             object-fit: cover;
             border-right: var(--border-thick);
+            background-color: #eee;
         }
         .booking-body {
-            padding: 20px;
+            padding: 18px;
             flex: 1;
             display: flex;
             flex-direction: column;
@@ -308,106 +175,53 @@ $result_bookings = $stmt->get_result();
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            border-bottom: 3px solid var(--black);
-            padding-bottom: 12px;
-            margin-bottom: 15px;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 10px;
+            margin-bottom: 14px;
             flex-wrap: wrap;
             gap: 10px;
         }
-        .car-name { font-size: 1.3rem; font-weight: 900; text-transform: uppercase; }
-        .car-plate { font-weight: 700; color: #555; }
-
-        .neo-badge {
-            border: 2px solid var(--black);
-            padding: 4px 10px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.8rem;
-            box-shadow: none;
-            border-radius: 4px;
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .badge-pending { background-color: var(--yellow); }
-        .badge-approved { background-color: var(--green); }
+        .car-name { font-size: 1.2rem; font-weight: 900; text-transform: uppercase; }
+        .car-plate { font-weight: 700; color: #555; font-size: 0.85rem; }
 
         .details-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-            margin-bottom: 15px;
+            gap: 12px;
+            margin-bottom: 14px;
         }
-        .detail-item { font-weight: 700; font-size: 0.9rem; }
-        .detail-label { display: block; text-transform: uppercase; font-size: 0.75rem; color: #666; font-weight: 800; }
-        .detail-value { display: flex; align-items: center; gap: 6px; margin-top: 2px; }
+        .detail-item { font-weight: 700; font-size: 0.875rem; }
+        .detail-label { display: block; text-transform: uppercase; font-size: 0.75rem; color: #666; font-weight: 800; margin-bottom: 2px; }
+        .detail-value { display: flex; align-items: center; gap: 6px; }
 
         .price-box {
             background-color: var(--bg-color);
-            border: 3px solid var(--black);
-            padding: 10px 15px;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            padding: 10px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             font-weight: 900;
-            font-size: 1.1rem;
+            font-size: 1.05rem;
             margin-top: 10px;
         }
 
         .empty-box {
             background: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            padding: 50px 20px;
+            padding: 40px 20px;
             text-align: center;
         }
-        .empty-box i { font-size: 4rem; display: block; margin-bottom: 15px; }
+        .empty-box i { font-size: 3.5rem; display: block; margin-bottom: 12px; }
 
-        /* Modal Popup */
-        .neo-modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6);
-            z-index: 2000;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            padding: 15px;
-        }
-        .neo-modal-overlay.show { display: flex; }
-        .neo-modal {
-            background: var(--white);
-            border: var(--border-thick);
-            box-shadow: 10px 10px 0px var(--black);
-            width: 100%;
-            max-width: 500px;
-            max-height: 90vh;
-            overflow-y: auto;
-            padding: 25px;
-            position: relative;
-        }
-
-        /* FOOTER */
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
-        }
-
-        /* RESPONSIVE MOBILE */
         @media (max-width: 768px) {
             .booking-card { flex-direction: column; }
-            .booking-img { width: 100%; height: 200px; border-right: none; border-bottom: var(--border-thick); }
+            .booking-img { width: 100%; height: 190px; border-right: none; border-bottom: var(--border-thick); }
             .details-grid { grid-template-columns: 1fr; gap: 10px; }
-            .main-content { padding: 1rem 10px; }
-            .neo-brand { font-size: 1.2rem; }
-            .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
             
-            /* Mobile Friendly Buttons & Forms */
             .header-flex { flex-direction: column; align-items: stretch !important; gap: 10px !important; }
             .header-flex .neo-btn { width: 100% !important; justify-content: center; }
             .mobile-btn-full { width: 100% !important; justify-content: center !important; text-align: center; }
@@ -423,7 +237,7 @@ $result_bookings = $stmt->get_result();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="dashboard.php" class="neo-brand">SCRS PMU</a>
+            <a href="dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
 
         <div class="profile-container">
@@ -446,30 +260,44 @@ $result_bookings = $stmt->get_result();
             <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
-            <a href="dashboard.php" class="sidebar-link"><i class="bi bi-house-door-fill"></i> Papan Pemuka</a>
+            <a href="dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
             <a href="booking.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Cari & Tempah</a>
-            <a href="my_bookings.php" class="sidebar-link active"><i class="bi bi-clipboard-check-fill"></i> Status Tempahan</a>
-            <a href="booking_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
+            <a href="my_bookings.php" class="sidebar-link active"><i class="bi bi-calendar-check-fill"></i> Tempahan Saya</a>
+            <a href="booking_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
 
     <!-- KANDUNGAN UTAMA -->
     <main class="main-content">
         
-        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+        <!-- HEADING PANDUAN PENGGUNA (DENGAN BUTANG KEMBALI) -->
         <div style="margin-bottom: 25px;">
             <div class="header-flex" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 6px;">
-                <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
-                    <i class="bi bi-clipboard-check-fill text-dark"></i> Status Tempahan & Pembayaran
-                </h1>
-                <a href="booking_history.php" class="neo-btn mobile-btn-full" style="background: var(--yellow); padding: 8px 16px; font-size: 0.85rem;">
-                    <i class="bi bi-clock-history me-1"></i> Sejarah Rekod
-                </a>
+                <div>
+                    <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
+                        <i class="bi bi-clipboard-check-fill text-dark"></i> Status Tempahan & Pembayaran
+                    </h1>
+                </div>
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="dashboard.php" class="neo-btn btn-sm btn-yellow">
+                        <i class="bi bi-arrow-left"></i> Papan Pemuka
+                    </a>
+                    <a href="booking_history.php" class="neo-btn btn-sm btn-white">
+                        <i class="bi bi-clock-history"></i> Rekod Tempahan
+                    </a>
+                </div>
             </div>
             <p style="font-weight: 700; color: #555; font-size: 0.95rem; margin: 0; line-height: 1.5;">
                 Pantau permohonan kenderaan anda di sini. Apabila diluluskan (Approved), imbas Kod QR DuitNow untuk membuat bayaran, muat naik resit, dan muat naik gambar pemulangan kenderaan.
             </p>
         </div>
+
+        <?php 
+        if (isset($_SESSION['flash_msg'])) {
+            echo $_SESSION['flash_msg'];
+            unset($_SESSION['flash_msg']);
+        }
+        ?>
 
         <?php if ($result_bookings->num_rows > 0): ?>
             <?php while ($booking = $result_bookings->fetch_assoc()): 
@@ -505,7 +333,7 @@ $result_bookings = $stmt->get_result();
                                     <span class="detail-label">Penyedia Kereta</span>
                                     <div class="detail-value">
                                         <i class="bi bi-person-badge text-primary"></i> 
-                                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($booking['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_roadtax'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_insurance'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
+                                        <a href="javascript:void(0)" onclick="showProviderModal('<?php echo htmlspecialchars($booking['provider_username'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_email'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_phone'], ENT_QUOTES); ?>', '<?php echo htmlspecialchars(!empty($booking['roadtax_file']) ? $booking['roadtax_file'] : ($booking['provider_roadtax'] ?? ''), ENT_QUOTES); ?>', '<?php echo htmlspecialchars(!empty($booking['insurance_file']) ? $booking['insurance_file'] : ($booking['provider_insurance'] ?? ''), ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_profile_picture'] ?? '', ENT_QUOTES); ?>', '<?php echo htmlspecialchars($booking['provider_qr_code'] ?? '', ENT_QUOTES); ?>')" style="color: #0055ff; font-weight: 900; text-decoration: underline; cursor: pointer;">
                                             <?php echo htmlspecialchars($booking['provider_name']); ?> <i class="bi bi-info-circle-fill ms-1 fs-6"></i>
                                         </a>
                                     </div>
@@ -519,6 +347,20 @@ $result_bookings = $stmt->get_result();
                                     <div class="detail-value">
                                         <i class="bi bi-tag-fill text-warning"></i> 
                                         RM <?php echo number_format(($booking['rent_type'] == 'Daily') ? $booking['price_per_day'] : $booking['price_per_hour'], 2); ?> / <?php echo ($booking['rent_type'] == 'Daily') ? 'Hari' : 'Jam'; ?>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Cukai Jalan Sah</span>
+                                    <div class="detail-value">
+                                        <i class="bi bi-calendar-event text-primary"></i> 
+                                        <?php echo !empty($booking['roadtax_expiry']) ? date('d/m/Y', strtotime($booking['roadtax_expiry'])) : '<span style="color:#888;">-</span>'; ?>
+                                    </div>
+                                </div>
+                                <div class="detail-item">
+                                    <span class="detail-label">Insurans Sah</span>
+                                    <div class="detail-value">
+                                        <i class="bi bi-shield-check text-success"></i> 
+                                        <?php echo !empty($booking['insurance_expiry']) ? date('d/m/Y', strtotime($booking['insurance_expiry'])) : '<span style="color:#888;">-</span>'; ?>
                                     </div>
                                 </div>
                             </div>
@@ -620,10 +462,16 @@ $result_bookings = $stmt->get_result();
                                 </div>
 
                             <?php else: ?>
-                                <div style="margin-top: 15px; border-top: 2px dashed var(--black); padding-top: 15px; text-align: left;">
-                                    <div style="background: var(--yellow); border: 2px solid var(--black); padding: 10px 15px; font-weight: 800; font-size: 0.85rem; color: #000;">
-                                        <i class="bi bi-hourglass-split me-1"></i> Permohonan tempahan anda sedang menunggu kelulusan daripada Penyedia Kereta. Butang pembayaran dan pengesahan pemulangan kenderaan akan dibuka setelah permohonan diluluskan.
+                                <div style="margin-top: 15px; border-top: 2px dashed var(--black); padding-top: 15px; text-align: left; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+                                    <div style="background: var(--yellow); border: 2px solid var(--black); padding: 10px 14px; font-weight: 800; font-size: 0.85rem; color: #000; flex: 1; min-width: 250px;">
+                                        <i class="bi bi-hourglass-split me-1"></i> Permohonan tempahan anda sedang menunggu kelulusan daripada Penyedia Kereta.
                                     </div>
+                                    <form action="" method="POST" style="margin: 0;" onsubmit="return confirm('Adakah anda pasti mahu membatalkan tempahan pending ini?');">
+                                        <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
+                                        <button type="submit" name="cancel_booking" class="neo-btn btn-pink mobile-btn-full" style="padding: 10px 16px; font-size: 0.85rem; white-space: nowrap;">
+                                            <i class="bi bi-x-circle-fill me-1"></i> Batalkan Tempahan
+                                        </button>
+                                    </form>
                                 </div>
                             <?php endif; ?>
                         </div>
@@ -1024,6 +872,13 @@ $result_bookings = $stmt->get_result();
                 closeReturnModal();
             }
         }
+
+        // Cegah paparan semula melalui butang Back selepas log keluar
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

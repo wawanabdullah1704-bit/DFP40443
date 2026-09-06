@@ -22,26 +22,59 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['add_car'])) {
     $seat_capacity = (int)$_POST['seat_capacity'];
     $price_per_day = (float)$_POST['price_per_day'];
     $price_per_hour = (float)$_POST['price_per_hour'];
+    $roadtax_expiry = !empty($_POST['roadtax_expiry']) ? $_POST['roadtax_expiry'] : null;
+    $insurance_expiry = !empty($_POST['insurance_expiry']) ? $_POST['insurance_expiry'] : null;
 
-    // Pengurusan Muat Naik Gambar
+    // Pengurusan Direktori Muat Naik
     $targetDir = "uploads/cars/";
     if (!is_dir($targetDir)) {
         mkdir($targetDir, 0777, true);
     }
+    $docDir = "uploads/cars/documents/";
+    if (!is_dir($docDir)) {
+        mkdir($docDir, 0777, true);
+    }
 
+    $time = time();
     $imageName = basename($_FILES["car_image"]["name"]);
-    $newImageName = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
+    $newImageName = $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
     $targetPath = $targetDir . $newImageName;
 
+    // Muat naik dokumen kenderaan
+    $targetGrant = null;
+    $targetRoadtax = null;
+    $targetInsurance = null;
+
+    if (!empty($_FILES["grant_file"]["name"])) {
+        $grantName = basename($_FILES["grant_file"]["name"]);
+        $newGrantName = $time . "_VOC_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $grantName);
+        $targetGrant = $docDir . $newGrantName;
+        move_uploaded_file($_FILES["grant_file"]["tmp_name"], $targetGrant);
+    }
+
+    if (!empty($_FILES["roadtax_file"]["name"])) {
+        $roadtaxName = basename($_FILES["roadtax_file"]["name"]);
+        $newRoadtaxName = $time . "_RT_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $roadtaxName);
+        $targetRoadtax = $docDir . $newRoadtaxName;
+        move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $targetRoadtax);
+    }
+
+    if (!empty($_FILES["insurance_file"]["name"])) {
+        $insuranceName = basename($_FILES["insurance_file"]["name"]);
+        $newInsuranceName = $time . "_INS_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $insuranceName);
+        $targetInsurance = $docDir . $newInsuranceName;
+        move_uploaded_file($_FILES["insurance_file"]["tmp_name"], $targetInsurance);
+    }
+
     if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-        $sql = "INSERT INTO cars (provider_id, car_brand, car_model, car_plate, transmission, seat_capacity, price_per_day, price_per_hour, car_image, status) 
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'Available')";
+        $sql = "INSERT INTO cars (provider_id, car_brand, car_model, car_plate, transmission, seat_capacity, price_per_day, price_per_hour, car_image, grant_file, roadtax_file, insurance_file, roadtax_expiry, insurance_expiry, status) 
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'Available')";
         
         $stmt = $conn->prepare($sql);
-        $stmt->bind_param("issssidds", $provider_id, $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath);
+        $stmt->bind_param("issssiddssssss", $provider_id, $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath, $targetGrant, $targetRoadtax, $targetInsurance, $roadtax_expiry, $insurance_expiry);
 
         if ($stmt->execute()) {
-            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: <strong>{$car_brand} {$car_model}</strong> telah ditambah ke dalam senarai kenderaan anda!</div>";
+            $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: <strong>{$car_brand} {$car_model}</strong> beserta dokumen sah laku telah ditambah ke dalam senarai kenderaan anda!</div>";
         } else {
             $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt->error . "</div>";
         }
@@ -62,43 +95,83 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['edit_car'])) {
     $seat_capacity = (int)$_POST['seat_capacity'];
     $price_per_day = (float)$_POST['price_per_day'];
     $price_per_hour = (float)$_POST['price_per_hour'];
+    $roadtax_expiry = !empty($_POST['roadtax_expiry']) ? $_POST['roadtax_expiry'] : null;
+    $insurance_expiry = !empty($_POST['insurance_expiry']) ? $_POST['insurance_expiry'] : null;
+
+    $docDir = "uploads/cars/documents/";
+    if (!is_dir($docDir)) {
+        mkdir($docDir, 0777, true);
+    }
+    $time = time();
+
+    // Dapatkan data sedia ada
+    $sql_cur = "SELECT car_image, grant_file, roadtax_file, insurance_file FROM cars WHERE id = ? AND provider_id = ?";
+    $stmt_cur = $conn->prepare($sql_cur);
+    $stmt_cur->bind_param("ii", $car_id, $provider_id);
+    $stmt_cur->execute();
+    $cur_car = $stmt_cur->get_result()->fetch_assoc();
+    $stmt_cur->close();
+
+    $newImagePath = $cur_car['car_image'];
+    $newGrantPath = $cur_car['grant_file'];
+    $newRoadtaxPath = $cur_car['roadtax_file'];
+    $newInsurancePath = $cur_car['insurance_file'];
 
     if (!empty($_FILES["car_image"]["name"])) {
         $targetDir = "uploads/cars/";
         $imageName = basename($_FILES["car_image"]["name"]);
-        $newImageName = time() . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
-        $targetPath = $targetDir . $newImageName;
-
-        // Ambil gambar lama untuk dipadam
-        $sql_old_img = "SELECT car_image FROM cars WHERE id = ? AND provider_id = ?";
-        $stmt_old = $conn->prepare($sql_old_img);
-        $stmt_old->bind_param("ii", $car_id, $provider_id);
-        $stmt_old->execute();
-        $res_old = $stmt_old->get_result();
-        if ($old_row = $res_old->fetch_assoc()) {
-            if (file_exists($old_row['car_image'])) {
-                unlink($old_row['car_image']);
+        $newImageName = $time . "_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $imageName);
+        $newImagePath = $targetDir . $newImageName;
+        if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $newImagePath)) {
+            if (!empty($cur_car['car_image']) && file_exists($cur_car['car_image'])) {
+                unlink($cur_car['car_image']);
             }
         }
-        $stmt_old->close();
+    }
 
-        if (move_uploaded_file($_FILES["car_image"]["tmp_name"], $targetPath)) {
-            $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=?, car_image=? WHERE id=? AND provider_id=?";
-            $stmt = $conn->prepare($sql);
-            $stmt->bind_param("sssiddssii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $targetPath, $car_id, $provider_id);
+    if (!empty($_FILES["grant_file"]["name"])) {
+        $grantName = basename($_FILES["grant_file"]["name"]);
+        $newGrantName = $time . "_VOC_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $grantName);
+        $newGrantPath = $docDir . $newGrantName;
+        if (move_uploaded_file($_FILES["grant_file"]["tmp_name"], $newGrantPath)) {
+            if (!empty($cur_car['grant_file']) && file_exists($cur_car['grant_file'])) {
+                unlink($cur_car['grant_file']);
+            }
         }
-    } else {
-        $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=? WHERE id=? AND provider_id=?";
-        $stmt = $conn->prepare($sql);
-        $stmt->bind_param("ssssiddii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $car_id, $provider_id);
     }
 
-    if (isset($stmt) && $stmt->execute()) {
-        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Maklumat <strong>{$car_brand} {$car_model}</strong> telah dikemaskini!</div>";
-    } else {
-        $message = "<div class='neo-alert alert-danger'>Ralat: Gagal mengemaskini maklumat kereta.</div>";
+    if (!empty($_FILES["roadtax_file"]["name"])) {
+        $roadtaxName = basename($_FILES["roadtax_file"]["name"]);
+        $newRoadtaxName = $time . "_RT_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $roadtaxName);
+        $newRoadtaxPath = $docDir . $newRoadtaxName;
+        if (move_uploaded_file($_FILES["roadtax_file"]["tmp_name"], $newRoadtaxPath)) {
+            if (!empty($cur_car['roadtax_file']) && file_exists($cur_car['roadtax_file'])) {
+                unlink($cur_car['roadtax_file']);
+            }
+        }
     }
-    if (isset($stmt)) $stmt->close();
+
+    if (!empty($_FILES["insurance_file"]["name"])) {
+        $insuranceName = basename($_FILES["insurance_file"]["name"]);
+        $newInsuranceName = $time . "_INS_" . preg_replace("/[^a-zA-Z0-9.]/", "_", $insuranceName);
+        $newInsurancePath = $docDir . $newInsuranceName;
+        if (move_uploaded_file($_FILES["insurance_file"]["tmp_name"], $newInsurancePath)) {
+            if (!empty($cur_car['insurance_file']) && file_exists($cur_car['insurance_file'])) {
+                unlink($cur_car['insurance_file']);
+            }
+        }
+    }
+
+    $sql = "UPDATE cars SET car_brand=?, car_model=?, car_plate=?, transmission=?, seat_capacity=?, price_per_day=?, price_per_hour=?, car_image=?, grant_file=?, roadtax_file=?, insurance_file=?, roadtax_expiry=?, insurance_expiry=? WHERE id=? AND provider_id=?";
+    $stmt = $conn->prepare($sql);
+    $stmt->bind_param("ssssiddssssssii", $car_brand, $car_model, $car_plate, $transmission, $seat_capacity, $price_per_day, $price_per_hour, $newImagePath, $newGrantPath, $newRoadtaxPath, $newInsurancePath, $roadtax_expiry, $insurance_expiry, $car_id, $provider_id);
+
+    if ($stmt->execute()) {
+        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Maklumat dan dokumen <strong>{$car_brand} {$car_model}</strong> telah dikemaskini!</div>";
+    } else {
+        $message = "<div class='neo-alert alert-danger'>Ralat: Gagal mengemaskini maklumat kereta (" . $stmt->error . ").</div>";
+    }
+    $stmt->close();
 }
 
 // 3. PROSES PADAM KERETA (DELETE)
@@ -212,227 +285,85 @@ $stmt_prov->close();
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Senarai Kereta - SCRS PMU</title>
     
+    <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; }
-        button, input, select { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
+        .page-header-actions {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); transition: var(--transition); border: none; background: none; cursor: pointer; }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* Dropdown Profil */
-        .profile-container { position: relative; }
-        .profile-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            padding: 8px 15px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
-
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            background-color: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 200px;
-            display: none;
-            flex-direction: column;
-            z-index: 1050;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: flex; }
-        .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 12px 15px;
-            font-weight: 800;
-            color: var(--black);
-            border-bottom: 2px solid var(--black);
-            text-decoration: none;
-        }
-        .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
-        .dropdown-item:hover { background-color: var(--yellow); }
-        .dropdown-item:last-child:hover { background-color: #ff33aa; }
-
-        /* SIDEBAR */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-link {
-            padding: 12px 15px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 15px; transition: var(--transition);
-        }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-
-        /* KANDUNGAN UTAMA */
-        .main-content { flex: 1; padding: 2rem 20px; max-width: 1200px; margin: 0 auto; width: 100%; }
-
-        .page-header-actions {
-            display: flex; justify-content: space-between; align-items: center;
-            margin-bottom: 25px; flex-wrap: wrap; gap: 15px;
+            margin-bottom: 22px;
+            flex-wrap: wrap;
+            gap: 12px;
         }
 
-        .neo-btn {
-            background-color: var(--yellow); border: 3px solid var(--black); box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900; text-transform: uppercase; padding: 10px 18px; cursor: pointer; transition: var(--transition);
-            display: inline-flex; align-items: center; gap: 8px; justify-content: center;
+        .cars-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 18px;
+            margin-bottom: 35px;
         }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-        .btn-blue { background-color: var(--blue); }
-        .btn-pink { background-color: var(--pink); }
-
-        .neo-alert {
-            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 15px 20px; font-weight: 800; margin-bottom: 25px; text-transform: uppercase;
-        }
-        .alert-success { background-color: var(--green); }
-        .alert-danger { background-color: var(--pink); }
-        .alert-warning { background-color: var(--yellow); }
-
-        /* CARDS GRID */
-        .cars-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
         
         .car-card {
-            background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid);
-            display: flex; flex-direction: column; position: relative; overflow: hidden;
+            background: var(--white);
+            border: var(--border-thick);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-solid);
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition);
         }
-        .car-img { height: 200px; width: 100%; object-fit: cover; border-bottom: var(--border-thick); }
-        .car-body { padding: 20px; display: flex; flex-direction: column; flex: 1; }
+        .car-card:hover {
+            box-shadow: var(--shadow-lg);
+        }
+        .car-img {
+            height: 180px;
+            width: 100%;
+            object-fit: cover;
+            border-bottom: var(--border-thick);
+            background-color: #eee;
+        }
+        .car-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+        }
         
-        .car-title { font-weight: 900; font-size: 1.2rem; text-transform: uppercase; margin-bottom: 4px; }
-        .car-plate { font-weight: 700; color: #555; margin-bottom: 12px; }
-
-        .neo-badge {
-            border: 2px solid var(--black); padding: 3px 8px; font-weight: 800;
-            font-size: 0.75rem; background: var(--bg-color); text-transform: uppercase;
-            border-radius: 4px; display: inline-block; box-shadow: none;
-        }
-        .badge-available { background-color: var(--green); }
-        .badge-unavailable { background-color: var(--pink); }
+        .car-title { font-weight: 900; font-size: 1.15rem; text-transform: uppercase; margin-bottom: 4px; }
+        .car-plate { font-weight: 700; color: #555; margin-bottom: 10px; font-size: 0.85rem; }
 
         .price-box {
-            background: var(--bg-color); border: 3px solid var(--black); padding: 12px; margin-top: auto; margin-bottom: 15px;
+            background: var(--bg-color);
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            padding: 10px 12px;
+            margin-top: auto;
+            margin-bottom: 14px;
         }
-        .price-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.9rem; }
-
-        /* MODAL */
-        .neo-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
-        }
-        .neo-modal-overlay.show { display: flex; }
-        
-        .neo-modal {
-            background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black);
-            width: 100%; max-width: 600px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 12px; margin-bottom: 20px; }
-        .modal-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-
-        .form-group { display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; }
-        .form-label { font-weight: 800; text-transform: uppercase; font-size: 0.85rem; }
-        .form-control, .form-select {
-            border: 3px solid var(--black); padding: 10px; font-weight: 700; background-color: var(--bg-color); outline: none; width: 100%;
-        }
-        .form-control:focus, .form-select:focus { background-color: var(--white); box-shadow: 3px 3px 0px var(--black); }
-        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
+        .price-row { display: flex; justify-content: space-between; font-weight: 700; font-size: 0.875rem; }
 
         .empty-box {
-            background: var(--white); border: var(--border-thick); box-shadow: var(--shadow-solid);
-            padding: 50px 20px; text-align: center;
+            background: var(--white);
+            border: var(--border-thick);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-solid);
+            padding: 40px 20px;
+            text-align: center;
         }
-        .empty-box i { font-size: 4rem; display: block; margin-bottom: 15px; }
+        .empty-box i { font-size: 3.5rem; display: block; margin-bottom: 12px; }
 
-        /* FOOTER */
-        footer {
-            background-color: var(--yellow); border-top: var(--border-thick); padding: 20px;
-            text-align: center; font-weight: 900; text-transform: uppercase; margin-top: auto;
+        @media (max-width: 900px) {
+            .cars-grid { grid-template-columns: repeat(2, 1fr); }
         }
-
-        /* RESPONSIVE MOBILE */
-        @media (max-width: 768px) {
+        @media (max-width: 600px) {
             .cars-grid { grid-template-columns: 1fr; }
-            .form-row { grid-template-columns: 1fr; }
-            .main-content { padding: 1rem 10px; }
-            .neo-brand { font-size: 1.2rem; }
-            .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
+            .form-row { grid-template-columns: 1fr !important; }
             .page-header-actions { flex-direction: column; align-items: stretch; }
             .page-header-actions .neo-btn { width: 100%; justify-content: center; }
         }
@@ -444,7 +375,7 @@ $stmt_prov->close();
     <header class="neo-navbar">
         <div class="neo-nav-left">
             <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="provider_dashboard.php" class="neo-brand">SCRS PMU (PROVIDER)</a>
+            <a href="provider_dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
 
         <div class="profile-container">
@@ -468,9 +399,9 @@ $stmt_prov->close();
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
-            <a href="provider_cars.php" class="sidebar-link active"><i class="bi bi-car-front-fill"></i> Senarai Kereta</a>
-            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Tempahan Semasa</a>
-            <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
+            <a href="provider_cars.php" class="sidebar-link active"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
 
@@ -479,17 +410,20 @@ $stmt_prov->close();
         
         <?php echo $message; ?>
 
-        <!-- HEADING PANDUAN PENGGUNA (TANPA KOTAK) -->
+        <!-- HEADING PANDUAN PENGGUNA (DENGAN BUTANG KEMBALI) -->
         <div style="margin-bottom: 25px;">
             <div class="page-header-actions" style="margin-bottom: 8px;">
                 <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 8px;">
                     <i class="bi bi-car-front-fill text-dark"></i> Senarai Kereta Sewaan
                 </h1>
-                <div style="display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button type="button" class="neo-btn btn-blue" onclick="openModal('qrCodeModal')">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                    <a href="provider_dashboard.php" class="neo-btn btn-sm btn-yellow">
+                        <i class="bi bi-arrow-left"></i> Papan Pemuka
+                    </a>
+                    <button type="button" class="neo-btn btn-sm btn-blue" onclick="openModal('qrCodeModal')">
                         <i class="bi bi-qr-code me-1"></i> QR Bayaran
                     </button>
-                    <button type="button" class="neo-btn btn-green" onclick="openModal('addCarModal')">
+                    <button type="button" class="neo-btn btn-sm btn-green" onclick="openModal('addCarModal')">
                         <i class="bi bi-plus-circle-fill me-1"></i> Tambah Kereta
                     </button>
                 </div>
@@ -534,6 +468,29 @@ $stmt_prov->close();
                                 <div class="price-row" style="margin-top: 5px;">
                                     <span>Kadar Sejam:</span>
                                     <strong>RM <?php echo number_format($car['price_per_hour'], 2); ?></strong>
+                                </div>
+                            </div>
+
+                            <!-- DOKUMEN & TARIKH SAH LAKU -->
+                            <div style="background: #f8fafc; border: 2px solid var(--black); padding: 10px; margin-bottom: 15px; font-size: 0.8rem; font-weight: 700;">
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                                    <span style="color: #666;"><i class="bi bi-calendar-event me-1"></i>Cukai Jalan:</span>
+                                    <strong><?php echo !empty($car['roadtax_expiry']) ? date('d/m/Y', strtotime($car['roadtax_expiry'])) : '<span style="color: #999;">Belum diisi</span>'; ?></strong>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                                    <span style="color: #666;"><i class="bi bi-calendar-check me-1"></i>Insurans:</span>
+                                    <strong><?php echo !empty($car['insurance_expiry']) ? date('d/m/Y', strtotime($car['insurance_expiry'])) : '<span style="color: #999;">Belum diisi</span>'; ?></strong>
+                                </div>
+                                <div style="display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; padding-top: 6px; border-top: 1px dashed #ccc;">
+                                    <?php if (!empty($car['grant_file'])): ?>
+                                        <a href="<?php echo htmlspecialchars($car['grant_file']); ?>" target="_blank" class="neo-badge" style="font-size: 0.7rem; padding: 2px 6px; background: var(--yellow); text-decoration: none;"><i class="bi bi-file-earmark-text me-1"></i>Geran</a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($car['roadtax_file'])): ?>
+                                        <a href="<?php echo htmlspecialchars($car['roadtax_file']); ?>" target="_blank" class="neo-badge" style="font-size: 0.7rem; padding: 2px 6px; background: var(--green); text-decoration: none;"><i class="bi bi-file-earmark-check me-1"></i>Roadtax</a>
+                                    <?php endif; ?>
+                                    <?php if (!empty($car['insurance_file'])): ?>
+                                        <a href="<?php echo htmlspecialchars($car['insurance_file']); ?>" target="_blank" class="neo-badge" style="font-size: 0.7rem; padding: 2px 6px; background: var(--blue); text-decoration: none; color: #fff;"><i class="bi bi-shield-check me-1"></i>Insurans</a>
+                                    <?php endif; ?>
                                 </div>
                             </div>
 
@@ -636,6 +593,60 @@ $stmt_prov->close();
                     </div>
                 </div>
 
+                <!-- DOKUMEN KENDERAAN & TARIKH SAH LAKU -->
+                <div style="border-top: 2px dashed var(--black); margin: 20px 0 15px 0; padding-top: 15px;">
+                    <h5 style="font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin-bottom: 12px; color: #0055ff;">
+                        <i class="bi bi-file-earmark-lock2-fill me-1"></i> Dokumen Kenderaan & Tarikh Sah Laku
+                    </h5>
+
+                    <!-- KOTAK PERINGATAN PRIVASI UNTUK SIJIL PEMILIKAN (VOC / GERAN) -->
+                    <div class="neo-alert" style="background: #fff8e1; border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); padding: 12px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.45;">
+                        <div style="font-weight: 900; color: #b78103; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-shield-exclamation fs-5"></i> <strong>Panduan Privasi Sijil Pemilikan Kenderaan (VOC / Geran):</strong>
+                        </div>
+                        <p style="margin: 0 0 6px 0; font-weight: 700; color: #333;">
+                            Pemilik kenderaan diminta menutup (sensor/mask) maklumat peribadi sensitif (seperti nama pemilik lama, nombor kad pengenalan, atau alamat kediaman) sebelum memuat naik salinan geran.
+                        </p>
+                        <p style="margin: 0; font-weight: 800; color: #000;">
+                            <strong>Maklumat yang WAJIB kelihatan jelas hanyalah:</strong>
+                        </p>
+                        <ul style="margin: 4px 0 0 18px; padding: 0; font-weight: 700; color: #444;">
+                            <li>1. Nombor Pendaftaran Kenderaan (No Plat)</li>
+                            <li>2. Nombor Chasis / Nombor Enjin</li>
+                            <li>3. Buatan / Nama Model</li>
+                            <li>4. Keupayaan Enjin (CC)</li>
+                            <li>5. Bahan Bakar (Petrol/Diesel)</li>
+                        </ul>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label"><i class="bi bi-file-earmark-text-fill text-primary me-1"></i> Salinan Sijil Pemilikan Kenderaan (Geran / VOC)</label>
+                        <input type="file" class="form-control" name="grant_file" accept=".jpg,.jpeg,.png,.pdf" required style="border-style: dashed;">
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-calendar-event me-1"></i> Cukai Jalan Sah Sehingga</label>
+                            <input type="date" class="form-control" name="roadtax_expiry" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-file-earmark-check me-1"></i> Salinan Cukai Jalan (Roadtax)</label>
+                            <input type="file" class="form-control" name="roadtax_file" accept=".jpg,.jpeg,.png,.pdf" required style="border-style: dashed;">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-calendar-check me-1"></i> Insurans Sah Sehingga</label>
+                            <input type="date" class="form-control" name="insurance_expiry" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-shield-check me-1"></i> Salinan Polisi Insurans</label>
+                            <input type="file" class="form-control" name="insurance_file" accept=".jpg,.jpeg,.png,.pdf" required style="border-style: dashed;">
+                        </div>
+                    </div>
+                </div>
+
                 <div style="display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; border-top: 3px solid var(--black); padding-top: 15px;">
                     <button type="button" class="neo-btn" style="background: #ccc;" onclick="closeModal('addCarModal')">Batal</button>
                     <button type="submit" name="add_car" class="neo-btn btn-green"><i class="bi bi-check-circle-fill me-1"></i> Simpan Kereta</button>
@@ -697,6 +708,53 @@ $stmt_prov->close();
                     <div class="form-group">
                         <label class="form-label">Harga Sejam (RM)</label>
                         <input type="number" step="0.01" class="form-control" name="price_per_hour" id="edit_price_per_hour" required>
+                    </div>
+                </div>
+
+                <!-- DOKUMEN KENDERAAN & TARIKH SAH LAKU (EDIT) -->
+                <div style="border-top: 2px dashed var(--black); margin: 20px 0 15px 0; padding-top: 15px;">
+                    <h5 style="font-weight: 900; text-transform: uppercase; font-size: 0.95rem; margin-bottom: 12px; color: #0055ff;">
+                        <i class="bi bi-file-earmark-lock2-fill me-1"></i> Dokumen Kenderaan & Tarikh Sah Laku
+                    </h5>
+
+                    <!-- KOTAK PERINGATAN PRIVASI UNTUK SIJIL PEMILIKAN (VOC / GERAN) -->
+                    <div class="neo-alert" style="background: #fff8e1; border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); padding: 12px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.45;">
+                        <div style="font-weight: 900; color: #b78103; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
+                            <i class="bi bi-shield-exclamation fs-5"></i> <strong>Panduan Privasi Sijil Pemilikan Kenderaan (VOC / Geran):</strong>
+                        </div>
+                        <p style="margin: 0; font-weight: 700; color: #333;">
+                            Pastikan maklumat sensitif ditutup sebelum memuat naik. Hanya no. pendaftaran, no. chasis/enjin, buatan/model, cc enjin dan bahan bakar diperlukan.
+                        </p>
+                    </div>
+
+                    <div class="form-group" style="margin-bottom: 15px;">
+                        <label class="form-label"><i class="bi bi-file-earmark-text-fill text-primary me-1"></i> Tukar Sijil Pemilikan Kenderaan (Pilihan)</label>
+                        <input type="file" class="form-control" name="grant_file" accept=".jpg,.jpeg,.png,.pdf" style="border-style: dashed;">
+                        <div id="current_grant_file" style="margin-top: 5px; font-size: 0.8rem; font-weight: 700;"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-calendar-event me-1"></i> Cukai Jalan Sah Sehingga</label>
+                            <input type="date" class="form-control" name="roadtax_expiry" id="edit_roadtax_expiry" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-file-earmark-check me-1"></i> Tukar Cukai Jalan (Pilihan)</label>
+                            <input type="file" class="form-control" name="roadtax_file" accept=".jpg,.jpeg,.png,.pdf" style="border-style: dashed;">
+                            <div id="current_roadtax_file" style="margin-top: 5px; font-size: 0.8rem; font-weight: 700;"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-calendar-check me-1"></i> Insurans Sah Sehingga</label>
+                            <input type="date" class="form-control" name="insurance_expiry" id="edit_insurance_expiry" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label"><i class="bi bi-shield-check me-1"></i> Tukar Polisi Insurans (Pilihan)</label>
+                            <input type="file" class="form-control" name="insurance_file" accept=".jpg,.jpeg,.png,.pdf" style="border-style: dashed;">
+                            <div id="current_insurance_file" style="margin-top: 5px; font-size: 0.8rem; font-weight: 700;"></div>
+                        </div>
                     </div>
                 </div>
 
@@ -795,6 +853,30 @@ $stmt_prov->close();
             document.getElementById('edit_seat_capacity').value = car.seat_capacity;
             document.getElementById('edit_price_per_day').value = car.price_per_day;
             document.getElementById('edit_price_per_hour').value = car.price_per_hour;
+            document.getElementById('edit_roadtax_expiry').value = car.roadtax_expiry || '';
+            document.getElementById('edit_insurance_expiry').value = car.insurance_expiry || '';
+
+            const grantContainer = document.getElementById('current_grant_file');
+            if (car.grant_file) {
+                grantContainer.innerHTML = `<span style="color: #2e7d32;">Fail sedia ada: <a href="${car.grant_file}" target="_blank" style="text-decoration: underline; font-weight: 800;"><i class="bi bi-file-earmark-pdf me-1"></i>Buka Geran</a></span>`;
+            } else {
+                grantContainer.innerHTML = `<span style="color: #999;">Tiada fail geran dimuat naik</span>`;
+            }
+
+            const roadtaxContainer = document.getElementById('current_roadtax_file');
+            if (car.roadtax_file) {
+                roadtaxContainer.innerHTML = `<span style="color: #2e7d32;">Fail sedia ada: <a href="${car.roadtax_file}" target="_blank" style="text-decoration: underline; font-weight: 800;"><i class="bi bi-file-earmark-pdf me-1"></i>Buka Roadtax</a></span>`;
+            } else {
+                roadtaxContainer.innerHTML = `<span style="color: #999;">Tiada fail roadtax dimuat naik</span>`;
+            }
+
+            const insuranceContainer = document.getElementById('current_insurance_file');
+            if (car.insurance_file) {
+                insuranceContainer.innerHTML = `<span style="color: #2e7d32;">Fail sedia ada: <a href="${car.insurance_file}" target="_blank" style="text-decoration: underline; font-weight: 800;"><i class="bi bi-file-earmark-pdf me-1"></i>Buka Insurans</a></span>`;
+            } else {
+                insuranceContainer.innerHTML = `<span style="color: #999;">Tiada fail insurans dimuat naik</span>`;
+            }
+
             openModal('editCarModal');
         }
     </script>

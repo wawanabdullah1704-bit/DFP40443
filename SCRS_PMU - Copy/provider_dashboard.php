@@ -117,191 +117,14 @@ $stmt_lat->close();
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Space Grotesk', sans-serif;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        ul { list-style: none; }
-        button { border: none; background: none; cursor: pointer; font-family: inherit; }
-
-        /* --- NAVBAR --- */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        
-        .menu-toggle-btn {
-            font-size: 2rem;
-            color: var(--black);
-            transition: var(--transition);
-        }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-
-        .neo-brand {
-            font-size: 1.5rem;
-            font-weight: 900;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        /* --- DROPDOWN PROFIL --- */
-        .profile-container { position: relative; }
-        
-        .profile-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            padding: 8px 15px;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: var(--shadow-solid); }
-        .profile-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 10px);
-            right: 0;
-            background-color: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 200px;
-            display: none;
-            flex-direction: column;
-            z-index: 1050;
-            margin: 0;
-            padding: 0;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: flex; }
-        .dropdown-menu li { width: 100%; margin: 0; padding: 0; }
-        
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            width: 100%;
-            padding: 12px 15px;
-            font-weight: 800;
-            color: var(--black);
-            border-bottom: 2px solid var(--black);
-            transition: background 0.1s;
-            text-decoration: none;
-        }
-        .dropdown-item:last-child { border-bottom: none; background-color: var(--pink); }
-        .dropdown-item:hover { background-color: var(--yellow); }
-        .dropdown-item:last-child:hover { background-color: #ff33aa; }
-
-        /* --- SIDEBAR (OFFCANVAS) --- */
-        .sidebar-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1005;
-            display: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed;
-            top: 0; left: -300px;
-            width: 280px; height: 100%;
-            background-color: var(--bg-color);
-            border-right: var(--border-thick);
-            z-index: 1010;
-            transition: left 0.3s ease;
-            display: flex;
-            flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px;
-            background-color: var(--yellow);
-            border-bottom: var(--border-thick);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn {
-            border: 3px solid var(--black);
-            background: var(--white);
-            padding: 5px 10px;
-            font-weight: 900;
-            box-shadow: 2px 2px 0px var(--black);
-        }
-        .close-btn:active { transform: translate(2px, 2px); box-shadow: 0px 0px 0px var(--black); }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 10px; }
-        .sidebar-link {
-            padding: 12px 15px;
-            border: 3px solid transparent;
-            font-weight: 800;
-            text-transform: uppercase;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            transition: var(--transition);
-        }
-        .sidebar-link.active { border: 3px solid var(--black); background: var(--white); box-shadow: 4px 4px 0px var(--black); }
-        .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-
-        /* --- KANDUNGAN UTAMA --- */
-        .main-content { flex: 1; }
-
-        /* --- CAROUSEL (SLEEK HERO BANNER) --- */
+        /* --- CAROUSEL HERO --- */
         .carousel-container {
             width: 100%;
-            height: 360px;
+            height: 340px;
             position: relative;
             overflow: hidden;
             border-bottom: var(--border-thick);
@@ -310,7 +133,7 @@ $stmt_lat->close();
         .carousel-track {
             display: flex;
             height: 100%;
-            transition: transform 0.5s ease-in-out;
+            transition: transform 0.45s ease-in-out;
         }
         .carousel-slide {
             min-width: 100%;
@@ -324,15 +147,14 @@ $stmt_lat->close();
             filter: contrast(105%) brightness(0.65);
         }
         
-        /* Modern Hero Caption Overlay (Left-Aligned & Mobile Friendly) */
         .carousel-caption-wrapper {
             position: absolute;
             inset: 0;
-            background: linear-gradient(180deg, rgba(0,0,0,0.15) 0%, rgba(0,0,0,0.85) 100%);
+            background: linear-gradient(180deg, rgba(0,0,0,0.1) 0%, rgba(0,0,0,0.85) 100%);
             display: flex;
             flex-direction: column;
             justify-content: flex-end;
-            padding: 30px 40px;
+            padding: 24px 30px;
             text-align: left;
         }
         .carousel-badge {
@@ -341,25 +163,26 @@ $stmt_lat->close();
             font-weight: 900;
             font-size: 0.8rem;
             text-transform: uppercase;
-            padding: 4px 10px;
-            border: 2px solid var(--black);
+            padding: 3px 10px;
+            border: var(--border-thin);
+            border-radius: var(--radius-full);
             display: inline-block;
             margin-bottom: 8px;
             width: fit-content;
-            box-shadow: 3px 3px 0px var(--black);
+            box-shadow: var(--shadow-sm);
         }
         .carousel-caption-wrapper h1 {
-            font-size: 2rem;
+            font-size: 1.8rem;
             font-weight: 900;
             text-transform: uppercase;
             color: var(--white);
-            margin-bottom: 6px;
+            margin-bottom: 4px;
             text-shadow: 2px 2px 0px var(--black);
             line-height: 1.2;
         }
         .carousel-caption-wrapper p {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 0.95rem;
             color: #f0f0f0;
             margin: 0;
             max-width: 600px;
@@ -371,9 +194,10 @@ $stmt_lat->close();
             transform: translateY(-50%);
             background-color: var(--white);
             border: var(--border-thick);
-            box-shadow: 3px 3px 0px var(--black);
-            padding: 8px 14px;
-            font-size: 1.3rem;
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
+            padding: 6px 12px;
+            font-size: 1.2rem;
             font-weight: 900;
             cursor: pointer;
             transition: var(--transition);
@@ -388,70 +212,81 @@ $stmt_lat->close();
         .section-container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 2rem 20px;
+            padding: 1.75rem 20px;
             text-align: left;
         }
         
         .section-title {
-            font-size: 1.2rem;
+            font-size: 1.15rem;
             font-weight: 900;
             text-transform: uppercase;
             color: var(--black);
             display: flex;
             align-items: center;
             gap: 8px;
-            margin-bottom: 16px;
+            margin-bottom: 15px;
             border-bottom: 3px solid var(--black);
             padding-bottom: 6px;
-            text-align: left;
         }
 
         .neo-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 20px;
-            margin-bottom: 30px;
+            gap: 16px;
+            margin-bottom: 24px;
         }
         .neo-grid-4 {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
-            gap: 15px;
-            margin-bottom: 30px;
+            gap: 14px;
+            margin-bottom: 24px;
         }
 
-        /* STATISTIK IMBASAN PENYEDIA (PAPAN METRIK MAKLUMAT - BUKAN BUTTON) */
+        /* STAT WIDGETS */
         .stat-widget {
             background-color: var(--white);
-            border: 2px solid #ccc;
-            border-top: 4px solid var(--black);
-            box-shadow: none !important;
-            padding: 16px 18px;
+            border: var(--border-thick);
+            border-radius: var(--radius-lg);
+            padding: 16px 14px;
             text-align: left;
             display: flex;
             align-items: center;
-            justify-content: space-between;
-            position: relative;
+            gap: 14px;
             cursor: default;
             user-select: none;
-            border-radius: 4px;
+            box-shadow: var(--shadow-solid);
+            transition: var(--transition);
         }
-        .stat-widget.border-b { border-top: 4px solid #00b0ff; }
-        .stat-widget.border-y { border-top: 4px solid #ffb300; }
-        .stat-widget.border-g { border-top: 4px solid #00c853; }
-        .stat-widget.border-p { border-top: 4px solid #e91e63; }
+        .stat-widget:hover {
+            transform: translate(-2px, -2px);
+            box-shadow: var(--shadow-lg);
+        }
         
         .stat-widget .stat-info { display: flex; flex-direction: column; }
-        .stat-widget h2 { font-size: 2rem; font-weight: 900; line-height: 1; margin-bottom: 4px; color: var(--black); }
-        .stat-widget p { font-weight: 800; font-size: 0.8rem; text-transform: uppercase; color: #666; margin: 0; }
-        .stat-widget .stat-icon { font-size: 2.2rem; }
-        .icon-b { color: #00b0ff; }
-        .icon-y { color: #ffb300; }
-        .icon-g { color: #00c853; }
-        .icon-p { color: #e91e63; }
+        .stat-widget h2 { font-size: 1.6rem; font-weight: 900; line-height: 1.1; margin-bottom: 2px; color: var(--black); }
+        .stat-widget p { font-weight: 800; font-size: 0.75rem; text-transform: uppercase; color: #666; margin: 0; }
+        .stat-widget .stat-icon {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.35rem;
+            color: var(--black);
+        }
+        .icon-box-b { background-color: var(--blue); }
+        .icon-box-y { background-color: var(--yellow); }
+        .icon-box-g { background-color: var(--green); }
+        .icon-box-p { background-color: var(--pink); }
 
-        /* KAD MENU TINDAKAN PENYEDIA (AKSES PINTAS - BOLEH DITEKAN) */
+        /* ACTION CARDS */
         .action-card {
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
             padding: 16px 14px;
             text-align: center;
@@ -461,130 +296,52 @@ $stmt_lat->close();
             justify-content: center;
             cursor: pointer;
             transition: var(--transition);
-            position: relative;
-        }
-        .action-card:hover { 
-            transform: translate(-3px, -3px); 
-            box-shadow: 8px 8px 0px var(--black); 
-        }
-        .action-card:active { 
-            transform: translate(3px, 3px); 
-            box-shadow: 0px 0px 0px var(--black); 
-        }
-        .action-card h4 { font-size: 1rem; font-weight: 900; text-transform: uppercase; margin: 8px 0 0 0; line-height: 1.2; }
-        .action-card .action-icon { font-size: 2.2rem; }
-
-        /* Warna Latar */
-        .bg-y { background-color: var(--yellow); }
-        .bg-g { background-color: var(--green); }
-        .bg-b { background-color: var(--blue); }
-        .bg-p { background-color: var(--pink); }
-        .bg-w { background-color: var(--white); }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 10px 18px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            justify-content: center;
             text-decoration: none;
             color: var(--black);
         }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-        .btn-blue { background-color: var(--blue); }
-        .btn-pink { background-color: var(--pink); }
-
-        .neo-alert {
-            border: var(--border-thick);
-            box-shadow: 4px 4px 0px var(--black);
-            padding: 15px 20px;
-            font-weight: 800;
-            margin-bottom: 25px;
-            text-transform: uppercase;
-            text-align: left;
+        .action-card:hover { 
+            transform: translate(-2px, -2px); 
+            box-shadow: var(--shadow-lg); 
         }
-        .alert-success { background-color: var(--green); }
-        .alert-danger { background-color: var(--pink); }
-        .alert-warning { background-color: var(--yellow); }
-
-        /* MODAL */
-        .neo-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000; display: none; align-items: center; justify-content: center; padding: 15px;
+        .action-card:active { 
+            transform: translate(2px, 2px); 
+            box-shadow: var(--shadow-active); 
         }
-        .neo-modal-overlay.show { display: flex; }
-        .neo-modal {
-            background: var(--white); border: var(--border-thick); box-shadow: 10px 10px 0px var(--black);
-            width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
-            text-align: left;
-        }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 12px; margin-bottom: 20px; }
-        .modal-title { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
+        .action-card h4 { font-size: 0.95rem; font-weight: 900; text-transform: uppercase; margin: 8px 0 0 0; }
+        .action-card .action-icon { font-size: 2rem; }
 
-        /* --- FOOTER --- */
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
-        }
+        .bg-y { background-color: var(--yellow); }
+        .bg-g { background-color: var(--green); }
+        .bg-b { background-color: var(--blue); }
 
-        /* --- RESPONSIVE MOBILE (TIADA SCROLL, COMPACT HORIZONTAL GRID) --- */
         @media (max-width: 768px) {
-            .neo-brand { font-size: 1.2rem; }
-            .profile-btn { padding: 6px 10px; font-size: 0.85rem; }
-            
             .carousel-container { height: 210px; }
-            .carousel-caption-wrapper { padding: 12px 16px; }
-            .carousel-caption-wrapper h1 { font-size: 1.1rem; margin-bottom: 3px; }
+            .carousel-caption-wrapper { padding: 14px 16px; }
+            .carousel-caption-wrapper h1 { font-size: 1.15rem; margin-bottom: 2px; }
             .carousel-caption-wrapper p { font-size: 0.8rem; }
-            .carousel-btn { padding: 3px 6px; font-size: 1rem; }
+            .carousel-btn { padding: 4px 8px; font-size: 1rem; }
 
-            .section-container { padding: 1rem 10px; }
-            
-            .neo-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 18px; }
-            
-            /* SUSUNAN 3 RUANGAN MENDATAR (TIADA SCROLL) */
-            .neo-grid {
-                grid-template-columns: repeat(3, 1fr);
-                gap: 8px;
-                margin-bottom: 18px;
-            }
+            .section-container { padding: 1.2rem 14px; }
+            .neo-grid-4 { grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 16px; }
+            .neo-grid { grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 16px; }
             
             .stat-widget {
                 padding: 10px 4px;
-                box-shadow: none !important;
                 flex-direction: column;
                 text-align: center;
                 align-items: center;
-                gap: 2px;
-                border-radius: 4px;
-                background: #ffffff;
             }
-            .stat-widget h2 { font-size: 1.3rem; margin-bottom: 2px; }
-            .stat-widget p { font-size: 0.62rem; font-weight: 700; color: #666; }
+            .stat-widget h2 { font-size: 1.3rem; }
+            .stat-widget p { font-size: 0.62rem; }
             .stat-widget .stat-icon { font-size: 1.2rem; order: -1; margin-bottom: 2px; }
 
-            /* KAD AKSES PINTAS COMPACT PADA MOBILE (3-COLUMNS) */
             .action-card {
                 padding: 12px 4px;
-                box-shadow: 3px 3px 0px var(--black);
+                box-shadow: var(--shadow-sm);
             }
-            .action-card:hover { transform: none; box-shadow: 3px 3px 0px var(--black); }
-            .action-card:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0px var(--black); }
-            .action-card .action-icon { font-size: 1.6rem; }
+            .action-card:hover { transform: none; box-shadow: var(--shadow-sm); }
+            .action-card:active { transform: translate(2px, 2px); box-shadow: var(--shadow-active); }
+            .action-card .action-icon { font-size: 1.5rem; }
             .action-card h4 { font-size: 0.72rem; margin-top: 4px; }
         }
     </style>
@@ -597,7 +354,7 @@ $stmt_lat->close();
             <button class="menu-toggle-btn" id="open-sidebar">
                 <i class="bi bi-list"></i>
             </button>
-            <a href="provider_dashboard.php" class="neo-brand">SCRS PMU (PROVIDER)</a>
+            <a href="provider_dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
 
         <div class="profile-container">
@@ -621,9 +378,9 @@ $stmt_lat->close();
         </div>
         <nav class="sidebar-nav">
             <a href="provider_dashboard.php" class="sidebar-link active"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
-            <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Senarai Kereta</a>
-            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-clipboard-check-fill"></i> Tempahan Semasa</a>
-            <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Sejarah Rekod</a>
+            <a href="provider_cars.php" class="sidebar-link"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
+            <a href="provider_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
+            <a href="provider_history.php" class="sidebar-link"><i class="bi bi-clock-history"></i> Rekod Tempahan</a>
         </nav>
     </aside>
 
@@ -690,29 +447,37 @@ $stmt_lat->close();
             <!-- STATISTIK RINGKASAN (PAPAN METRIK MAKLUMAT - BUKAN BUTTON) -->
             <div class="section-title"><i class="bi bi-bar-chart-fill me-1"></i> Imbasan Sistem</div>
             <div class="neo-grid-4">
-                <div class="stat-widget border-b">
-                    <i class="bi bi-car-front-fill stat-icon icon-b"></i>
+                <div class="stat-widget">
+                    <div class="stat-icon icon-box-b">
+                        <i class="bi bi-car-front-fill"></i>
+                    </div>
                     <div class="stat-info">
                         <h2><?php echo $total_cars; ?></h2>
                         <p>Jumlah Kereta</p>
                     </div>
                 </div>
-                <div class="stat-widget border-y">
-                    <i class="bi bi-hourglass-split stat-icon icon-y"></i>
+                <div class="stat-widget">
+                    <div class="stat-icon icon-box-y">
+                        <i class="bi bi-hourglass-split"></i>
+                    </div>
                     <div class="stat-info">
                         <h2><?php echo $total_pending; ?></h2>
                         <p>Menunggu</p>
                     </div>
                 </div>
-                <div class="stat-widget border-g">
-                    <i class="bi bi-clipboard-check-fill stat-icon icon-g"></i>
+                <div class="stat-widget">
+                    <div class="stat-icon icon-box-g">
+                        <i class="bi bi-clipboard-check-fill"></i>
+                    </div>
                     <div class="stat-info">
                         <h2><?php echo $total_active; ?></h2>
                         <p>Aktif</p>
                     </div>
                 </div>
-                <div class="stat-widget border-p">
-                    <i class="bi bi-cash-stack stat-icon icon-p"></i>
+                <div class="stat-widget">
+                    <div class="stat-icon icon-box-p">
+                        <i class="bi bi-cash-stack"></i>
+                    </div>
                     <div class="stat-info">
                         <h2>RM <?php echo number_format($total_earnings, 0); ?></h2>
                         <p>Pendapatan</p>
@@ -738,7 +503,7 @@ $stmt_lat->close();
                 </div>
                 <div class="action-card bg-w" onclick="window.location.href='provider_history.php'">
                     <i class="bi bi-clock-history action-icon"></i>
-                    <h4>Sejarah Rekod</h4>
+                    <h4>Rekod Tempahan</h4>
                 </div>
             </div>
 
@@ -885,6 +650,13 @@ $stmt_lat->close();
             const modal = document.getElementById(modalId);
             if (modal) modal.classList.remove('show');
         };
+
+        // Cegah paparan semula melalui butang Back selepas log keluar
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

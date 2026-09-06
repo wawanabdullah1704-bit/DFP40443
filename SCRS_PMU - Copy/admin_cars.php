@@ -175,190 +175,37 @@ $cars_result = $stmt_list->get_result();
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --orange: #ff914d;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        button, input, select { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .neo-nav-left { display: flex; align-items: center; gap: 15px; }
-        .menu-toggle-btn { font-size: 2rem; color: var(--black); background: none; border: none; cursor: pointer; transition: var(--transition); }
-        .menu-toggle-btn:hover { transform: scale(1.1); }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
-        /* PROFILE DROPDOWN */
-        .nav-right-actions { display: flex; align-items: center; gap: 12px; }
-        .profile-container { position: relative; }
-        .profile-btn {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            padding: 8px 14px;
-            font-weight: 800;
-            box-shadow: 4px 4px 0px var(--black);
-            cursor: pointer;
-            transition: var(--transition);
-        }
-        .profile-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 8px);
-            right: 0;
-            background: var(--white);
-            border: 3px solid var(--black);
-            box-shadow: 6px 6px 0px var(--black);
-            width: 170px;
-            display: none;
-            z-index: 1001;
-            list-style: none;
-        }
-        .dropdown-menu.show { display: block; }
-        .dropdown-item {
-            display: flex;
-            align-items: center;
-            padding: 10px 14px;
-            font-weight: 700;
-            font-size: 0.9rem;
-            color: var(--black);
-            text-decoration: none;
-            transition: var(--transition);
-        }
-        .dropdown-item:hover { background-color: var(--pink); color: var(--black); }
-
-        /* SIDEBAR */
-        .sidebar-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.5); z-index: 1005; display: none; opacity: 0; transition: opacity 0.3s;
-        }
-        .sidebar-overlay.show { display: block; opacity: 1; }
-
-        .sidebar {
-            position: fixed; top: 0; left: -300px; width: 280px; height: 100%;
-            background-color: var(--bg-color); border-right: var(--border-thick);
-            z-index: 1010; transition: left 0.3s ease; display: flex; flex-direction: column;
-        }
-        .sidebar.open { left: 0; }
-        
-        .sidebar-header {
-            padding: 20px; background-color: var(--yellow); border-bottom: var(--border-thick);
-            display: flex; justify-content: space-between; align-items: center;
-        }
-        .sidebar-header h2 { font-weight: 900; text-transform: uppercase; font-size: 1.2rem; }
-        .close-btn { border: 3px solid var(--black); background: var(--white); padding: 5px 10px; font-weight: 900; box-shadow: 2px 2px 0px var(--black); cursor: pointer; }
-
-        .sidebar-nav { padding: 20px; display: flex; flex-direction: column; gap: 8px; overflow-y: auto; }
-        .sidebar-link {
-            padding: 10px 14px; border: 3px solid transparent; font-weight: 800;
-            text-transform: uppercase; display: flex; align-items: center; gap: 12px; transition: var(--transition);
-            font-size: 0.9rem;
-        }
-        .sidebar-link.active, .sidebar-link:hover { border: 3px solid var(--black); background: var(--white); transform: translate(-2px, -2px); box-shadow: 4px 4px 0px var(--black); }
-        .sidebar-link.logout-link:hover { background-color: var(--pink); }
-
-        /* MAIN CONTENT */
-        .main-content {
-            flex: 1;
-            padding: 2rem 20px;
-            max-width: 1200px;
-            margin: 0 auto;
-            width: 100%;
-        }
-
         .page-header {
-            margin-bottom: 25px;
+            margin-bottom: 22px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 10px 16px;
-            cursor: pointer;
-            transition: var(--transition);
-            display: inline-flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 0.9rem;
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-        .btn-blue { background-color: var(--blue); }
-        .btn-pink { background-color: var(--pink); }
-
-        .neo-alert {
-            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 12px 15px; font-weight: 800; margin-bottom: 20px; text-transform: uppercase; font-size: 0.9rem;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .alert-success { background-color: var(--green); }
-        .alert-danger { background-color: var(--pink); }
 
         /* FILTER CARD */
         .filter-card {
             background-color: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-solid);
-            padding: 15px 20px;
-            margin-bottom: 25px;
+            padding: 14px 18px;
+            margin-bottom: 22px;
         }
         .filter-form {
             display: flex;
-            gap: 12px;
+            gap: 10px;
             align-items: center;
             flex-wrap: wrap;
         }
         .filter-input {
-            border: 3px solid var(--black);
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
             padding: 9px 12px;
             font-weight: 700;
             background-color: var(--bg-color);
@@ -366,7 +213,8 @@ $cars_result = $stmt_list->get_result();
             min-width: 200px;
         }
         .filter-select {
-            border: 3px solid var(--black);
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
             padding: 9px 12px;
             font-weight: 800;
             background-color: var(--bg-color);
@@ -376,98 +224,65 @@ $cars_result = $stmt_list->get_result();
         .table-card {
             background-color: var(--white);
             border: var(--border-thick);
+            border-radius: var(--radius-xl);
             box-shadow: var(--shadow-solid);
-            padding: 20px;
+            padding: 18px;
         }
         .neo-table-wrapper { overflow-x: auto; }
         .neo-table {
             width: 100%;
-            border-collapse: collapse;
+            border-collapse: separate;
+            border-spacing: 0;
+            border: var(--border-thin);
+            border-radius: var(--radius-md);
+            overflow: hidden;
             text-align: left;
             font-weight: 700;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
         }
         .neo-table th {
             background-color: var(--blue);
-            border: 2px solid var(--black);
-            padding: 10px;
+            border-bottom: var(--border-thin);
+            border-right: var(--border-thin);
+            padding: 9px 12px;
             text-transform: uppercase;
             font-weight: 900;
-            font-size: 0.85rem;
+            font-size: 0.8rem;
             white-space: nowrap;
         }
         .neo-table td {
-            border: 2px solid var(--black);
-            padding: 10px;
+            border-bottom: var(--border-thin);
+            border-right: var(--border-thin);
+            padding: 9px 12px;
             vertical-align: middle;
+        }
+        .neo-table th:last-child, .neo-table td:last-child {
+            border-right: none;
+        }
+        .neo-table tr:last-child td {
+            border-bottom: none;
         }
         .neo-table tr:nth-child(even) { background-color: #fafafa; }
 
         .car-thumb {
-            width: 65px;
-            height: 45px;
+            width: 60px;
+            height: 42px;
             object-fit: cover;
-            border: 2px solid var(--black);
-            box-shadow: 2px 2px 0px var(--black);
+            border: var(--border-thin);
+            border-radius: var(--radius-sm);
+            box-shadow: var(--shadow-sm);
         }
-
-        .neo-badge {
-            border: 2px solid var(--black);
-            padding: 3px 8px;
-            font-weight: 900;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            display: inline-flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .badge-approved { background-color: var(--green); }
-        .badge-rejected { background-color: var(--pink); }
 
         .action-btns { display: flex; gap: 6px; flex-wrap: wrap; }
         .btn-sm {
             padding: 5px 10px;
             font-size: 0.8rem;
-            border-width: 2px;
-            box-shadow: 2px 2px 0px var(--black);
-        }
-
-        /* MODAL POPUP */
-        .neo-modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.6); z-index: 2000;
-            display: none; align-items: center; justify-content: center; padding: 15px;
-        }
-        .neo-modal-overlay.show { display: flex; }
-        .neo-modal {
-            background: var(--white); border: var(--border-thick);
-            box-shadow: 10px 10px 0px var(--black); width: 100%; max-width: 550px;
-            max-height: 90vh; overflow-y: auto; padding: 25px; position: relative;
-        }
-        .modal-header {
-            display: flex; justify-content: space-between; align-items: center;
-            border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;
-        }
-        .form-group { margin-bottom: 14px; display: flex; flex-direction: column; gap: 4px; }
-        .form-label { font-weight: 800; text-transform: uppercase; font-size: 0.8rem; color: #333; }
-        .form-control {
-            border: 2px solid var(--black); padding: 8px 10px; font-weight: 700;
-            background-color: var(--bg-color); width: 100%;
-        }
-
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
+            box-shadow: var(--shadow-sm);
         }
 
         @media (max-width: 768px) {
-            .main-content { padding: 1rem 10px; }
             .filter-form { flex-direction: column; align-items: stretch; }
+            .filter-input, .filter-select { width: 100%; }
         }
     </style>
 </head>
@@ -476,23 +291,18 @@ $cars_result = $stmt_list->get_result();
     <!-- NAVBAR -->
     <header class="neo-navbar">
         <div class="neo-nav-left">
-            <button class="menu-toggle-btn" id="open-sidebar"><i class="bi bi-list"></i></button>
-            <a href="admin_dashboard.php" class="neo-brand">SCRS PMU</a>
+            <button class="menu-toggle-btn" id="open-sidebar" aria-label="Buka Menu"><i class="bi bi-list"></i></button>
+            <a href="admin_dashboard.php" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
         </div>
-        <div class="nav-right-actions">
-            <a href="admin_dashboard.php" class="neo-btn" style="padding: 6px 12px; font-size: 0.8rem; background: var(--yellow);">
-                <i class="bi bi-speedometer2"></i> Dashboard
-            </a>
-            <div class="profile-container">
-                <button class="profile-btn" id="profile-toggle">
-                    <i class="bi bi-person-fill fs-5"></i>
-                    <span>ADMIN: <?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
-                </button>
-                <ul class="dropdown-menu" id="profile-menu">
-                    <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
-                    <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
-                </ul>
-            </div>
+        <div class="profile-container">
+            <button class="profile-btn" id="profile-toggle">
+                <i class="bi bi-person-circle fs-5"></i>
+                <span><?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
+            </button>
+            <ul class="dropdown-menu" id="profile-menu">
+                <li><a href="edit_profile.php" class="dropdown-item"><i class="bi bi-gear-fill me-2"></i> Edit Profil</a></li>
+                <li><a href="logout.php" class="dropdown-item"><i class="bi bi-box-arrow-right me-2"></i> Log Keluar</a></li>
+            </ul>
         </div>
     </header>
 
@@ -501,7 +311,7 @@ $cars_result = $stmt_list->get_result();
     <aside class="sidebar" id="sidebar">
         <div class="sidebar-header">
             <h2>Panel Admin</h2>
-            <button class="close-btn" id="close-sidebar"><i class="bi bi-x-lg"></i></button>
+            <button class="close-btn" id="close-sidebar" aria-label="Tutup Menu"><i class="bi bi-x-lg"></i></button>
         </div>
         <nav class="sidebar-nav">
             <a href="admin_dashboard.php" class="sidebar-link"><i class="bi bi-speedometer2"></i> Papan Pemuka</a>
@@ -509,15 +319,13 @@ $cars_result = $stmt_list->get_result();
             <a href="admin_providers.php" class="sidebar-link"><i class="bi bi-people-fill"></i> Urus Penyedia</a>
             <a href="admin_cars.php" class="sidebar-link active"><i class="bi bi-car-front-fill"></i> Urus Kenderaan</a>
             <a href="admin_bookings.php" class="sidebar-link"><i class="bi bi-calendar-check-fill"></i> Urus Tempahan</a>
-            <a href="edit_profile.php" class="sidebar-link"><i class="bi bi-person-gear"></i> Edit Profil</a>
-            <a href="logout.php" class="sidebar-link logout-link"><i class="bi bi-box-arrow-right"></i> Log Keluar</a>
         </nav>
     </aside>
 
     <!-- MAIN CONTENT -->
     <main class="main-content">
         
-        <div class="page-header">
+        <div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <div>
                 <h1 style="font-size: 1.6rem; font-weight: 900; text-transform: uppercase; margin: 0; color: var(--black); display: flex; align-items: center; gap: 10px;">
                     <i class="bi bi-car-front-fill"></i> Pengurusan Kenderaan
@@ -526,9 +334,14 @@ $cars_result = $stmt_list->get_result();
                     Daftar kereta baharu, tetapkan kadar harga harian/jam, kemaskini butiran kereta, dan padam kenderaan.
                 </p>
             </div>
-            <button class="neo-btn btn-green" onclick="openCreateModal()">
-                <i class="bi bi-plus-circle-fill"></i> Tambah Kereta Baharu
-            </button>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+                <a href="admin_dashboard.php" class="neo-btn btn-sm btn-yellow">
+                    <i class="bi bi-arrow-left"></i> Papan Pemuka
+                </a>
+                <button class="neo-btn btn-sm btn-green" onclick="openCreateModal()">
+                    <i class="bi bi-plus-circle-fill"></i> Tambah Kereta Baharu
+                </button>
+            </div>
         </div>
 
         <?php if (!empty($message)): ?>
@@ -862,6 +675,18 @@ $cars_result = $stmt_list->get_result();
                     <span style="color: #666;">Status Ketersediaan:</span>
                     <span id="viewStatus"></span>
                 </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 6px 0;">
+                    <span style="color: #666;">Cukai Jalan Sah Sehingga:</span>
+                    <span id="viewRoadtaxExp" style="font-weight: 800;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 6px 0;">
+                    <span style="color: #666;">Insurans Sah Sehingga:</span>
+                    <span id="viewInsuranceExp" style="font-weight: 800;"></span>
+                </div>
+                <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 6px 0; align-items: center;">
+                    <span style="color: #666;">Dokumen Kenderaan:</span>
+                    <div id="viewCarDocs" style="display: flex; gap: 6px; flex-wrap: wrap;"></div>
+                </div>
 
                 <div style="margin-top: 15px;">
                     <button class="neo-btn btn-pink" style="width: 100%; justify-content: center;" onclick="closeViewModal()">Tutup</button>
@@ -935,11 +760,26 @@ $cars_result = $stmt_list->get_result();
             document.getElementById('viewRateDay').textContent = 'RM ' + parseFloat(data.price_per_day).toFixed(2) + ' / hari';
             document.getElementById('viewRateHour').textContent = 'RM ' + parseFloat(data.price_per_hour).toFixed(2) + ' / jam';
             document.getElementById('viewStatus').textContent = data.status.toUpperCase();
+            document.getElementById('viewRoadtaxExp').textContent = data.roadtax_expiry ? data.roadtax_expiry : '-';
+            document.getElementById('viewInsuranceExp').textContent = data.insurance_expiry ? data.insurance_expiry : '-';
+
+            let docsHtml = '';
+            if (data.grant_file) docsHtml += `<a href="${data.grant_file}" target="_blank" class="neo-badge bg-y" style="text-decoration:none;"><i class="bi bi-file-earmark-text me-1"></i>Geran</a> `;
+            if (data.roadtax_file) docsHtml += `<a href="${data.roadtax_file}" target="_blank" class="neo-badge bg-g" style="text-decoration:none;"><i class="bi bi-file-earmark-check me-1"></i>Roadtax</a> `;
+            if (data.insurance_file) docsHtml += `<a href="${data.insurance_file}" target="_blank" class="neo-badge bg-b" style="text-decoration:none; color:#fff;"><i class="bi bi-shield-check me-1"></i>Insurans</a>`;
+            document.getElementById('viewCarDocs').innerHTML = docsHtml || '<span style="color:#999;">Tiada Dokumen</span>';
 
             document.getElementById('viewModalOverlay').classList.add('show');
         }
         function closeViewModal() { document.getElementById('viewModalOverlay').classList.remove('show'); }
         function closeViewModalOutside(e) { if (e.target.id === 'viewModalOverlay') closeViewModal(); }
+
+        // Cegah paparan semula melalui butang Back selepas log keluar
+        window.addEventListener('pageshow', function(event) {
+            if (event.persisted || (window.performance && window.performance.navigation && window.performance.navigation.type === 2)) {
+                window.location.reload();
+            }
+        });
     </script>
 </body>
 </html>

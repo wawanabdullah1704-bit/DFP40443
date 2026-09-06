@@ -58,8 +58,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['update_profile'])) {
     }
 
     if (!empty($new_password)) {
-        if (strlen($new_password) <= 8) {
-            $message = "<div class='neo-alert alert-danger'>Ralat: Kata laluan mestilah lebih daripada 8 aksara!</div>";
+        if (strlen($new_password) < 8) {
+            $message = "<div class='neo-alert alert-danger'>Ralat: Kata laluan mestilah sekurang-kurangnya 8 aksara (8 aksara atau lebih)!</div>";
         } else if (!preg_match('/[A-Z]/', $new_password) || !preg_match('/[a-z]/', $new_password) || !preg_match('/[0-9]/', $new_password) || !preg_match('/[^A-Za-z0-9]/', $new_password)) {
             $message = "<div class='neo-alert alert-danger'>Ralat: Kata laluan mesti mengandungi huruf besar, huruf kecil, nombor, dan simbol!</div>";
         } else if ($new_password !== $confirm_password) {
@@ -135,75 +135,25 @@ $current_pic = $user_data['profile_picture'] ?? '';
     
     <!-- Ikon Bootstrap -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <!-- Master Neo-Brutalism CSS -->
+    <link rel="stylesheet" href="neo-style.css">
 
-    <!-- CSS NEO-BRUTALISM -->
     <style>
-        :root {
-            --black: #000000;
-            --white: #ffffff;
-            --yellow: #ffde59;
-            --green: #00e676;
-            --blue: #00e5ff;
-            --pink: #ff66c4;
-            --bg-color: #f4f4f0;
-            --border-thick: 4px solid var(--black);
-            --shadow-solid: 6px 6px 0px var(--black);
-            --shadow-hover: 4px 4px 0px var(--black);
-            --shadow-active: 0px 0px 0px var(--black);
-            --transition: all 0.15s ease-in-out;
-        }
-
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Space Grotesk', sans-serif; }
-
-        body {
-            background-color: var(--bg-color);
-            background-image: radial-gradient(#ccc 1.5px, transparent 1.5px);
-            background-size: 20px 20px;
-            min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-            overflow-x: hidden;
-        }
-
-        a { text-decoration: none; color: inherit; }
-        button, input { font-family: inherit; }
-
-        /* NAVBAR */
-        .neo-navbar {
-            background-color: var(--white);
-            border-bottom: var(--border-thick);
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            position: sticky; top: 0; z-index: 1000;
-        }
-        .neo-brand { font-size: 1.5rem; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; }
-
         .main-content {
             flex: 1;
-            padding: 2rem 20px;
-            max-width: 600px;
+            padding: 2rem 16px;
+            max-width: 620px;
             margin: 0 auto;
             width: 100%;
         }
 
-        .neo-card {
-            background-color: var(--white);
-            border: var(--border-thick);
-            box-shadow: var(--shadow-solid);
-            padding: 30px;
-        }
-
         .card-header-title {
-            font-size: 1.5rem;
+            font-size: 1.35rem;
             font-weight: 900;
             text-transform: uppercase;
-            border-bottom: 3px solid var(--black);
+            border-bottom: 2.5px solid var(--black);
             padding-bottom: 10px;
-            margin-bottom: 20px;
+            margin-bottom: 18px;
             display: flex;
             align-items: center;
             gap: 10px;
@@ -214,121 +164,62 @@ $current_pic = $user_data['profile_picture'] ?? '';
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 12px;
-            margin-bottom: 25px;
-            padding: 20px;
-            border: 3px dashed var(--black);
+            gap: 10px;
+            margin-bottom: 22px;
+            padding: 18px;
+            border: 2.5px dashed var(--black);
+            border-radius: var(--radius-lg);
             background: var(--bg-color);
             cursor: pointer;
             transition: var(--transition);
         }
-        .profile-pic-area:hover { background: #ebebeb; }
+        .profile-pic-area:hover { background: #eee; }
 
         .profile-avatar {
-            width: 110px;
-            height: 110px;
-            border: 4px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
+            width: 100px;
+            height: 100px;
+            border: var(--border-thick);
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-sm);
             object-fit: cover;
             display: block;
         }
         .profile-avatar-placeholder {
-            width: 110px;
-            height: 110px;
-            border: 4px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
+            width: 100px;
+            height: 100px;
+            border: var(--border-thick);
+            border-radius: var(--radius-full);
+            box-shadow: var(--shadow-sm);
             background: var(--yellow);
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 3rem;
+            font-size: 2.6rem;
         }
         .profile-pic-label {
             font-weight: 800;
             text-transform: uppercase;
-            font-size: 0.8rem;
+            font-size: 0.775rem;
             color: #555;
         }
-
-        .form-group {
-            margin-bottom: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
-
-        .form-label {
-            font-weight: 800;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-        }
-
-        .form-control {
-            border: 3px solid var(--black);
-            padding: 12px;
-            font-weight: 700;
-            background-color: var(--bg-color);
-            outline: none;
-            width: 100%;
-        }
-        .form-control:focus { background-color: var(--white); box-shadow: 3px 3px 0px var(--black); }
 
         .input-wrapper { position: relative; display: flex; align-items: center; }
         .password-toggle-btn {
             position: absolute; right: 12px; cursor: pointer;
             font-size: 1.2rem; color: var(--black); background: none; border: none;
-        }
-
-        .neo-btn {
-            background-color: var(--yellow);
-            border: 3px solid var(--black);
-            box-shadow: 4px 4px 0px var(--black);
-            font-weight: 900;
-            text-transform: uppercase;
-            padding: 12px 20px;
-            cursor: pointer;
-            transition: var(--transition);
-            width: 100%;
-            text-align: center;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .neo-btn:hover { transform: translate(-2px, -2px); box-shadow: 6px 6px 0px var(--black); }
-        .neo-btn:active { transform: translate(4px, 4px); box-shadow: var(--shadow-active); }
-        .btn-green { background-color: var(--green); }
-
-        .neo-alert {
-            border: var(--border-thick); box-shadow: 4px 4px 0px var(--black);
-            padding: 15px 20px; font-weight: 800; margin-bottom: 25px; text-transform: uppercase;
-        }
-        .alert-success { background-color: var(--green); }
-        .alert-danger { background-color: var(--pink); }
-
-        footer {
-            background-color: var(--yellow);
-            border-top: var(--border-thick);
-            padding: 20px;
-            text-align: center;
-            font-weight: 900;
-            text-transform: uppercase;
-            margin-top: auto;
+            padding: 4px;
         }
 
         @media (max-width: 768px) {
-            .main-content { padding: 1rem 10px; }
-            .neo-card { padding: 20px 15px; }
-            .neo-brand { font-size: 1.2rem; }
+            .main-content { padding: 1rem 12px; }
         }
     </style>
 </head>
 <body>
 
-    <!-- NAVBAR -->
     <header class="neo-navbar">
-        <a href="<?php echo $return_url; ?>" class="neo-brand">SCRS PMU</a>
-        <a href="<?php echo $return_url; ?>" class="neo-btn" style="width: auto; padding: 6px 14px; font-size: 0.85rem;">
+        <a href="<?php echo $return_url; ?>" class="neo-brand"><i class="bi bi-car-front-fill me-1"></i>SCRS <span>PMU</span></a>
+        <a href="<?php echo $return_url; ?>" class="neo-btn btn-sm btn-yellow" style="width: auto;">
             <i class="bi bi-arrow-left me-1"></i> Kembali
         </a>
     </header>
@@ -395,7 +286,7 @@ $current_pic = $user_data['profile_picture'] ?? '';
                     <div class="form-group">
                         <label class="form-label">Kata Laluan Baharu</label>
                         <div class="input-wrapper">
-                            <input type="password" class="form-control" name="new_password" id="new_password" placeholder="Lebih daripada 8 aksara">
+                            <input type="password" class="form-control" name="new_password" id="new_password" placeholder="8 aksara atau lebih" minlength="8">
                             <button type="button" class="password-toggle-btn" id="toggleNewPw">
                                 <i class="bi bi-eye-fill"></i>
                             </button>
@@ -407,11 +298,13 @@ $current_pic = $user_data['profile_picture'] ?? '';
                                 <div id="s2" style="flex:1;height:5px;background:#ddd;"></div>
                                 <div id="s3" style="flex:1;height:5px;background:#ddd;"></div>
                                 <div id="s4" style="flex:1;height:5px;background:#ddd;"></div>
+                                <div id="s5" style="flex:1;height:5px;background:#ddd;"></div>
                             </div>
-                            <div style="font-size:0.78rem; font-weight:800;">
-                                <span id="chk-upper" style="margin-right:8px;">&#x2715; Huruf Besar</span>
-                                <span id="chk-lower" style="margin-right:8px;">&#x2715; Huruf Kecil</span>
-                                <span id="chk-num" style="margin-right:8px;">&#x2715; Nombor</span>
+                            <div style="font-size:0.78rem; font-weight:800; display:flex; flex-wrap:wrap; gap:8px;">
+                                <span id="chk-len">&#x2715; 8+ Aksara</span>
+                                <span id="chk-upper">&#x2715; Huruf Besar</span>
+                                <span id="chk-lower">&#x2715; Huruf Kecil</span>
+                                <span id="chk-num">&#x2715; Nombor</span>
                                 <span id="chk-sym">&#x2715; Simbol</span>
                             </div>
                         </div>
@@ -419,7 +312,7 @@ $current_pic = $user_data['profile_picture'] ?? '';
 
                     <div class="form-group">
                         <label class="form-label">Sahkan Kata Laluan Baharu</label>
-                        <input type="password" class="form-control" name="confirm_password" placeholder="Ulang kata laluan baharu">
+                        <input type="password" class="form-control" name="confirm_password" placeholder="Ulang kata laluan baharu" minlength="8">
                     </div>
                 </div>
 
@@ -470,12 +363,19 @@ $current_pic = $user_data['profile_picture'] ?? '';
 
         // Password Strength Indicator
         const strengthBox = document.getElementById('strength-box');
-        const bars = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4')];
+        const bars = [document.getElementById('s1'), document.getElementById('s2'), document.getElementById('s3'), document.getElementById('s4'), document.getElementById('s5')];
+        const chkLen   = document.getElementById('chk-len');
         const chkUpper = document.getElementById('chk-upper');
         const chkLower = document.getElementById('chk-lower');
         const chkNum   = document.getElementById('chk-num');
         const chkSym   = document.getElementById('chk-sym');
-        const colors   = ['#ff4444','#ffbb00','#00bbff','#00e676'];
+        const colors   = ['#ff4444','#ff7700','#ffbb00','#00bbff','#00e676'];
+
+        function updateCheck(el, pass, text) {
+            if (!el) return;
+            el.style.color = pass ? '#007700' : '#cc0000';
+            el.innerHTML = (pass ? '&#x2714;' : '&#x2715;') + ' ' + text;
+        }
 
         if (newPwInput) {
             newPwInput.addEventListener('input', function() {
@@ -483,22 +383,22 @@ $current_pic = $user_data['profile_picture'] ?? '';
                 if (!v) { strengthBox.style.display = 'none'; return; }
                 strengthBox.style.display = 'block';
 
+                const hasLen   = v.length >= 8;
                 const hasUpper = /[A-Z]/.test(v);
                 const hasLower = /[a-z]/.test(v);
                 const hasNum   = /[0-9]/.test(v);
                 const hasSym   = /[^A-Za-z0-9]/.test(v);
-                const score    = [hasUpper, hasLower, hasNum, hasSym].filter(Boolean).length;
+                const score    = [hasLen, hasUpper, hasLower, hasNum, hasSym].filter(Boolean).length;
 
-                bars.forEach((b, i) => b.style.background = i < score ? colors[score - 1] : '#ddd');
+                bars.forEach((b, i) => {
+                    if (b) b.style.background = i < score ? colors[score - 1] : '#ddd';
+                });
 
-                chkUpper.innerHTML = (hasUpper ? '&#x2714;' : '&#x2715;') + ' Huruf Besar';
-                chkUpper.style.color = hasUpper ? '#007700' : '#cc0000';
-                chkLower.innerHTML = (hasLower ? '&#x2714;' : '&#x2715;') + ' Huruf Kecil';
-                chkLower.style.color = hasLower ? '#007700' : '#cc0000';
-                chkNum.innerHTML   = (hasNum   ? '&#x2714;' : '&#x2715;') + ' Nombor';
-                chkNum.style.color = hasNum ? '#007700' : '#cc0000';
-                chkSym.innerHTML   = (hasSym   ? '&#x2714;' : '&#x2715;') + ' Simbol';
-                chkSym.style.color = hasSym ? '#007700' : '#cc0000';
+                updateCheck(chkLen, hasLen, '8+ Aksara');
+                updateCheck(chkUpper, hasUpper, 'Huruf Besar');
+                updateCheck(chkLower, hasLower, 'Huruf Kecil');
+                updateCheck(chkNum, hasNum, 'Nombor');
+                updateCheck(chkSym, hasSym, 'Simbol');
             });
         }
     </script>
