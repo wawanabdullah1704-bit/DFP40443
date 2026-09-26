@@ -1,0 +1,20 @@
+{
+  "name": "scrs_pmu---copy",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "test": "node tests/test_chrome.js",
+    "test:chrome": "node tests/test_chrome.js",
+    "test:history": "node tests/test_provider_history.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "playwright-core": "^1.63.0"
+  }
+}
