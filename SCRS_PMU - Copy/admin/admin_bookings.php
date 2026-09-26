@@ -92,12 +92,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action_update_booking'
                     $mail->isSMTP();
                     $mail->Host       = 'smtp.gmail.com';
                     $mail->SMTPAuth   = true;
-                    $mail->Username   = 'chickenmasterz26@gmail.com';
-                    $mail->Password   = 'pcccoszzikvwmzsd';
+                    $mail->Username   = 'scrspmu@gmail.com';
+                    $mail->Password   = 'cnpriksgpjbbldvj';
                     $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                     $mail->Port       = 587;
 
-                    $mail->setFrom('chickenmasterz26@gmail.com', 'SCRS PMU');
+                    $mail->setFrom('scrspmu@gmail.com', 'SCRS PMU');
                     $mail->addAddress($stu_data['student_email'], $stu_data['student_name']);
 
                     $mail->isHTML(true);

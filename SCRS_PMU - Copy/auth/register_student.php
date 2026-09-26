@@ -86,12 +86,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         $mail->isSMTP();
                         $mail->Host       = 'smtp.gmail.com';
                         $mail->SMTPAuth   = true;
-                        $mail->Username   = 'chickenmasterz26@gmail.com';
-                        $mail->Password   = 'pcccoszzikvwmzsd';
+                        $mail->Username   = 'scrspmu@gmail.com';
+                        $mail->Password   = 'cnpriksgpjbbldvj';
                         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                         $mail->Port       = 587;
 
-                        $mail->setFrom('admin.jhepp@gmail.com', 'SCRS PMU');
+                        $mail->setFrom('scrspmu@gmail.com', 'SCRS PMU');
                         $mail->addAddress($email, $fullName);
 
                         $mail->isHTML(true);

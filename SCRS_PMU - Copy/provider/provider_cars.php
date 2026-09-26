@@ -558,6 +558,88 @@ $stmt_prov->close();
                 font-size: 0.85rem;
             }
         }
+
+        /* Panduan Privasi VOC/Geran Trigger & Popup */
+        .voc-guide-trigger {
+            background: #fffbeb;
+            border: 2px solid var(--black);
+            border-radius: var(--radius-md);
+            box-shadow: 3px 3px 0px var(--black);
+            padding: 9px 12px;
+            margin-bottom: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 10px;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s ease, box-shadow 0.1s ease, background 0.1s ease;
+        }
+        .voc-guide-trigger:hover {
+            background: #fef08a;
+            transform: translate(-1.5px, -1.5px);
+            box-shadow: 4.5px 4.5px 0px var(--black);
+        }
+        .voc-guide-trigger:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1.5px 1.5px 0px var(--black);
+        }
+        .voc-guide-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            min-width: 0;
+            flex: 1;
+        }
+        .voc-guide-icon {
+            font-size: 1.35rem;
+            color: #d97706;
+            flex-shrink: 0;
+            line-height: 1;
+        }
+        .voc-guide-text {
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+        .voc-guide-title {
+            font-weight: 900;
+            font-size: 0.84rem;
+            color: var(--black);
+            line-height: 1.25;
+            text-transform: uppercase;
+        }
+        .voc-guide-desc {
+            font-size: 0.74rem;
+            color: #4b5563;
+            font-weight: 700;
+            line-height: 1.25;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .voc-guide-btn {
+            font-size: 0.72rem;
+            padding: 5px 9px;
+            pointer-events: none;
+            white-space: nowrap;
+            flex-shrink: 0;
+        }
+        @media (max-width: 480px) {
+            .voc-guide-trigger {
+                padding: 8px 10px;
+            }
+            .voc-guide-title {
+                font-size: 0.78rem;
+            }
+            .voc-guide-desc {
+                font-size: 0.7rem;
+            }
+            .voc-guide-btn {
+                padding: 4px 7px;
+                font-size: 0.68rem;
+            }
+        }
     </style>
 </head>
 <body>
@@ -878,24 +960,18 @@ $stmt_prov->close();
                         <i class="bi bi-file-earmark-lock2-fill me-1"></i> Dokumen Kenderaan & Tarikh Sah Laku
                     </h5>
 
-                    <!-- KOTAK PERINGATAN PRIVASI UNTUK SIJIL PEMILIKAN (VOC / GERAN) -->
-                    <div class="neo-alert" style="background: #fff8e1; border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); padding: 12px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.45;">
-                        <div style="font-weight: 900; color: #b78103; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-shield-exclamation fs-5"></i> <strong>Panduan Privasi Sijil Pemilikan Kenderaan (VOC / Geran):</strong>
+                    <!-- BUTANG POPUP PANDUAN PRIVASI GERAN (VOC) -->
+                    <div class="voc-guide-trigger" role="button" tabindex="0" onclick="openModal('vocPrivacyModal')" onkeydown="if(event.key==='Enter') openModal('vocPrivacyModal')">
+                        <div class="voc-guide-left">
+                            <i class="bi bi-shield-lock-fill voc-guide-icon"></i>
+                            <div class="voc-guide-text">
+                                <div class="voc-guide-title">Panduan Privasi Geran (VOC)</div>
+                                <div class="voc-guide-desc">Sila sensor/tutup data peribadi sensitif</div>
+                            </div>
                         </div>
-                        <p style="margin: 0 0 6px 0; font-weight: 700; color: #333;">
-                            Pemilik kenderaan diminta menutup (sensor/mask) maklumat peribadi sensitif (seperti nama pemilik lama, nombor kad pengenalan, atau alamat kediaman) sebelum memuat naik salinan geran.
-                        </p>
-                        <p style="margin: 0; font-weight: 800; color: #000;">
-                            <strong>Maklumat yang WAJIB kelihatan jelas hanyalah:</strong>
-                        </p>
-                        <ul style="margin: 4px 0 0 18px; padding: 0; font-weight: 700; color: #444;">
-                            <li>1. Nombor Pendaftaran Kenderaan (No Plat)</li>
-                            <li>2. Nombor Chasis / Nombor Enjin</li>
-                            <li>3. Buatan / Nama Model</li>
-                            <li>4. Keupayaan Enjin (CC)</li>
-                            <li>5. Bahan Bakar (Petrol/Diesel)</li>
-                        </ul>
+                        <span class="neo-btn btn-sm btn-yellow voc-guide-btn">
+                            <i class="bi bi-info-circle-fill me-1"></i> Lihat Panduan
+                        </span>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 15px;">
@@ -997,14 +1073,18 @@ $stmt_prov->close();
                         <i class="bi bi-file-earmark-lock2-fill me-1"></i> Dokumen Kenderaan & Tarikh Sah Laku
                     </h5>
 
-                    <!-- KOTAK PERINGATAN PRIVASI UNTUK SIJIL PEMILIKAN (VOC / GERAN) -->
-                    <div class="neo-alert" style="background: #fff8e1; border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); padding: 12px; margin-bottom: 15px; font-size: 0.85rem; line-height: 1.45;">
-                        <div style="font-weight: 900; color: #b78103; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
-                            <i class="bi bi-shield-exclamation fs-5"></i> <strong>Panduan Privasi Sijil Pemilikan Kenderaan (VOC / Geran):</strong>
+                    <!-- BUTANG POPUP PANDUAN PRIVASI GERAN (VOC) -->
+                    <div class="voc-guide-trigger" role="button" tabindex="0" onclick="openModal('vocPrivacyModal')" onkeydown="if(event.key==='Enter') openModal('vocPrivacyModal')">
+                        <div class="voc-guide-left">
+                            <i class="bi bi-shield-lock-fill voc-guide-icon"></i>
+                            <div class="voc-guide-text">
+                                <div class="voc-guide-title">Panduan Privasi Geran (VOC)</div>
+                                <div class="voc-guide-desc">Sila sensor/tutup data peribadi sensitif</div>
+                            </div>
                         </div>
-                        <p style="margin: 0; font-weight: 700; color: #333;">
-                            Pastikan maklumat sensitif ditutup sebelum memuat naik. Hanya no. pendaftaran, no. chasis/enjin, buatan/model, cc enjin dan bahan bakar diperlukan.
-                        </p>
+                        <span class="neo-btn btn-sm btn-yellow voc-guide-btn">
+                            <i class="bi bi-info-circle-fill me-1"></i> Lihat Panduan
+                        </span>
                     </div>
 
                     <div class="form-group" style="margin-bottom: 15px;">
@@ -1074,6 +1154,64 @@ $stmt_prov->close();
                     <button type="submit" name="upload_qr" class="neo-btn btn-green"><i class="bi bi-cloud-arrow-up-fill me-1"></i> Simpan Kod QR</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- MODAL PANDUAN PRIVASI GERAN / VOC (POPUP) -->
+    <div class="neo-modal-overlay" id="vocPrivacyModal" style="z-index: 2500;" onclick="if(event.target === this) closeModal('vocPrivacyModal')">
+        <div class="neo-modal" style="max-width: 520px; max-height: 85vh; overflow-y: auto;" onclick="event.stopPropagation()">
+            <div class="modal-header" style="background: #fff8e1; margin: -24px -24px 16px -24px; padding: 14px 20px; border-bottom: 3px solid var(--black); border-top-left-radius: var(--radius-xl); border-top-right-radius: var(--radius-xl);">
+                <h3 style="margin: 0; font-size: 1.05rem; font-weight: 900; color: #b45309; display: flex; align-items: center; gap: 8px;">
+                    <i class="bi bi-shield-lock-fill"></i> Panduan Privasi Geran / VOC
+                </h3>
+                <button type="button" class="close-btn" onclick="closeModal('vocPrivacyModal')">&times;</button>
+            </div>
+
+            <div style="display: flex; flex-direction: column; gap: 12px;">
+                <!-- KOTAK TUTUP DATA SENSITIF -->
+                <div style="background: #fee2e2; border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); border-radius: var(--radius-md); padding: 12px 14px;">
+                    <div style="font-weight: 900; color: #991b1b; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
+                        <i class="bi bi-exclamation-octagon-fill fs-6"></i> Wajib Tutup (Sensor / Mask)
+                    </div>
+                    <p style="margin: 0 0 6px 0; font-weight: 700; color: #374151; font-size: 0.82rem; line-height: 1.4;">
+                        Sila tutup atau lorek maklumat sensitif berikut sebelum memuat naik salinan geran demi melindungi privasi anda:
+                    </p>
+                    <ul style="margin: 0 0 0 16px; padding: 0; font-weight: 800; color: #b91c1c; font-size: 0.8rem; display: flex; flex-direction: column; gap: 3px;">
+                        <li><i class="bi bi-x-circle-fill me-1"></i> Nama Pemilik Lama / Terdahulu</li>
+                        <li><i class="bi bi-x-circle-fill me-1"></i> Nombor Kad Pengenalan (No. IC)</li>
+                        <li><i class="bi bi-x-circle-fill me-1"></i> Alamat Rumah / Kediaman Peribadi</li>
+                    </ul>
+                </div>
+
+                <!-- KOTAK MAKLUMAT WAJIB KELIHATAN -->
+                <div style="background: #f0fdf4; border: 2px solid var(--black); box-shadow: 3px 3px 0px var(--black); border-radius: var(--radius-md); padding: 12px 14px;">
+                    <div style="font-weight: 900; color: #166534; font-size: 0.85rem; margin-bottom: 6px; display: flex; align-items: center; gap: 6px; text-transform: uppercase;">
+                        <i class="bi bi-check-circle-fill fs-6"></i> Maklumat Yang Wajib Jelas
+                    </div>
+                    <p style="margin: 0 0 6px 0; font-weight: 700; color: #374151; font-size: 0.82rem; line-height: 1.4;">
+                        Pastikan butiran kenderaan berikut kelihatan jelas untuk pengesahan pihak JHEPP / sistem:
+                    </p>
+                    <ul style="margin: 0 0 0 16px; padding: 0; font-weight: 800; color: #15803d; font-size: 0.8rem; display: flex; flex-direction: column; gap: 3px;">
+                        <li>1. Nombor Pendaftaran Kenderaan (No Plat)</li>
+                        <li>2. Nombor Chasis & Nombor Enjin</li>
+                        <li>3. Buatan & Nama Model Kenderaan</li>
+                        <li>4. Keupayaan Enjin (CC)</li>
+                        <li>5. Bahan Bakar (Petrol / Diesel)</li>
+                    </ul>
+                </div>
+
+                <!-- TIP CARA SENSOR -->
+                <div style="background: #f8fafc; border: 1.5px solid #cbd5e1; border-radius: var(--radius-md); padding: 10px 12px; font-size: 0.78rem; color: #475569; font-weight: 700; display: flex; align-items: flex-start; gap: 8px; line-height: 1.4;">
+                    <i class="bi bi-lightbulb-fill text-warning fs-6" style="flex-shrink: 0; margin-top: 1px;"></i>
+                    <span><strong>Tip:</strong> Anda boleh menggunakan fungsi 'Edit / Pen / Markup' di galeri telefon anda untuk menconteng hitam bahagian sensitif sebelum dimuat naik.</span>
+                </div>
+            </div>
+
+            <div style="margin-top: 16px; display: flex; justify-content: flex-end; border-top: 2px solid #e2e8f0; padding-top: 12px;">
+                <button type="button" class="neo-btn btn-green" onclick="closeModal('vocPrivacyModal')" style="width: 100%; justify-content: center; padding: 9px; font-size: 0.9rem;">
+                    <i class="bi bi-check-circle-fill me-1"></i> Saya Faham & Kembali
+                </button>
+            </div>
         </div>
     </div>
 

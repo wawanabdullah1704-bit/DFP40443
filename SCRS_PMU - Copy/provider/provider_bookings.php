@@ -29,7 +29,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['approve_booking'])) {
     $stmt_app->bind_param("ii", $booking_id, $provider_id);
     
     if ($stmt_app->execute()) {
-        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Permohonan tempahan telah <strong>DILULUSKAN</strong>. Pelajar kini boleh melihat Kod QR untuk membuat pembayaran.</div>";
+        $email_sent_info = "";
 
         // ========================================================
         // HANTAR E-MEL NOTIFIKASI KEPADA PELAJAR (STUDENT)
@@ -74,12 +74,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['approve_booking'])) {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'chickenmasterz26@gmail.com';
-                $mail->Password   = 'pcccoszzikvwmzsd';
+                $mail->Username   = 'scrspmu@gmail.com';
+                $mail->Password   = 'cnpriksgpjbbldvj';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
-                $mail->setFrom('chickenmasterz26@gmail.com', 'SCRS PMU');
+                $mail->setFrom('scrspmu@gmail.com', 'SCRS PMU');
                 $mail->addAddress($stu_data['student_email'], $stu_data['student_name']);
 
                 $mail->isHTML(true);
@@ -138,11 +138,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['approve_booking'])) {
                 </div>";
 
                 $mail->send();
-                $message .= "<div class='neo-alert alert-success mt-2'><i class='bi bi-envelope-check-fill me-2'></i>Notifikasi e-mel kelulusan telah dihantar kepada pelajar (<strong>" . htmlspecialchars($stu_data['student_email']) . "</strong>).</div>";
+                $email_sent_info = "<div style='margin-top: 6px; padding-top: 6px; border-top: 1.5px dashed rgba(0,0,0,0.18); font-size: 0.82rem; font-weight: 700;'><i class='bi bi-envelope-check-fill me-1'></i> Notifikasi e-mel kelulusan telah dihantar kepada pelajar (<strong>" . htmlspecialchars($stu_data['student_email']) . "</strong>).</div>";
             } catch (Exception $e) {
                 // E-mel gagal tapi status tetap dikemaskini
             }
         }
+
+        $message = "<div class='neo-alert alert-success'>
+            <div style='display: flex; align-items: flex-start; gap: 10px;'>
+                <i class='bi bi-check-circle-fill' style='font-size: 1.3rem; flex-shrink: 0; line-height: 1.2;'></i>
+                <div style='flex: 1; min-width: 0;'>
+                    <div>Berjaya: Permohonan tempahan telah <strong>DILULUSKAN</strong>. Pelajar kini boleh melihat Kod QR untuk membuat pembayaran.</div>
+                    {$email_sent_info}
+                </div>
+            </div>
+        </div>";
     } else {
         $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt_app->error . "</div>";
     }
@@ -166,7 +176,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['reject_booking'])) {
     $stmt_rej->bind_param("ii", $booking_id, $provider_id);
     
     if ($stmt_rej->execute()) {
-        $message = "<div class='neo-alert alert-danger'><i class='bi bi-x-circle-fill me-2'></i>Permohonan tempahan telah <strong>DITOLAK</strong>.</div>";
+        $message = "<div class='neo-alert alert-danger'><div style='display: flex; align-items: center; gap: 10px;'><i class='bi bi-x-circle-fill' style='font-size: 1.25rem; flex-shrink: 0;'></i><div>Permohonan tempahan telah <strong>DITOLAK</strong>.</div></div></div>";
         if ($rej_data) {
             create_notification(
                 $conn,
@@ -201,7 +211,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['complete_booking'])) {
     $stmt_comp->bind_param("ii", $booking_id, $provider_id);
     
     if ($stmt_comp->execute()) {
-        $message = "<div class='neo-alert alert-success'><i class='bi bi-check-circle-fill me-2'></i>Berjaya: Tempahan telah ditandakan sebagai <strong>SELESAI (Completed)</strong>. Terima kasih!</div>";
+        $message = "<div class='neo-alert alert-success'><div style='display: flex; align-items: center; gap: 10px;'><i class='bi bi-check-circle-fill' style='font-size: 1.25rem; flex-shrink: 0;'></i><div>Berjaya: Tempahan telah ditandakan sebagai <strong>SELESAI (Completed)</strong>. Terima kasih!</div></div></div>";
         if ($cmp_data) {
             create_notification(
                 $conn,
@@ -300,7 +310,7 @@ function renderBookingCardAndModal($booking) {
 
     <!-- MODAL POPUP BUTIRAN LENGKAP TEMPAHAN & TINDAKAN PENYEDIA -->
     <div class="neo-modal-overlay booking-detail-modal-overlay" id="bookingModal<?php echo $booking['id']; ?>" onclick="if(event.target === this) closeBookingDetailModal('bookingModal<?php echo $booking['id']; ?>')">
-        <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px; padding: 18px;">
+        <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px;">
             <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--black);">
                 <h3 class="modal-title" style="font-weight: 900; font-size: 1.15rem; margin: 0; text-transform: uppercase;">
                     <?php echo $is_approved ? 'Urus Tempahan' : 'Semakan Permohonan'; ?> #<?php echo $booking['id']; ?>
@@ -312,11 +322,11 @@ function renderBookingCardAndModal($booking) {
             <div class="modal-detail-banner">
                 <img src="<?php echo $car_img_src; ?>" alt="<?php echo $car_display_name; ?>">
                 <div style="flex: 1; min-width: 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
-                        <h4 style="font-weight: 900; text-transform: uppercase; margin: 0; font-size: 0.95rem; color: var(--black); line-height: 1.2;">
-                            <?php echo $car_display_name; ?>
-                        </h4>
-                        <span class="badge-status <?php echo $badge_class; ?>" style="font-size: 0.8rem; flex-shrink: 0;">
+                    <h4 style="font-weight: 900; text-transform: uppercase; margin: 0 0 3px 0; font-size: 0.92rem; color: var(--black); line-height: 1.25; word-break: break-word;">
+                        <?php echo $car_display_name; ?>
+                    </h4>
+                    <div style="margin-bottom: 5px;">
+                        <span class="badge-status <?php echo $badge_class; ?>" style="font-size: 0.78rem;">
                             <i class="bi <?php echo $status_icon; ?>"></i> <?php echo $status_text; ?>
                         </span>
                     </div>
@@ -372,8 +382,9 @@ function renderBookingCardAndModal($booking) {
                     <!-- STATUS PENDING: LULUS / TOLAK -->
                     <div style="background: #fffbeb; border: 2px solid #f59e0b; border-radius: var(--radius-md); padding: 10px; font-weight: 800; font-size: 0.82rem; color: #92400e; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                         <i class="bi bi-hourglass-split"></i>
-                        <span>Permohonan baharu memerlukan tindakan kelulusan anda.</span>
+                        <span>Permohonan baharu. Sila semak perincian sebelum meluluskan:</span>
                     </div>
+
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px;">
                         <form action="" method="POST" style="margin: 0;" onsubmit="return confirm('Adakah anda pasti ingin meluluskan tempahan ini?');">
                             <input type="hidden" name="booking_id" value="<?php echo $booking['id']; ?>">
@@ -403,9 +414,9 @@ function renderBookingCardAndModal($booking) {
                             <?php endif; ?>
                         </div>
                         <?php if ($has_receipt): ?>
-                            <a href="../<?php echo htmlspecialchars($booking['payment_receipt']); ?>" target="_blank" class="neo-btn btn-blue" style="padding: 4px 10px; font-size: 0.78rem;">
-                                <i class="bi bi-receipt me-1"></i> Lihat Resit
-                            </a>
+                            <button type="button" onclick="viewDocument('<?php echo htmlspecialchars($booking['payment_receipt']); ?>', 'Resit Pembayaran - Tempahan #<?php echo $booking['id']; ?> (<?php echo htmlspecialchars(addslashes($booking['student_name'])); ?>)')" class="neo-btn btn-blue" style="padding: 5px 12px; font-size: 0.78rem;">
+                                <i class="bi bi-receipt me-1"></i> Semak & Sahkan Resit
+                            </button>
                         <?php endif; ?>
                     </div>
 
@@ -420,9 +431,9 @@ function renderBookingCardAndModal($booking) {
                             <?php endif; ?>
                         </div>
                         <?php if ($has_return_img): ?>
-                            <a href="../<?php echo htmlspecialchars($booking['return_image']); ?>" target="_blank" class="neo-btn btn-yellow" style="padding: 4px 10px; font-size: 0.78rem;">
-                                <i class="bi bi-image me-1"></i> Lihat Gambar
-                            </a>
+                            <button type="button" onclick="viewDocument('<?php echo htmlspecialchars($booking['return_image']); ?>', 'Gambar Pemulangan - Tempahan #<?php echo $booking['id']; ?> (<?php echo htmlspecialchars(addslashes($booking['student_name'])); ?>)')" class="neo-btn btn-yellow" style="padding: 5px 12px; font-size: 0.78rem;">
+                                <i class="bi bi-image me-1"></i> Semak & Sahkan Gambar
+                            </button>
                         <?php endif; ?>
                     </div>
 
@@ -602,6 +613,7 @@ function renderBookingCardAndModal($booking) {
             padding: 10px;
             margin-bottom: 12px;
             align-items: center;
+            overflow: hidden;
         }
         .modal-detail-banner img {
             width: 90px;
@@ -790,7 +802,84 @@ function renderBookingCardAndModal($booking) {
             .compact-thumb-wrap { width: 80px; height: 64px; min-width: 80px; }
             .compact-car-title { font-size: 0.88rem; }
             .header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px !important; }
-            .modal-detail-banner img { width: 85px; }
+            .modal-detail-banner { gap: 10px !important; padding: 8px 10px !important; }
+            .modal-detail-banner img { width: 80px !important; height: 60px !important; }
+        }
+
+        /* Modal Pengesahan Dokumen Skrin Penuh / Pratonton */
+        .doc-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(3px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        .doc-modal-box {
+            background: var(--white);
+            border: 3px solid var(--black);
+            border-radius: var(--radius-lg);
+            box-shadow: 6px 6px 0px var(--black);
+            width: 100%;
+            max-width: 800px;
+            max-height: 94vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .doc-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+        .doc-modal-badge {
+            background: var(--yellow);
+            color: var(--black);
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border: 1.5px solid var(--black);
+            border-radius: var(--radius-sm);
+            box-shadow: 1.5px 1.5px 0px var(--black);
+        }
+        .doc-viewer-stage {
+            width: 100%;
+            min-height: 380px;
+            max-height: 60vh;
+            background: #18181b;
+            border: 2px solid var(--black);
+            border-radius: var(--radius-md);
+            overflow: auto;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        .doc-viewer-img {
+            max-width: 100%;
+            max-height: 56vh;
+            object-fit: contain;
+            border-radius: 4px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+            display: block;
+            margin: auto;
         }
     </style>
 </head>
@@ -939,20 +1028,50 @@ function renderBookingCardAndModal($booking) {
                 <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0; align-items: center;">
                     <span style="color: #666;">Kad Pelajar:</span>
                     <span>
-                        <a id="modalStudentIdDoc" href="" target="_blank" class="neo-btn btn-sm btn-yellow" style="display: inline-flex; align-items: center; padding: 3px 8px; font-size: 0.75rem; text-decoration: none;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Dokumen</a>
+                        <a id="modalStudentIdDoc" href="" target="_blank" class="neo-btn btn-sm btn-yellow" style="padding: 3px 8px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-file-earmark-image"></i> Lihat Dokumen</a>
                         <span id="modalStudentNoIdDoc" style="color: #999; display: none;">Tiada Fail</span>
                     </span>
                 </div>
                 <div style="display: flex; justify-content: space-between; border-bottom: 2px dashed #ccc; padding: 8px 0; align-items: center;">
                     <span style="color: #666;">Lesen Memandu:</span>
                     <span>
-                        <a id="modalStudentLicenseDoc" href="" target="_blank" class="neo-btn btn-sm btn-green" style="display: inline-flex; align-items: center; padding: 3px 8px; font-size: 0.75rem; text-decoration: none;"><i class="bi bi-file-earmark-image me-1"></i>Lihat Lesen</a>
+                        <a id="modalStudentLicenseDoc" href="" target="_blank" class="neo-btn btn-sm btn-green" style="padding: 3px 8px; font-size: 0.75rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;"><i class="bi bi-file-earmark-image"></i> Lihat Lesen</a>
                         <span id="modalStudentNoLicenseDoc" style="color: #999; display: none;">Tiada Fail</span>
                     </span>
                 </div>
                 <div style="text-align: center; margin-top: 20px;">
-                    <button type="button" class="neo-btn btn-white" style="width: 100%; justify-content: center;" onclick="closeStudentModal()"><i class="bi bi-arrow-left-short me-1"></i>Tutup</button>
+                    <button class="neo-btn btn-white" style="width: 100%; justify-content: center;" onclick="closeStudentModal()"><i class="bi bi-x-lg me-1"></i> Tutup</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL PENGESAHAN DOKUMEN (RINGKAS & KEMAS - TANPA ZOOM) -->
+    <div class="doc-modal-overlay" id="docModalOverlay" onclick="if(event.target===this) closeDocModal()">
+        <div class="doc-modal-box" onclick="event.stopPropagation()">
+            <div class="doc-modal-header">
+                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden;">
+                    <span class="doc-modal-badge" id="docTypeBadge" style="flex-shrink: 0;">Dokumen</span>
+                    <h3 id="docModalTitle" style="font-weight: 900; font-size: 0.95rem; margin: 0; text-transform: uppercase; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        Pratonton Dokumen
+                    </h3>
+                </div>
+            </div>
+
+            <!-- TINGKAP LIHAT DOKUMEN -->
+            <div class="doc-viewer-stage">
+                <img id="docPreviewImg" src="" alt="Pratonton Dokumen" class="doc-viewer-img">
+                <iframe id="docPreviewPdf" src="" style="width: 100%; height: 58vh; border: none; display: none;"></iframe>
+            </div>
+
+            <!-- BUTANG TINDAKAN RINGKAS -->
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1.5px dashed #ddd;">
+                <a id="docOpenTabBtn" href="" target="_blank" class="neo-btn btn-sm btn-yellow" style="padding: 5px 14px; font-size: 0.8rem;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Buka Penuh
+                </a>
+                <button type="button" class="neo-btn btn-sm btn-white" onclick="closeDocModal()" style="padding: 5px 14px; font-size: 0.8rem;">
+                    Tutup
+                </button>
             </div>
         </div>
     </div>
@@ -962,7 +1081,7 @@ function renderBookingCardAndModal($booking) {
         &copy; <?php echo date("Y"); ?> SCRS PMU. SISTEM SEWAAN KERETA.
     </footer>
 
-    <!-- SKRIP ASLI -->
+    <!-- SKRIP ASLI & KAWALAN DOKUMEN -->
     <script>
         // Dropdown Profil
         const profileToggle = document.getElementById('profile-toggle');
@@ -1046,7 +1165,7 @@ function renderBookingCardAndModal($booking) {
             const noIdElem = document.getElementById('modalStudentNoIdDoc');
             if (idDoc && idDoc.trim() !== '') {
                 idElem.href = (idDoc.startsWith('http') || idDoc.startsWith('../')) ? idDoc : ('../' + idDoc);
-                idElem.style.display = 'inline-flex';
+                idElem.style.display = 'inline-block';
                 noIdElem.style.display = 'none';
             } else {
                 idElem.style.display = 'none';
@@ -1057,7 +1176,7 @@ function renderBookingCardAndModal($booking) {
             const noLicElem = document.getElementById('modalStudentNoLicenseDoc');
             if (licenseDoc && licenseDoc.trim() !== '') {
                 licElem.href = (licenseDoc.startsWith('http') || licenseDoc.startsWith('../')) ? licenseDoc : ('../' + licenseDoc);
-                licElem.style.display = 'inline-flex';
+                licElem.style.display = 'inline-block';
                 noLicElem.style.display = 'none';
             } else {
                 licElem.style.display = 'none';
@@ -1075,6 +1194,55 @@ function renderBookingCardAndModal($booking) {
             if (e.target.id === 'studentModalOverlay') {
                 closeStudentModal();
             }
+        }
+
+        // KAWALAN DOKUMEN VIEWER MODAL (RINGKAS TANPA ZOOM)
+        const docModalOverlay = document.getElementById('docModalOverlay');
+        const docModalTitle = document.getElementById('docModalTitle');
+        const docTypeBadge = document.getElementById('docTypeBadge');
+        const docPreviewImg = document.getElementById('docPreviewImg');
+        const docPreviewPdf = document.getElementById('docPreviewPdf');
+        const docOpenTabBtn = document.getElementById('docOpenTabBtn');
+
+        function viewDocument(url, title) {
+            if (!url || url.trim() === '') return;
+            docModalTitle.textContent = title;
+
+            if (docTypeBadge) {
+                const lowerTitle = title.toLowerCase();
+                if (lowerTitle.includes('resit')) {
+                    docTypeBadge.textContent = 'Resit Bayaran';
+                    docTypeBadge.style.background = 'var(--yellow)';
+                } else if (lowerTitle.includes('pulang') || lowerTitle.includes('pemulangan')) {
+                    docTypeBadge.textContent = 'Gambar Pemulangan';
+                    docTypeBadge.style.background = '#00f5d4';
+                } else {
+                    docTypeBadge.textContent = 'Dokumen';
+                    docTypeBadge.style.background = '#e2e8f0';
+                }
+            }
+
+            const fullUrl = (url && !url.startsWith('../') && !url.startsWith('http')) ? '../' + url : url;
+            docOpenTabBtn.href = fullUrl;
+
+            const isPdf = fullUrl.toLowerCase().endsWith('.pdf');
+            if (isPdf) {
+                docPreviewImg.style.display = 'none';
+                docPreviewPdf.style.display = 'block';
+                docPreviewPdf.src = fullUrl;
+            } else {
+                docPreviewPdf.style.display = 'none';
+                docPreviewImg.style.display = 'block';
+                docPreviewImg.src = fullUrl;
+            }
+
+            docModalOverlay.style.display = 'flex';
+        }
+
+        function closeDocModal() {
+            if (docPreviewPdf) docPreviewPdf.src = '';
+            if (docPreviewImg) docPreviewImg.src = '';
+            docModalOverlay.style.display = 'none';
         }
     </script>
 </body>

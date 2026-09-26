@@ -154,6 +154,66 @@ $result_history = $stmt->get_result();
             box-shadow: 6px 6px 0px var(--black) !important;
         }
 
+        /* Seksyen Pengesahan Dokumen (Kemas & Responsif) */
+        .doc-verification-strip {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .doc-strip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .doc-strip-label {
+            color: #64748b;
+            font-weight: 800;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .doc-strip-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+        .doc-item-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 10px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            border: 1.5px solid var(--black);
+            border-radius: var(--radius-sm);
+            box-shadow: 2px 2px 0px var(--black);
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+            white-space: nowrap;
+            text-align: center;
+        }
+        .doc-item-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--black);
+        }
+        .doc-item-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px var(--black);
+        }
+        .doc-item-btn.btn-receipt {
+            background-color: var(--yellow);
+            color: var(--black);
+        }
+        .doc-item-btn.btn-return {
+            background-color: #00f5d4;
+            color: var(--black);
+        }
+
         table.neo-table th, table.neo-table td {
             padding: 11px 13px;
             border-bottom: var(--border-thin);
@@ -328,24 +388,28 @@ $result_history = $stmt->get_result();
                             </div>
                         </div>
 
-                        <!-- Baris Bawah: Dokumen (Jika Ada) -->
+                        <!-- Baris Bawah: Dokumen & Bukti Transaksi (Kemas & Tersusun) -->
                         <?php 
                         $has_receipt = (!empty($row['payment_receipt']) && file_exists(__DIR__ . '/../' . $row['payment_receipt']));
                         $has_return = (!empty($row['return_image']) && file_exists(__DIR__ . '/../' . $row['return_image']));
                         if ($has_receipt || $has_return): 
                         ?>
-                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0;">
-                                <span style="color: #64748b; font-weight: 800; font-size: 0.78rem; text-transform: uppercase;">Dokumen:</span>
-                                <?php if ($has_receipt): ?>
-                                    <a href="../<?php echo htmlspecialchars($row['payment_receipt']); ?>" target="_blank" class="neo-btn btn-sm btn-yellow" style="padding: 4px 10px; font-size: 0.76rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="bi bi-receipt"></i> Resit Bayaran
-                                    </a>
-                                <?php endif; ?>
-                                <?php if ($has_return): ?>
-                                    <a href="../<?php echo htmlspecialchars($row['return_image']); ?>" target="_blank" class="neo-btn btn-sm btn-blue" style="padding: 4px 10px; font-size: 0.76rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="bi bi-camera-fill"></i> Gambar Pulang
-                                    </a>
-                                <?php endif; ?>
+                            <div class="doc-verification-strip">
+                                <div class="doc-strip-header">
+                                    <span class="doc-strip-label"><i class="bi bi-file-earmark-check-fill text-primary me-1"></i> Dokumen & Bukti Transaksi:</span>
+                                </div>
+                                <div class="doc-strip-buttons">
+                                    <?php if ($has_receipt): ?>
+                                        <a href="../<?php echo htmlspecialchars($row['payment_receipt']); ?>" target="_blank" class="doc-item-btn btn-receipt">
+                                            <i class="bi bi-receipt"></i> Resit Bayaran
+                                        </a>
+                                    <?php endif; ?>
+                                    <?php if ($has_return): ?>
+                                        <a href="../<?php echo htmlspecialchars($row['return_image']); ?>" target="_blank" class="doc-item-btn btn-return">
+                                            <i class="bi bi-camera-fill"></i> Gambar Pulang
+                                        </a>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -366,8 +430,8 @@ $result_history = $stmt->get_result();
     <!-- MODAL MAKLUMAT PROVIDER (POPUP) -->
     <div class="neo-modal-overlay" id="providerModalOverlay" onclick="closeProviderModalOutside(event)" style="z-index: 3000;">
         <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px;">
-            <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;">
-                <h3 class="modal-title" style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem;">Maklumat Penyedia Kereta</h3>
+            <div class="modal-header" style="border-bottom: 3px solid var(--black); padding-bottom: 10px; margin-bottom: 15px;">
+                <h3 class="modal-title" style="font-weight: 900; text-transform: uppercase; font-size: 1.2rem; margin: 0;">Maklumat Penyedia Kereta</h3>
             </div>
             <div class="modal-body" style="font-weight: 700; font-size: 0.95rem;">
                 <div style="text-align: center; margin-bottom: 20px;">

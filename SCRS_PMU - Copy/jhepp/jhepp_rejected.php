@@ -34,7 +34,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action_verify'])) {
     $stmt->bind_param("si", $new_status, $user_id);
     
     if ($stmt->execute()) {
-        $message = "<div class='neo-alert alert-success mb-3'><i class='bi bi-check-circle-fill me-2'></i>Akaun pelajar berjaya <strong>DILULUSKAN</strong> semula!</div>";
+        $email_info = "";
 
         create_notification(
             $conn,
@@ -63,20 +63,31 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action_verify'])) {
                 $mail->isSMTP();
                 $mail->Host       = 'smtp.gmail.com';
                 $mail->SMTPAuth   = true;
-                $mail->Username   = 'chickenmasterz26@gmail.com';
-                $mail->Password   = 'pcccoszzikvwmzsd';
+                $mail->Username   = 'scrspmu@gmail.com';
+                $mail->Password   = 'cnpriksgpjbbldvj';
                 $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
                 $mail->Port       = 587;
 
-                $mail->setFrom('admin.jhepp@gmail.com', 'Pegawai JHEPP PMU');
+                $mail->setFrom('scrspmu@gmail.com', 'SCRS PMU');
                 $mail->addAddress($to_email, $user_name);
                 $mail->isHTML(true);
                 $mail->Subject = "SCRS PMU - Akaun Pelajar Diluluskan!";
                 $mail->Body = "Salam <b>$user_name</b>,<br><br>Tahniah! Permohonan pendaftaran akaun anda di SCRS PMU telah <b>DILULUSKAN</b> oleh pegawai JHEPP. Anda kini boleh log masuk ke dalam sistem.<br><br>Terima kasih,<br>Pegawai JHEPP PMU";
                 $mail->send();
+                $email_info = "<div style='margin-top: 6px; padding-top: 6px; border-top: 1.5px dashed rgba(0,0,0,0.18); font-size: 0.82rem; font-weight: 700;'><i class='bi bi-envelope-check-fill me-1'></i> Notifikasi e-mel kelulusan telah dihantar ke <strong>" . htmlspecialchars($to_email) . "</strong>.</div>";
             } catch (Exception $e) {}
         }
         $stmt_email->close();
+
+        $message = "<div class='neo-alert alert-success mb-3'>
+            <div style='display: flex; align-items: flex-start; gap: 10px;'>
+                <i class='bi bi-check-circle-fill' style='font-size: 1.3rem; flex-shrink: 0; line-height: 1.2;'></i>
+                <div style='flex: 1; min-width: 0;'>
+                    <div>Akaun pelajar berjaya <strong>DILULUSKAN</strong> semula!</div>
+                    {$email_info}
+                </div>
+            </div>
+        </div>";
     } else {
         $message = "<div class='neo-alert alert-danger'>Ralat pangkalan data: " . $stmt->error . "</div>";
     }
@@ -375,14 +386,16 @@ if (!empty($params)) {
             padding-bottom: 12px;
             margin-bottom: 14px;
             gap: 12px;
-            flex-wrap: wrap;
+            flex-wrap: nowrap;
         }
 
         .doc-modal-title-group {
             display: flex;
             align-items: center;
             gap: 10px;
-            flex-wrap: wrap;
+            flex: 1;
+            min-width: 0;
+            overflow: hidden;
         }
 
         .doc-modal-badge {
@@ -638,14 +651,11 @@ if (!empty($params)) {
             <!-- HEADER -->
             <div class="doc-modal-header">
                 <div class="doc-modal-title-group">
-                    <span class="doc-modal-badge" id="docTypeBadge">Dokumen Pelajar</span>
-                    <h3 id="docModalTitle" style="font-weight: 900; font-size: 1.1rem; margin: 0; text-transform: uppercase; color: var(--black);">
+                    <span class="doc-modal-badge" id="docTypeBadge" style="flex-shrink: 0;">Dokumen Pelajar</span>
+                    <h3 id="docModalTitle" style="font-weight: 900; font-size: 1.05rem; margin: 0; text-transform: uppercase; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                         Pratonton Dokumen
                     </h3>
                 </div>
-                <button type="button" class="neo-btn btn-sm btn-pink" onclick="closeDocModal()" title="Tutup Modal" style="padding: 5px 12px; font-size: 0.82rem;">
-                    <i class="bi bi-x-lg"></i> Tutup
-                </button>
             </div>
 
             <!-- VIEWPORT CANVAS BERPUSAT (LATAR KELABU GELAP UNTUK KEJELASAN DOKUMEN) -->
@@ -675,6 +685,9 @@ if (!empty($params)) {
                     <a id="docOpenTabBtn" href="" target="_blank" class="neo-btn btn-sm btn-yellow" style="padding: 6px 14px; font-size: 0.82rem;">
                         <i class="bi bi-box-arrow-up-right me-1"></i> Buka Tab Baharu
                     </a>
+                    <button type="button" class="neo-btn btn-sm btn-white" onclick="closeDocModal()" style="padding: 6px 14px; font-size: 0.82rem;">
+                        Tutup
+                    </button>
                 </div>
             </div>
         </div>

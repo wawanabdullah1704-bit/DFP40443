@@ -290,6 +290,7 @@ $result_bookings = $stmt->get_result();
             padding: 10px;
             margin-bottom: 12px;
             align-items: center;
+            overflow: hidden;
         }
         .modal-detail-banner img {
             width: 90px;
@@ -391,7 +392,8 @@ $result_bookings = $stmt->get_result();
             .mobile-form-stack { flex-direction: column !important; align-items: stretch !important; gap: 8px !important; }
             .mobile-form-stack input[type="file"] { width: 100% !important; }
             .mobile-form-stack .neo-btn { width: 100% !important; justify-content: center; }
-            .modal-detail-banner img { width: 85px; }
+            .modal-detail-banner { gap: 10px !important; padding: 8px 10px !important; }
+            .modal-detail-banner img { width: 80px !important; height: 60px !important; }
         }
     </style>
 </head>
@@ -514,7 +516,7 @@ $result_bookings = $stmt->get_result();
 
                 <!-- MODAL POPUP MAKLUMAT LENGKAP TEMPAHAN & TINDAKAN -->
                 <div class="neo-modal-overlay booking-detail-modal-overlay" id="bookingModal<?php echo $booking['id']; ?>" onclick="if(event.target === this) closeBookingDetailModal('bookingModal<?php echo $booking['id']; ?>')">
-                    <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px; padding: 18px;">
+                    <div class="neo-modal" onclick="event.stopPropagation()" style="max-width: 480px;">
                         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 2px solid var(--black);">
                             <h3 class="modal-title" style="font-weight: 900; font-size: 1.15rem; margin: 0; text-transform: uppercase;">
                                 Butiran Tempahan #<?php echo $booking['id']; ?>
@@ -526,11 +528,11 @@ $result_bookings = $stmt->get_result();
                         <div class="modal-detail-banner">
                             <img src="<?php echo $car_img_src; ?>" alt="<?php echo $car_display_name; ?>">
                             <div style="flex: 1; min-width: 0;">
-                                <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; margin-bottom: 5px;">
-                                    <h4 style="font-weight: 900; text-transform: uppercase; margin: 0; font-size: 0.95rem; color: var(--black); line-height: 1.2;">
-                                        <?php echo $car_display_name; ?>
-                                    </h4>
-                                    <span class="badge-status <?php echo $badge_class; ?>" style="font-size: 0.8rem; flex-shrink: 0;">
+                                <h4 style="font-weight: 900; text-transform: uppercase; margin: 0 0 3px 0; font-size: 0.92rem; color: var(--black); line-height: 1.25; word-break: break-word;">
+                                    <?php echo $car_display_name; ?>
+                                </h4>
+                                <div style="margin-bottom: 5px;">
+                                    <span class="badge-status <?php echo $badge_class; ?>" style="font-size: 0.78rem;">
                                         <i class="bi <?php echo $status_icon; ?>"></i> <?php echo $status_text; ?>
                                     </span>
                                 </div>

@@ -128,6 +128,139 @@ $result_history = $stmt_h->get_result();
             .stat-summary-val { font-size: 1.05rem; }
             .header-flex { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px !important; }
         }
+
+        /* Seksyen Pengesahan Dokumen (Kemas & Responsif) */
+        .doc-verification-strip {
+            margin-top: 10px;
+            padding-top: 8px;
+            border-top: 1px dashed #e2e8f0;
+        }
+        .doc-strip-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 6px;
+        }
+        .doc-strip-label {
+            color: #64748b;
+            font-weight: 800;
+            font-size: 0.72rem;
+            text-transform: uppercase;
+            letter-spacing: 0.4px;
+            display: inline-flex;
+            align-items: center;
+        }
+        .doc-strip-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 8px;
+        }
+        .doc-item-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            padding: 7px 10px;
+            font-size: 0.78rem;
+            font-weight: 800;
+            border: 1.5px solid var(--black);
+            border-radius: var(--radius-sm);
+            box-shadow: 2px 2px 0px var(--black);
+            cursor: pointer;
+            text-decoration: none;
+            transition: var(--transition);
+            white-space: nowrap;
+            text-align: center;
+        }
+        .doc-item-btn:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 3px 3px 0px var(--black);
+        }
+        .doc-item-btn:active {
+            transform: translate(1px, 1px);
+            box-shadow: 1px 1px 0px var(--black);
+        }
+        .doc-item-btn.btn-receipt {
+            background-color: var(--yellow);
+            color: var(--black);
+        }
+        .doc-item-btn.btn-return {
+            background-color: #00f5d4;
+            color: var(--black);
+        }
+
+        /* Modal Pengesahan Dokumen Ringkas (Tanpa Zoom) */
+        .doc-modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.78);
+            backdrop-filter: blur(3px);
+            z-index: 3000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            padding: 12px;
+            box-sizing: border-box;
+        }
+        .doc-modal-box {
+            background: var(--white);
+            border: 3px solid var(--black);
+            border-radius: var(--radius-lg);
+            box-shadow: 6px 6px 0px var(--black);
+            width: 100%;
+            max-width: 650px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            padding: 16px;
+            box-sizing: border-box;
+            position: relative;
+        }
+        .doc-modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid var(--black);
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+            gap: 10px;
+            flex-wrap: nowrap;
+        }
+        .doc-modal-badge {
+            background: var(--yellow);
+            color: var(--black);
+            font-size: 0.75rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            padding: 3px 8px;
+            border: 1.5px solid var(--black);
+            border-radius: var(--radius-sm);
+            box-shadow: 1.5px 1.5px 0px var(--black);
+        }
+        .doc-viewer-stage {
+            width: 100%;
+            max-height: 64vh;
+            background: #0f172a;
+            border: 2px solid var(--black);
+            border-radius: var(--radius-md);
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+        .doc-viewer-img {
+            max-width: 100%;
+            max-height: 60vh;
+            object-fit: contain;
+            border-radius: 4px;
+            display: block;
+            margin: auto;
+        }
     </style>
 </head>
 <body>
@@ -265,24 +398,28 @@ $result_history = $stmt_h->get_result();
                             </div>
                         </div>
 
-                        <!-- Baris Bawah: Dokumen (Jika Ada) -->
+                        <!-- Baris Bawah: Pengesahan Dokumen (Kemas, Tanpa Dokumen Pelajar) -->
                         <?php 
                         $has_receipt = (!empty($row['payment_receipt']) && file_exists(__DIR__ . '/../' . $row['payment_receipt']));
                         $has_return = (!empty($row['return_image']) && file_exists(__DIR__ . '/../' . $row['return_image']));
                         if ($has_receipt || $has_return): 
                         ?>
-                            <div style="display: flex; gap: 8px; align-items: center; flex-wrap: wrap; margin-top: 10px; padding-top: 8px; border-top: 1px dashed #e2e8f0;">
-                                <span style="color: #64748b; font-weight: 800; font-size: 0.78rem; text-transform: uppercase;">Dokumen:</span>
-                                <?php if ($has_receipt): ?>
-                                    <a href="../<?php echo htmlspecialchars($row['payment_receipt']); ?>" target="_blank" class="neo-btn btn-sm btn-yellow" style="padding: 4px 10px; font-size: 0.76rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="bi bi-receipt"></i> Resit Bayaran
-                                    </a>
-                                <?php endif; ?>
-                                <?php if ($has_return): ?>
-                                    <a href="../<?php echo htmlspecialchars($row['return_image']); ?>" target="_blank" class="neo-btn btn-sm btn-blue" style="padding: 4px 10px; font-size: 0.76rem; text-decoration: none; display: inline-flex; align-items: center; gap: 5px;">
-                                        <i class="bi bi-camera-fill"></i> Gambar Pulang
-                                    </a>
-                                <?php endif; ?>
+                            <div class="doc-verification-strip">
+                                <div class="doc-strip-header">
+                                    <span class="doc-strip-label"><i class="bi bi-file-earmark-text-fill text-primary"></i> Dokumen Tempahan:</span>
+                                </div>
+                                <div class="doc-strip-buttons">
+                                    <?php if ($has_receipt): ?>
+                                        <button type="button" class="doc-item-btn btn-receipt" onclick="viewDocument('<?php echo htmlspecialchars($row['payment_receipt']); ?>', 'Resit Bayaran - #<?php echo $row['id']; ?>')">
+                                            <i class="bi bi-receipt"></i> Resit Bayaran
+                                        </button>
+                                    <?php endif; ?>
+                                    <?php if ($has_return): ?>
+                                        <button type="button" class="doc-item-btn btn-return" onclick="viewDocument('<?php echo htmlspecialchars($row['return_image']); ?>', 'Gambar Pemulangan - #<?php echo $row['id']; ?>')">
+                                            <i class="bi bi-camera-fill"></i> Gambar Pulang
+                                        </button>
+                                    <?php endif; ?>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </div>
@@ -345,12 +482,42 @@ $result_history = $stmt_h->get_result();
         </div>
     </div>
 
+    <!-- MODAL PENGESAHAN DOKUMEN (RINGKAS & KEMAS - TANPA ZOOM) -->
+    <div class="doc-modal-overlay" id="docModalOverlay" onclick="if(event.target===this) closeDocModal()">
+        <div class="doc-modal-box" onclick="event.stopPropagation()">
+            <div class="doc-modal-header">
+                <div style="display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; overflow: hidden;">
+                    <span class="doc-modal-badge" id="docTypeBadge" style="flex-shrink: 0;">Dokumen</span>
+                    <h3 id="docModalTitle" style="font-weight: 900; font-size: 0.95rem; margin: 0; text-transform: uppercase; color: var(--black); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                        Pratonton Dokumen
+                    </h3>
+                </div>
+            </div>
+
+            <!-- TINGKAP LIHAT DOKUMEN -->
+            <div class="doc-viewer-stage">
+                <img id="docPreviewImg" src="" alt="Pratonton Dokumen" class="doc-viewer-img">
+                <iframe id="docPreviewPdf" src="" style="width: 100%; height: 58vh; border: none; display: none;"></iframe>
+            </div>
+
+            <!-- BUTANG TINDAKAN RINGKAS -->
+            <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 12px; padding-top: 10px; border-top: 1.5px dashed #ddd;">
+                <a id="docOpenTabBtn" href="" target="_blank" class="neo-btn btn-sm btn-yellow" style="padding: 5px 14px; font-size: 0.8rem;">
+                    <i class="bi bi-box-arrow-up-right me-1"></i> Buka Penuh
+                </a>
+                <button type="button" class="neo-btn btn-sm btn-white" onclick="closeDocModal()" style="padding: 5px 14px; font-size: 0.8rem;">
+                    Tutup
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- FOOTER -->
     <footer>
         &copy; <?php echo date("Y"); ?> SCRS PMU. SISTEM SEWAAN KERETA.
     </footer>
 
-    <!-- SKRIP ASLI -->
+    <!-- SKRIP ASLI & KAWALAN DOKUMEN -->
     <script>
         // Dropdown Profil
         const profileToggle = document.getElementById('profile-toggle');
@@ -429,6 +596,55 @@ $result_history = $stmt_h->get_result();
             if (e.target.id === 'studentModalOverlay') {
                 closeStudentModal();
             }
+        }
+
+        // KAWALAN DOKUMEN VIEWER MODAL (RINGKAS TANPA ZOOM)
+        const docModalOverlay = document.getElementById('docModalOverlay');
+        const docModalTitle = document.getElementById('docModalTitle');
+        const docTypeBadge = document.getElementById('docTypeBadge');
+        const docPreviewImg = document.getElementById('docPreviewImg');
+        const docPreviewPdf = document.getElementById('docPreviewPdf');
+        const docOpenTabBtn = document.getElementById('docOpenTabBtn');
+
+        function viewDocument(url, title) {
+            if (!url || url.trim() === '') return;
+            docModalTitle.textContent = title;
+
+            if (docTypeBadge) {
+                const lowerTitle = title.toLowerCase();
+                if (lowerTitle.includes('resit')) {
+                    docTypeBadge.textContent = 'Resit Bayaran';
+                    docTypeBadge.style.background = 'var(--yellow)';
+                } else if (lowerTitle.includes('pulang') || lowerTitle.includes('pemulangan')) {
+                    docTypeBadge.textContent = 'Gambar Pemulangan';
+                    docTypeBadge.style.background = '#00f5d4';
+                } else {
+                    docTypeBadge.textContent = 'Dokumen';
+                    docTypeBadge.style.background = '#e2e8f0';
+                }
+            }
+
+            const fullUrl = (url && !url.startsWith('../') && !url.startsWith('http')) ? '../' + url : url;
+            docOpenTabBtn.href = fullUrl;
+
+            const isPdf = fullUrl.toLowerCase().endsWith('.pdf');
+            if (isPdf) {
+                docPreviewImg.style.display = 'none';
+                docPreviewPdf.style.display = 'block';
+                docPreviewPdf.src = fullUrl;
+            } else {
+                docPreviewPdf.style.display = 'none';
+                docPreviewImg.style.display = 'block';
+                docPreviewImg.src = fullUrl;
+            }
+
+            docModalOverlay.style.display = 'flex';
+        }
+
+        function closeDocModal() {
+            if (docPreviewPdf) docPreviewPdf.src = '';
+            if (docPreviewImg) docPreviewImg.src = '';
+            docModalOverlay.style.display = 'none';
         }
     </script>
 </body>
